@@ -25,7 +25,7 @@ public class Fabrica {
     static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     static final String[] PROIBIDO = {"combo", "cedh", "stax", "turbo", "infinite", "infinito", "storm", "lock"};
     static final int MIN_CRIATURAS = 25, MAX_PECAS_COMBO = 6, MAX_FALTANDO = 3;
-    static final String[] ESTRATEGICAS = {"group hug", "politics", "control", "spellslinger", "aristocrat", "voltron", "stax", "pillowfort"};
+    static final String[] ESTRATEGICAS = {"group hug", "politics", "control", "spellslinger", "aristocrat", "voltron", "stax", "pillowfort", "reanimat", "graveyard", "self-mill", "blink", "spells matter"};
 
     public static void main(String[] a) throws Exception {
         Path pasta = Paths.get(a[0]), estadoArq = Paths.get(a[1]);
