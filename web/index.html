@@ -5639,8 +5639,18 @@ function textoPassos(){ return [
 ];}
 
 let pularAteMeuTurno = false;
+let cancelandoAlvos = 0;   // Cancelar na escolha de alvos: desmarca um por vez (clicar de novo no alvo desmarca) e depois cancela
 function desenharPrompt(){
   const box = $('#prompt'); const p = E.prompt;
+  if (cancelandoAlvos){
+    if (!p || p.tipo !== 'target') cancelandoAlvos = 0;
+    else if (!respondido){
+      const marcado = [...escolhidos()][0];
+      // se o XMage não desmarcar, desiste depois de alguns passos e só encerra (não fica marcando/desmarcando)
+      if (marcado && --cancelandoAlvos > 1){ responder('uuid', marcado); return; }
+      cancelandoAlvos = 0; responder('bool', false); return;
+    }
+  }
   if (pularAteMeuTurno && E.jogo){
     const meuTurno = E.jogo.jogadores.some(x=>x.eu && x.ativo);
     if (meuTurno || E.fase !== 'jogo') pularAteMeuTurno = false;
@@ -5685,7 +5695,12 @@ function desenharPrompt(){
     case 'target':
       sub = p.cartas && p.cartas.length ? 'Escolha na janela.' : 'Clique num alvo destacado (amarelo).';
       if (p.cartas && p.cartas.length) h += `<button class="peq" id="btnReabrir">Ver opções</button>`;
-      h += B(p.obrigatorio ? 'Concluir' : 'Cancelar','bool',false);
+      // no XMage, "terminar" (false) fica com os alvos já marcados: com algum marcado isso é Confirmar,
+      // e Cancelar de verdade desmarca tudo antes (cancelandoAlvos, no começo do desenharPrompt)
+      if (escolhidos().size){
+        h += B('Confirmar','bool',false,'pri');
+        if (!p.obrigatorio) h += `<button id="btnCancelarAlvos" title="Desmarca os alvos escolhidos e cancela">Cancelar</button>`;
+      } else h += B(p.obrigatorio ? 'Concluir' : 'Cancelar','bool',false);
       break;
     case 'mana': sub='Clique nos terrenos/fontes de mana ou na mana do seu pool.'; h = B('Cancelar','bool',false); break;
     case 'xmana': sub='Gere a mana para o X e confirme.'; h = B('Pronto','bool',true,'pri') + B('Cancelar','bool',false); break;
@@ -5695,6 +5710,8 @@ function desenharPrompt(){
   msgEl.innerHTML = `${simbolos(msg)}${sub?`<small>${esc(sub)}</small>`:''}${msg!==msgOrig?`<small class="orig">${simbolos(msgOrig)}</small>`:''}`;
   bt.innerHTML = h;
   bt.querySelectorAll('button[data-t]').forEach(b=>b.onclick=()=>responder(b.dataset.t, JSON.parse(b.dataset.v)));
+  const bca = $('#btnCancelarAlvos');
+  if (bca) bca.onclick = ()=>{ cancelandoAlvos = escolhidos().size + 2; desenharPrompt(); };   // nº máximo de passos (trava contra laço)
   // "Confirmar antes de passar a fase principal" (Configurações): o primeiro clique fica só na Mesa
   const pf = bt.querySelector('.btnPassarFase');
   if (pf){ const original = pf.onclick; pf.onclick = ()=>confirmarPasseMain(()=>original()); }
