@@ -698,9 +698,27 @@ public class Ponte implements MageClient {
 
     /** Servidor do XMage: "localhost" (você é o anfitrião) ou o IP do anfitrião na VPN (Radmin/Tailscale). */
     String servidor() {
+        String h = servidorBruto();
+        return "zera".equalsIgnoreCase(h) ? enderecoZera() : h;
+    }
+    /** O que está gravado: "localhost", um IP, ou "zera" (servidor do grupo, sempre ligado). */
+    String servidorBruto() {
         JsonObject c = config();
         String h = c.has("servidor") ? c.get("servidor").getAsString().trim() : "";
         return h.isEmpty() ? "localhost" : h;
+    }
+    // Servidor do grupo (o Zera, ligado 24h): pelo Tailscale (amigos de fora) ou pela rede de casa
+    static final String[] ENDERECOS_ZERA = {"100.109.159.116", "192.168.15.13"};
+    volatile String zeraEscolhido = null; volatile long zeraQuando = 0;
+    String enderecoZera() {
+        if (zeraEscolhido != null && System.currentTimeMillis() - zeraQuando < 60_000) return zeraEscolhido;
+        String achou = null;
+        for (String ip : ENDERECOS_ZERA) {
+            try (Socket so = new Socket()) { so.connect(new InetSocketAddress(ip, PORTA_XMAGE), 1500); achou = ip; break; } catch (IOException ignored) { }
+        }
+        if (achou == null) return zeraEscolhido != null ? zeraEscolhido : ENDERECOS_ZERA[0];
+        zeraEscolhido = achou; zeraQuando = System.currentTimeMillis();
+        return achou;
     }
     boolean souAnfitriao() {
         String h = servidor();
@@ -719,6 +737,7 @@ public class Ponte implements MageClient {
 
     void garantirServidor() throws Exception {
         if (!souAnfitriao()) {
+            if ("zera".equalsIgnoreCase(servidorBruto()) && !portaAberta(servidor(), PORTA_XMAGE)) throw new IllegalStateException("Não consegui alcançar o servidor do grupo (Zera). Confira se o Tailscale está ligado neste PC.");
             if (!portaAberta(servidor(), PORTA_XMAGE)) throw new IllegalStateException("Não consegui alcançar o servidor em " + servidor() + ":" + PORTA_XMAGE
                     + ". Confira se o anfitrião está com a Mesa aberta, se vocês estão na mesma rede (Radmin/Tailscale) e o IP.");
             return;
@@ -870,6 +889,7 @@ public class Ponte implements MageClient {
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("servidor", servidor());
         r.put("anfitriao", souAnfitriao());
+        r.put("grupo", "zera".equalsIgnoreCase(servidorBruto()));
         r.put("conectado", session != null && session.isConnected() ? hostConectado : null);
         r.put("meusIps", meusIps());
         r.put("temGrimorio", Files.exists(GRIMORIO));
@@ -955,7 +975,7 @@ public class Ponte implements MageClient {
     void salvarPartida() {
         try {
             JsonObject o = new JsonObject();
-            o.addProperty("servidor", servidor());
+            o.addProperty("servidor", servidorBruto());
             o.addProperty("usuario", meuNome);
             o.addProperty("tableId", tableId == null ? "" : tableId.toString());
             o.addProperty("gameId", gameId == null ? "" : gameId.toString());

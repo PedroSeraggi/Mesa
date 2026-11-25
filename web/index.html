@@ -911,6 +911,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
       <div class="cabDecks"><h2 id="jgTitulo">Jogar com amigos</h2><div class="dicaMenu" id="jgConectado"></div></div>
       <div class="blocoJogar">
         <div class="tituloBloco">1 · Conexão</div>
+        <label class="radioLinha"><input type="radio" name="jgModo" value="grupo"> <b>Servidor do grupo (Zera)</b> <span class="dicaMenu">sempre ligado: ninguém precisa ser anfitrião e quem cair consegue voltar (precisa do Tailscale)</span></label>
         <label class="radioLinha"><input type="radio" name="jgModo" value="anfitriao"> <b>Sou o anfitrião</b> <span class="dicaMenu">o servidor de regras roda no meu PC</span></label>
         <div id="jgIps" class="ipsBox"></div>
         <label class="radioLinha"><input type="radio" name="jgModo" value="amigo"> <b>Entrar no servidor de um amigo</b></label>
@@ -1015,15 +1016,6 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
 
 <script>
 const $ = s => document.querySelector(s);
-let E = null;            // estado vindo da ponte
-let decks = [];
-let visao = localGet('visao') || 'todos';
-let focoId = null;       // jogador em foco no modo foco/duo
-let ultimoSeq = -1;
-let respondido = false;
-let menuPassarAberto = false;
-let avisosVistos = new Set();
-
 // Configurações: ficam num arquivo da Mesa (prefs.json, pela ponte) e numa cópia no navegador.
 // O arquivo vale mais: se o navegador apagar os dados (limpeza, outro navegador), nada se perde.
 const PREFS_SO_NAVEGADOR = new Set(['tiposCartas']);   // caches grandes: só no navegador
@@ -1038,6 +1030,15 @@ function localSet(k,v){
   if (PREFS) PREFS[k] = String(v);
   fetch('/api/prefs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k, v:String(v)})}).catch(()=>{});
 }
+let E = null;            // estado vindo da ponte
+let decks = [];
+let visao = localGet('visao') || 'todos';
+let focoId = null;       // jogador em foco no modo foco/duo
+let ultimoSeq = -1;
+let respondido = false;
+let menuPassarAberto = false;
+let avisosVistos = new Set();
+
 function esc(s){ return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 // tira as tags HTML de um texto. Antes criava um documento inteiro a cada chamada (milhares por atualização
 // do histórico = tela travando); agora usa um único elemento e lembra dos textos já limpos.
@@ -1349,8 +1350,9 @@ async function iniciarJogar(){
   $('#jgDeck').innerHTML = opt; $('#jgDeckCriar').innerHTML = opt;
   const salvo = localGet('meuDeck'); if (salvo && decks.some(d=>d.arquivo===salvo)){ $('#jgDeck').value = salvo; $('#jgDeckCriar').value = salvo; }
   const cfgS = await (await fetch('/api/config')).json();
-  document.querySelectorAll('input[name=jgModo]').forEach(r=>{ r.checked = (r.value==='anfitriao') === cfgS.anfitriao; });
-  $('#jgIp').value = cfgS.anfitriao ? '' : cfgS.servidor;
+  const modo = cfgS.grupo ? 'grupo' : cfgS.anfitriao ? 'anfitriao' : 'amigo';
+  document.querySelectorAll('input[name=jgModo]').forEach(r=>{ r.checked = r.value === modo; });
+  $('#jgIp').value = modo === 'amigo' ? cfgS.servidor : '';
   const vpn = (cfgS.meusIps||[]).filter(i=>i.tipo!=='Rede local');
   $('#jgIps').innerHTML = cfgS.anfitriao
     ? ((vpn.length ? vpn : cfgS.meusIps||[]).map(i=>`<span class="ipChip ${i.tipo!=='Rede local'?'vpn':''}" title="Clique para copiar"><b>${esc(i.ip)}</b>${esc(i.tipo)}</span>`).join('')
@@ -1375,6 +1377,7 @@ $('#jgLugares').onchange = desenharBotsJogar;
 $('#jgBots').onchange = desenharBotsJogar;
 document.querySelectorAll('input[name=jgModo]').forEach(r=>r.onchange=async ()=>{
   if (r.value==='anfitriao' && r.checked){ await post('/api/config',{servidor:'localhost'}); iniciarJogar(); }
+  if (r.value==='grupo' && r.checked){ await post('/api/config',{servidor:'zera'}); iniciarJogar(); }
   if (r.value==='amigo' && r.checked) $('#jgIp').focus();
 });
 $('#jgSalvarIp').onclick = async ()=>{
