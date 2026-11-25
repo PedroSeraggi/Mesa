@@ -68,6 +68,7 @@ public class Amigos {
         srv.createContext("/chefe", ex -> tratar(ex, Amigos::chefe));
         srv.createContext("/deckDia", ex -> tratar(ex, Amigos::deckDia));
         srv.createContext("/mao", ex -> tratar(ex, Amigos::mao));
+        srv.createContext("/times", ex -> tratar(ex, Amigos::times));
         srv.createContext("/decksChefe", ex -> tratar(ex, c -> {   // todos os decks de chefe que a pessoa já ganhou (a Mesa baixa os que faltam)
             Usuario u = usuario(c); List<Map<String, Object>> l = new ArrayList<>();
             for (Map.Entry<String, List<Map<String, Object>>> e : b.derrotaramChefe.entrySet()) {
@@ -465,6 +466,33 @@ public class Amigos {
         return r;
     }
 
+    // ---------------- 2v2 online: times de cada mesa (o XMage lê o arquivo ao começar, para alternar os lugares) ----------------
+    static final Map<String, JsonObject> timesMesa = new HashMap<>();   // mesa -> {timeA:[nomes], timeB:[nomes], quando}
+    static Object times(JsonObject c) throws IOException {
+        usuario(c);
+        String mesa = texto(c, "mesa", 64, "");
+        if (!mesa.matches("[0-9a-f-]{36}")) throw new IllegalArgumentException("mesa inválida");
+        synchronized (timesMesa) {
+            long agora = System.currentTimeMillis();
+            timesMesa.values().removeIf(x -> agora - x.get("quando").getAsLong() > 6 * 3600_000L);
+            if (c.has("timeA") && c.has("timeB")) {
+                JsonObject t = new JsonObject();
+                t.add("timeA", c.getAsJsonArray("timeA")); t.add("timeB", c.getAsJsonArray("timeB")); t.addProperty("quando", agora);
+                timesMesa.put(mesa, t);
+                java.nio.file.Path d = java.nio.file.Paths.get(Optional.ofNullable(System.getenv("TIMES")).orElse("/times"));
+                if (Files.isDirectory(d)) Files.write(d.resolve(mesa + ".json"), GSON.toJson(t).getBytes(StandardCharsets.UTF_8));
+            }
+            JsonObject t = timesMesa.get(mesa);
+            if (t == null) {   // o serviço reiniciou: os times continuam no arquivo
+                java.nio.file.Path f = java.nio.file.Paths.get(Optional.ofNullable(System.getenv("TIMES")).orElse("/times")).resolve(mesa + ".json");
+                if (Files.exists(f)) { t = JsonParser.parseString(new String(Files.readAllBytes(f), StandardCharsets.UTF_8)).getAsJsonObject(); timesMesa.put(mesa, t); }
+            }
+            Map<String, Object> r = new LinkedHashMap<>();
+            if (t != null) { r.put("timeA", t.get("timeA")); r.put("timeB", t.get("timeB")); }
+            return r;
+        }
+    }
+
     // ---------------- 2v2: cada jogador vê a mão do parceiro (só na memória; some sozinho) ----------------
     static final Map<String, Map<String, Object[]>> maos = new HashMap<>();   // jogo -> código -> {nome, cartas, quando}
     static Object mao(JsonObject c) {
@@ -478,11 +506,12 @@ public class Amigos {
             maos.values().removeIf(Map::isEmpty);
             Map<String, Object[]> m = maos.computeIfAbsent(jogo, k -> new HashMap<>());
             if (c.has("cartas") && c.get("cartas").isJsonArray() && c.getAsJsonArray("cartas").size() <= 40)
-                m.put(u.codigo, new Object[]{u.nome, c.getAsJsonArray("cartas"), agora});
+                m.put(u.codigo, new Object[]{u.nome, c.getAsJsonArray("cartas"), agora, texto(c, "jogador", 64, "")});
             for (Map.Entry<String, Object[]> e : m.entrySet()) {
                 if (e.getKey().equals(u.codigo)) continue;
                 Map<String, Object> x = new LinkedHashMap<>();
                 x.put("nome", e.getValue()[0]); x.put("cartas", e.getValue()[1]); x.put("quando", e.getValue()[2]);
+                if (e.getValue().length > 3) x.put("jogador", e.getValue()[3]);
                 outros.add(x);
             }
         }

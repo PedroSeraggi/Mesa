@@ -479,6 +479,10 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .lbLug.vazio span{animation:lbPisca 1.6s ease-in-out infinite}
 @keyframes lbPisca{50%{opacity:.4}}
 .lb2v2{width:100%}
+.lbOnline .lbLug.trocavel{cursor:pointer}
+.lbOnline .lbLug.trocavel:hover{filter:brightness(1.12)}
+.lbOnline .lbLug.selTroca{outline:3px solid #6fc0f0;outline-offset:3px}
+.lbDicaTimes{margin-top:-30px;margin-bottom:10px}
 .lb2v2 .lbLug{flex-basis:260px;aspect-ratio:260/150;background-position:center 30%}
 .lb2v2 .lbLug .cmd{bottom:30px}
 .lbRot{font-family:var(--ff-titulo);font-size:11px;letter-spacing:.3em;text-transform:uppercase;text-align:center;color:#e0a040}
@@ -1344,7 +1348,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
         </div>
         <div class="blocoJogar" id="jgBlocoCriar">
           <div class="tituloBloco">Monte a sala</div>
-          <label>Modo de jogo<select id="jgModoJogo"><option value="todos" selected>Todos contra todos</option><option value="2v2">2 contra 2 (beta): vocês contra 2 bots</option></select></label>
+          <label>Modo de jogo<select id="jgModoJogo"><option value="todos" selected>Todos contra todos</option><option value="2v2online">2 contra 2 online (beta): 4 jogadores</option><option value="2v2">2 contra 2 (beta): vocês contra 2 bots</option></select></label>
           <label>Seu deck<select id="jgDeckCriar"></select></label>
           <label>Nome da sala<input id="jgNome" placeholder="Ex.: Sexta do Commander"></label>
           <label>Lugares<select id="jgLugares"><option value="2">2 jogadores</option><option value="3">3 jogadores</option><option value="4" selected>4 jogadores</option><option value="5">5 jogadores</option><option value="6">6 jogadores</option></select></label>
@@ -1795,6 +1799,15 @@ async function iniciarJogar(){
   timerMesas = setInterval(()=>{ if (vista==='jogar' && !document.hidden){ atualizarMesas(); } else clearInterval(timerMesas); }, 3000);
 }
 function desenharBotsJogar(){
+  const online2 = $('#jgModoJogo').value === '2v2online';
+  $('#jgNivel').closest('label').classList.toggle('oculto', online2);
+  if (online2){
+    $('#jgLugares').value = '4'; $('#jgLugares').disabled = true;
+    $('#jgBots').innerHTML = '<option value="0">Nenhum (só gente)</option>'; $('#jgBots').disabled = true; $('#jgBotsDecks').innerHTML = '';
+    $('#jgVida').value = '60'; $('#jgVida').disabled = true;
+    return;
+  }
+  $('#jgNivel').closest('label').classList.remove('oculto');
   const dupla = $('#jgModoJogo').value === '2v2';
   if (dupla){ $('#jgLugares').value = '4'; if (!$('#jgBots').options.length || +$('#jgBots').value !== 2){ $('#jgBots').innerHTML = '<option value="2">2 bots</option>'; } }
   $('#jgLugares').disabled = dupla; $('#jgBots').disabled = dupla;
@@ -1813,7 +1826,7 @@ function desenharBotsJogar(){
   document.querySelectorAll('.jgBotDeck').forEach((s,i)=>{ s.value = arqs[(i+1)%arqs.length]; });
 }
 $('#jgLugares').onchange = desenharBotsJogar;
-$('#jgModoJogo').onchange = ()=>{ if ($('#jgModoJogo').value !== '2v2') $('#jgBots').innerHTML = ''; desenharBotsJogar(); };
+$('#jgModoJogo').onchange = ()=>{ if (!$('#jgModoJogo').value.startsWith('2v2')) { $('#jgBots').innerHTML = ''; $('#jgLugares').disabled = false; $('#jgBots').disabled = false; $('#jgVida').disabled = false; $('#jgVida').value = '40'; } desenharBotsJogar(); };
 $('#jgBots').onchange = desenharBotsJogar;
 document.querySelectorAll('input[name=jgModo]').forEach(r=>r.onchange=async ()=>{
   if (r.value==='anfitriao' && r.checked){ await post('/api/config',{servidor:'localhost'}); iniciarJogar(); }
@@ -1901,8 +1914,31 @@ function dadosLugares(m, cartoes, eu){
     const bot = !!l.bot, cmds = c.cmds || [];
     const nome = bot ? (nomeXm ? nomeXm.split(' · ')[0] : 'Bot') : (c.nome || l.nome);
     const numBot = bot && nomeXm ? (nomeXm.match(/\d+/)||[''])[0] : '';
-    return {i, vazio: !nomeXm, bot, eu: l.nome && l.nome===eu, nome, deck: c.deck || '', cmd: cmds[0] || null, cmds,
+    return {i, vazio: !nomeXm, bot, nomeXm, eu: l.nome && l.nome===eu, nome, deck: c.deck || '', cmd: cmds[0] || null, cmds,
       avatar: c.avatar || '', cor: c.cor || (bot ? '#3a2a4a' : CORES[i%CORES.length]), ini: bot ? 'B' + numBot : ((nome||'?')[0]||'?').toUpperCase()};
+  });
+}
+// 2v2 online: o dono clica num jogador e depois num do outro time para trocá-los
+let timesSala = null, donoSala = false, trocaSel = null;
+function ligarTrocaTimes(dados){
+  const cards = [...document.querySelectorAll('#jgSala .lbOnline .lbLug')];
+  const ordem = [...dados.filter(d=>d.time!==ultimaSala.meuT), ...dados.filter(d=>d.time===ultimaSala.meuT)];
+  cards.forEach((el, k)=>{
+    const d = ordem[k]; if (!d || d.vazio) return;
+    el.classList.add('trocavel'); el.title = 'Clique para trocar de time';
+    if (trocaSel === d.nomeXm) el.classList.add('selTroca');
+    el.onclick = async ()=>{
+      if (!trocaSel){ trocaSel = d.nomeXm; salaHtmlAnterior = ''; desenharSala(); return; }
+      if (trocaSel === d.nomeXm){ trocaSel = null; salaHtmlAnterior = ''; desenharSala(); return; }
+      const a = [...(timesSala.timeA||[])], b = [...(timesSala.timeB||[])];
+      const x = trocaSel, y = d.nomeXm; trocaSel = null;
+      const tx = a.includes(x) ? a : b, ty = a.includes(y) ? a : b;
+      if (tx === ty){ avisoLocal('Escolha um jogador do outro time.'); salaHtmlAnterior = ''; desenharSala(); return; }
+      tx.splice(tx.indexOf(x), 1, y); ty.splice(ty.indexOf(y), 1, x);
+      const res = await post('/api/mesa/times', {timeA: a, timeB: b});
+      if (res.erro) avisoLocal(res.erro);
+      salaHtmlAnterior = ''; desenharSala();
+    };
   });
 }
 function lbLugarHtml(d){
@@ -1946,8 +1982,21 @@ async function desenharSala(){
   if (nomesCmd.some(n=>!tiposCartas[n] || !tiposCartas[n].ci)) buscarTipos(nomesCmd);
   const dupla = (m.nome||'').startsWith('2v2 · ');
   const dados = dadosLugares(m, cartoes, r.eu);
-  ultimaSala = {dupla, dados};
-  const lugaresHtml = dupla
+  const online2 = dupla && !!r.times;
+  if (online2){   // 2v2 online: cada um no seu time; os lugares vazios completam o time com vaga
+    const tA = r.times.timeA || [], tB = r.times.timeB || [];
+    dados.forEach(d=>{ d.time = d.vazio ? null : (tA.includes(d.nomeXm) ? 'A' : tB.includes(d.nomeXm) ? 'B' : 'A'); });
+    let nA = dados.filter(d=>d.time==='A').length, nB = dados.filter(d=>d.time==='B').length;
+    dados.filter(d=>d.vazio).forEach(d=>{ if (nA < 2){ d.time = 'A'; nA++; } else { d.time = 'B'; nB++; } });
+  } else dados.forEach(d=>{ d.time = d.bot ? 'B' : 'A'; });
+  const euD = dados.find(d=>d.eu), meuT = euD ? euD.time : 'A';
+  ultimaSala = {dupla, dados, meuT};
+  timesSala = online2 ? r.times : null; donoSala = !!r.dono;
+  const lugaresHtml = online2
+    ? `<div class="lb2v2 lbOnline"><div class="lbRot bots">Adversários</div><div class="lbFila">${dados.filter(d=>d.time!==meuT).map(lbLugarHtml).join('')}</div>
+        <div class="lbVs"><b>VS</b></div><div class="lbRot">Seu time</div><div class="lbFila">${dados.filter(d=>d.time===meuT).map(lbLugarHtml).join('')}</div>
+        ${r.dono ? '<div class="dicaMenu lbDicaTimes">Clique em dois jogadores de times diferentes para trocá-los de time.</div>' : ''}</div>`
+    : dupla
     ? `<div class="lb2v2"><div class="lbRot bots">Bots</div><div class="lbFila">${dados.filter(d=>d.bot).map(lbLugarHtml).join('')}</div>
         <div class="lbVs"><b>VS</b></div><div class="lbRot">Seu time</div><div class="lbFila">${dados.filter(d=>!d.bot).map(lbLugarHtml).join('')}</div></div>`
     : `<div class="lbFila">${dados.map(lbLugarHtml).join('')}</div>`;
@@ -1956,10 +2005,11 @@ async function desenharSala(){
       <div class="dicaMenu">Amigos na mesma rede do Radmin veem esta sala sozinhos em "Entrar em sala". Se não aparecer, eles colam o código.</div>` : ''}
     <div class="dicaMenu">${r.dono ? (cheia ? 'Todos sentados! Pode começar.' : 'Esperando os amigos entrarem...') : 'Esperando o dono da mesa começar...'}</div>
     ${lugaresHtml}
-    <div style="display:flex;gap:10px">${r.dono?`<button class="pri" id="salaComecar" ${(cheia || (dupla && dados.filter(d=>!d.bot && !d.vazio).length===2))?'':'disabled'}>Começar partida</button>`:''}<button id="salaSair">${r.dono?'Cancelar mesa':'Sair da mesa'}</button></div></div>`;
+    <div style="display:flex;gap:10px">${r.dono?`<button class="pri" id="salaComecar" ${(cheia || (dupla && !online2 && dados.filter(d=>!d.bot && !d.vazio).length===2))?'':'disabled'}>Começar partida</button>`:''}<button id="salaSair">${r.dono?'Cancelar mesa':'Sair da mesa'}</button></div></div>`;
   if (novoHtml === salaHtmlAnterior) return;   // não redesenha à toa (a flutuação recomeçaria)
   salaHtmlAnterior = novoHtml;
   $('#jgSala').innerHTML = novoHtml;
+  if (online2 && r.dono) ligarTrocaTimes(dados);
   const c = $('#salaComecar'); if (c) c.onclick = async ()=>{ c.disabled = true; const res = await post('/api/mesa/comecar', {}); if (res.erro){ avisoLocal(res.erro); c.disabled = false; } };
   $('#salaSair').onclick = async ()=>{ await post('/api/mesa/sair', {}); };
   const cv = $('#salaConvite'); if (cv) cv.onclick = ()=>{
@@ -1981,7 +2031,7 @@ function telaEntradaSala(sala){
       <div class="f" style="background-image:url('${imgCarta(d.cmd)}')"><div class="av" ${d.avatar?`style="background-image:url('${d.avatar}')"`:''}>${d.avatar?'':esc(d.ini)}</div><div class="nm">${esc(d.nome)}</div></div></div>`;
   let cartas = '';
   if (sala.dupla){
-    const bots = ds.filter(d=>d.bot), time = ds.filter(d=>!d.bot), passo = larg*1.35;
+    const mt = sala.meuT || 'A', bots = ds.filter(d=>(d.time||(d.bot?'B':'A'))!==mt), time = ds.filter(d=>(d.time||(d.bot?'B':'A'))===mt), passo = larg*1.35;
     bots.forEach((d,k)=>{ const x = (k-(bots.length-1)/2)*passo, y = -alt*.62; cartas += carta(d, x, y, 0, x, -innerHeight, -innerHeight, k, true); });
     time.forEach((d,k)=>{ const x = (k-(time.length-1)/2)*passo, y = alt*.62; cartas += carta(d, x, y, 0, x, innerHeight, innerHeight, k+2, false); });
   } else {
@@ -3953,6 +4003,20 @@ function desenhar(){
   controlarMaoParceiro();
 }
 
+// 2v2: time de cada jogador. Online vem da ponte (E.times); contra bots, gente é um time e bots o outro.
+const ehBotNome = n => /^(IA|Bot) \d+ /.test(n||'');
+function timeDe(nome){ return (E && E.times && E.times[nome]) || (ehBotNome(nome) ? 'B' : 'A'); }
+function meuTime(){ const eu = ((E && E.jogo && E.jogo.jogadores) || []).find(j=>j.eu); return eu ? timeDe(eu.nome) : 'A'; }
+function contraBots(){ return ((E && E.jogo && E.jogo.jogadores) || []).some(j=>ehBotNome(j.nome)); }
+// parceiro de time (só ele tem a mão mostrada)
+function parceiroMao(){
+  const ps = (maoParcInfo && maoParcInfo.parceiros) || [];
+  const eu = ((E && E.jogo && E.jogo.jogadores) || []).find(j=>j.eu);
+  if (!eu) return ps[0] || null;
+  const parc = ((E && E.jogo && E.jogo.jogadores) || []).find(j=>!j.eu && timeDe(j.nome) === timeDe(eu.nome));
+  return ps.find(p=>p.jogador && parc && p.jogador === parc.nome) || (contraBots() ? ps[0] : null) || null;
+}
+
 // 2v2: mão do parceiro (busca a cada 2 s pelo Zera; só para ver)
 let maoParcInfo = null, maoParcTimer = null, maoParcAberta = false, maoParcAssin = '';
 try { maoParcAberta = localGet('maoParcAberta') === '1'; } catch(e){}
@@ -3967,11 +4031,11 @@ async function buscarMaoParceiro(){
   try { maoParcInfo = await (await fetch('/api/maoParceiro')).json(); } catch(e){ maoParcInfo = null; }
   desenharMaoParceiro();
 }
-function nomeParceiro(){ const p = maoParcInfo && (maoParcInfo.parceiros||[])[0]; return p ? p.nome : ''; }
+function nomeParceiro(){ const p = parceiroMao(); return p ? p.nome : ''; }
 let abaMao = 'eu', maoParcAssinMao = '';
 function desenharMaoParceiro(){
   // agora a mão do parceiro é uma aba na barra da mão: só redesenha a mão quando as cartas dele mudam
-  const p = maoParcInfo && (maoParcInfo.parceiros||[])[0];
+  const p = parceiroMao();
   const a = JSON.stringify(p ? [p.nome, p.cartas] : null);
   if (a !== maoParcAssinMao){ maoParcAssinMao = a; if (E && E.jogo && E.fase === 'jogo') { desenharMao(); desenharVidaTime(); } }
 }
@@ -4002,12 +4066,13 @@ function desenharVidaTime(){
   const on = !!(E && E.modo2v2 && E.fase === 'jogo' && js.length === 4);
   box.classList.toggle('oculto', !on);
   if (!on) return;
-  const ehBotJ = j => /^(IA|Bot) \d+ /.test(j.nome||'');
-  const humanos = js.filter(j=>!ehBotJ(j)).sort((a,b)=>(b.eu?1:0)-(a.eu?1:0)), bots = js.filter(ehBotJ).sort((a,b)=>a.nome.localeCompare(b.nome));
+  const ehBotJ = j => ehBotNome(j.nome);
+  const mt = meuTime();
+  const humanos = js.filter(j=>timeDe(j.nome)===mt).sort((a,b)=>(b.eu?1:0)-(a.eu?1:0)), bots = js.filter(j=>timeDe(j.nome)!==mt).sort((a,b)=>a.nome.localeCompare(b.nome));
   const metade = (j, lado, cor)=>{
     if (!(j.id in vidaInicial)) vidaInicial[j.id] = Math.max(1, j.vida);
     const pct = Math.max(0, Math.min(100, j.vida / vidaInicial[j.id] * 100));
-    const nome = j.eu ? 'Você' : ehBotJ(j) ? j.nome.replace(/^(Bot|IA) (\d+) · .*/, 'Bot $2') : (nomeParceiro() || j.nome);
+    const nome = j.eu ? 'Você' : ehBotJ(j) ? j.nome.replace(/^(Bot|IA) (\d+) · .*/, 'Bot $2') : (timeDe(j.nome)===mt ? (nomeParceiro() || j.nome) : j.nome);
     return `<div class="vtMetade ${lado} ${pct <= 25 ? 'baixa' : ''}" title="${esc(j.nome)}: ${j.vida} de vida"><i style="width:${pct}%;background:${cor}"></i><b>${esc(nome)}</b></div>`;
   };
   const linha = (cls, tit, a, b, corA, corB)=>`<div class="vtLinha ${cls}"><span class="vtTit">${tit}</span><span class="vtNum">${Math.max(0,a.vida)}</span>
@@ -4015,7 +4080,7 @@ function desenharVidaTime(){
   let recolhido = false; try { recolhido = localGet('vidaTimeRecolhida') === '1'; } catch(e){}
   box.classList.toggle('recolhido', recolhido);
   box.innerHTML = (humanos.length === 2 ? linha('time', 'Seu time', humanos[0], humanos[1], 'linear-gradient(90deg,#7a1a14,#d8402e)', 'linear-gradient(90deg,#c9a46a,#8a6a3a)') : '')
-    + (bots.length === 2 ? linha('bots', 'Bots', bots[0], bots[1], 'linear-gradient(90deg,#3a2a4a,#7a5a9a)', 'linear-gradient(90deg,#9a7ab8,#4a3a5a)') : '')
+    + (bots.length === 2 ? linha('bots', contraBots() ? 'Bots' : 'Adversários', bots[0], bots[1], 'linear-gradient(90deg,#3a2a4a,#7a5a9a)', 'linear-gradient(90deg,#9a7ab8,#4a3a5a)') : '')
     + `<button class="vtSeta" title="${recolhido ? 'Mostrar as barras de vida' : 'Esconder as barras de vida'}">${recolhido ? '▾ Vida dos times' : '▴'}</button>`;
   box.querySelector('.vtSeta').onclick = ()=>{ try { localSet('vidaTimeRecolhida', recolhido ? '0' : '1'); } catch(e){} desenharVidaTime(); };
 }
@@ -4189,9 +4254,9 @@ function jogadoresVisiveis(){
     const outro = ativo && !ativo.eu ? ativo : js.find(p=>p.id===focoId) || ops[0];
     return [outro, meu].filter(Boolean);
   }
-  if (E.modo2v2 && js.length === 4){   // 2v2: bots em cima, o time embaixo (você no canto direito)
-    const ehB = p => /^(IA|Bot) \d+ /.test(p.nome||'');
-    return [...js.filter(ehB), ...ops.filter(p=>!ehB(p)), meu].filter(Boolean);
+  if (E.modo2v2 && js.length === 4){   // 2v2: adversários em cima, o seu time embaixo (você no canto direito)
+    const mt = meuTime();
+    return [...js.filter(p=>timeDe(p.nome)!==mt), ...ops.filter(p=>timeDe(p.nome)===mt), meu].filter(Boolean);
   }
   return [...ops, meu].filter(Boolean);
 }
@@ -4378,7 +4443,7 @@ function desenharMesa(){
   }
   const efeitosPendentes = capturarEfeitos();
   mesa.innerHTML = h;
-  if (dupla2v2) mesa.querySelectorAll('.tab').forEach((t,i)=>t.classList.add(/^(IA|Bot) \d+ /.test((ordem[i]||{}).nome||'') ? 'ladoBot' : 'ladoTime'));
+  if (dupla2v2){ const mt = meuTime(); mesa.querySelectorAll('.tab').forEach((t,i)=>t.classList.add(timeDe((ordem[i]||{}).nome)!==mt ? 'ladoBot' : 'ladoTime')); }
   dispararEfeitos(efeitosPendentes);
   if (visao==='livre' && !cam.ajustada){ cam.ajustada = true; centralizarCamera(); }
   ligarCartas(mesa);
@@ -4926,7 +4991,7 @@ function desenharMao(){
   let w = Math.min(165, Math.max(100, larg / Math.max(n,1) + 12));
   document.documentElement.style.setProperty('--mao-w', w+'px');
   const dupla = !!(E.modo2v2 && !E.assistindo);
-  const parc = dupla && maoParcInfo ? (maoParcInfo.parceiros||[])[0] : null;
+  const parc = dupla && maoParcInfo ? parceiroMao() : null;
   if (!dupla) abaMao = 'eu';
   if (dupla){
     const nomeP = parc ? parc.nome : 'parceiro', cartasP = parc ? (parc.cartas||[]) : [];
