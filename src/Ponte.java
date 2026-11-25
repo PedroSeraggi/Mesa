@@ -3174,7 +3174,8 @@ public class Ponte implements MageClient {
         List<Object> cont = new ArrayList<>();
         if (c.getCounters() != null) for (CounterView k : c.getCounters()) cont.add(Arrays.asList(k.getName(), k.getCount()));
         m.put("marcadores", cont);
-        if (c.getSecondCardFace() != null) m.put("verso", c.getSecondCardFace().getName());
+        // nome da outra face; "verso" (true) fica só para a carta que está transformada (a tela pede a imagem do verso)
+        if (c.getSecondCardFace() != null) m.put("nomeVerso", c.getSecondCardFace().getName());
         if (c instanceof PermanentView) {
             PermanentView p = (PermanentView) c;
             m.put("virada", p.isTapped());
