@@ -317,6 +317,40 @@ html.modoDesenho #mesa,html.modoDesenho #mesa *{cursor:crosshair!important}
 .bnItem:hover .bnAcoes,.bnAcoes.sempre{opacity:1}
 .bnAcoes button{padding:4px 9px;font-size:12px}
 .bnVazio{padding:4px 14px;background:none!important;border:none!important}
+.fimCaixa{max-width:min(860px,94vw);max-height:92vh;overflow:auto;text-align:left!important}
+.fimCaixa h2,.fimCaixa #fimTxt{text-align:center}
+.fimBts{justify-content:center}
+#fimResumo .subt{margin:6px 0 2px}
+.rsInfo{text-align:center;color:var(--txt2);font-size:13px;margin-top:-6px}
+.rsPodio{display:flex;flex-direction:column;gap:6px}
+.rsLugar{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:10px;background:#00000033;border-left:4px solid var(--c)}
+.rsLugar.primeiro{background:linear-gradient(90deg,#E4C87433,#00000033);box-shadow:0 0 18px #E4C87422}
+.rsLugar b{display:block;color:#f3e6c8}.rsLugar span{font-size:13px;color:var(--txt2)}
+.rsPos{font-family:var(--ff-titulo);font-size:20px;color:var(--ouro);width:30px;text-align:center}
+.rsAv{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;background:#3a2a18 center/cover;color:#1a1208;font-weight:800}
+.rsTabWrap{overflow-x:auto}
+.rsTab{border-collapse:collapse;width:100%;font-size:13.5px}
+.rsTab th,.rsTab td{padding:6px 8px;border-bottom:1px solid var(--borda);text-align:center}
+.rsTab th:first-child{text-align:left}
+.rsTab td small{display:block;font-size:10.5px;color:var(--ouro)}
+.rsTab .rsX{color:var(--txt3)}
+.rsGraf{width:100%;height:auto;background:#00000026;border-radius:10px}
+.rsGraf text{fill:var(--txt2);font-size:11px}.rsGraf .zero{stroke:#B8574255;stroke-dasharray:4 4}
+.rsLegenda{display:flex;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--txt2)}
+.rsLegenda i{display:inline-block;width:12px;height:3px;margin-right:5px;vertical-align:middle;border-radius:2px}
+.rsDest{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.rsDest div{background:var(--bg2);border:1px solid var(--borda);border-radius:9px;padding:9px 11px;line-height:1.3}
+.rsDest small{display:block;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt2)}
+.rsDest b{display:block;font-family:var(--ff-titulo);font-size:20px;color:var(--ouro)}
+.rsDest span{font-size:12.5px;color:var(--txt)}
+.rsMvp{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.rsMvp>div{display:flex;gap:10px;align-items:center;background:#00000033;border-left:3px solid var(--c);border-radius:8px;padding:6px;line-height:1.3}
+.rsMvp img{width:64px;height:46px;object-fit:cover;border-radius:5px;flex:none}
+.rsMvp b{display:block;font-size:13.5px}.rsMvp span{font-size:12px;color:var(--txt2)}
+#faixaEspec{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:44;display:flex;align-items:center;gap:8px;background:linear-gradient(#2a3a4a,#1a2632);border:1px solid #6f9fc4;color:#dce9f5;border-radius:999px;padding:6px 8px 6px 14px;box-shadow:0 6px 20px #000a;font-size:13.5px}
+#faixaEspec.oculto{display:none}
+.olhoEspec{display:flex;color:#9cc4e8}
+body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .rmsg{max-width:88%;padding:8px 11px;border-radius:10px;line-height:1.4;font-size:14px;white-space:normal;word-wrap:break-word;user-select:text;-webkit-user-select:text}
 .rmsg.eu{align-self:flex-end;background:#3a2a14;border:1px solid #6b5426}
 .rmsg.ia{align-self:flex-start;background:var(--bg2);border:1px solid var(--borda2)}
@@ -1071,7 +1105,8 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
   </div></div>
 </div>
 <div id="fechada" class="oculto"><div><h1>Mesa</h1><p>A Mesa foi fechada.</p><p class="dicaMenu">Pode fechar esta aba. Para jogar de novo, abra o atalho Mesa.</p></div></div>
-<div id="fim" class="oculto"><div class="caixa"><h2 id="fimTit"></h2><div id="fimTxt" style="color:var(--txt2);white-space:pre-line"></div><button class="pri" id="fimNovo">Nova partida</button></div></div>
+<div id="fim" class="oculto"><div class="caixa fimCaixa"><h2 id="fimTit"></h2><div id="fimTxt" style="color:var(--txt2);white-space:pre-line"></div><div id="fimResumo"></div>
+  <div class="linhaBts fimBts"><button class="pri oculto" id="fimRevanche">Revanche</button><button id="fimNovo">Voltar ao menu</button></div></div></div>
 <div id="avisos"></div>
 <div id="hover" class="oculto"></div>
 
@@ -1459,8 +1494,9 @@ async function atualizarMesas(){
     const aberta = m.estado==='WAITING' && m.livres>0;
     return `<div class="mesaItem"><div class="info"><b>${esc(m.nome)}</b><span class="dicaMenu">de ${esc(m.dono)} · ${aberta?`${m.livres} lugar(es) livre(s)`:m.estado==='DUELING'?'em andamento':'cheia'}</span>
       <div class="lugares">${m.lugares.map(l=>`<span class="lugar ${!l.nome?'livre':l.bot?'bot':''} ${l.nome===r.eu?'eu':''}">${l.nome?esc(l.nome):'livre'}</span>`).join('')}</div></div>
-      ${aberta?`<button class="pri" data-entrar="${m.id}">Entrar</button>`:''}</div>`;
+      ${aberta?`<button class="pri" data-entrar="${m.id}">Entrar</button>`:''}${m.estado==='DUELING'?`<button data-assistir="${m.id}">Assistir</button>`:''}</div>`;
   }).join('') : '<div class="dicaMenu">Nenhuma mesa aberta. Crie uma ao lado ou espere um amigo criar.</div>';
+  box.querySelectorAll('[data-assistir]').forEach(b=>b.onclick=()=>assistirMesa({mesa: b.dataset.assistir}));
   box.querySelectorAll('[data-entrar]').forEach(b=>b.onclick=async ()=>{
     b.disabled = true; localSet('meuDeck', $('#jgDeck').value);
     const res = await post('/api/mesa/entrar', {mesa: b.dataset.entrar, deck: $('#jgDeck').value});
@@ -2792,11 +2828,13 @@ function desenharAmigos(){
       <div class="bnAcoes sempre"><button class="amOlho" title="Ver perfil" data-ver="${a.codigo}">${OLHO_SVG}</button><button class="pri" data-am="aceitar" data-c="${a.codigo}">Aceitar</button><button data-am="recusar" data-c="${a.codigo}">Recusar</button></div></div>`).join(''));
     const todos = f.amigos||[], lista = todos.filter(bate), on = todos.filter(a=>a.online).length;
     h += grupo('amigos', `Amigos - ${on}/${todos.length}`, lista.length ? lista.map(a=>{
-      const sala = a.online && a.sala && a.sala.livres > 0 && a.sala.mesa !== A.minhaMesa ? a.sala : null;
+      const sala = a.online && a.sala && !a.sala.emJogo && a.sala.livres > 0 && a.sala.mesa !== A.minhaMesa ? a.sala : null;
+      const jogoAmigo = a.online && a.sala && a.sala.emJogo ? a.sala : null;
       const podeConv = conv && a.online && !(a.sala && a.sala.mesa === A.minhaMesa);
       return `<div class="bnItem ${a.online?'':'off'}">${avAmigo(a, a.online)}<div class="amInfo"><b>${esc(a.nome)}</b><span class="${a.online?'bnVerde':''}">${a.online ? esc(a.status ? a.status[0].toUpperCase()+a.status.slice(1) : 'Online') : quandoOffline(a.visto)}</span></div>
-        <div class="bnAcoes ${sala?'sempre':''}"><button class="amOlho" title="Ver perfil" data-ver="${a.codigo}">${OLHO_SVG}</button>
+        <div class="bnAcoes ${sala||jogoAmigo?'sempre':''}"><button class="amOlho" title="Ver perfil" data-ver="${a.codigo}">${OLHO_SVG}</button>
         ${sala ? `<button class="pri" data-entrar="${esc(JSON.stringify(sala))}">Entrar</button>` : ''}
+        ${jogoAmigo ? `<button data-assistir="${esc(JSON.stringify(jogoAmigo))}">Assistir</button>` : ''}
         ${podeConv ? `<button data-am="convidar" data-c="${a.codigo}">Convidar</button>` : ''}
         <button class="amX" title="Remover amigo" data-am="remover" data-c="${a.codigo}" data-n="${esc(a.nome)}">✕</button></div></div>`; }).join('')
       : `<div class="dicaMenu bnVazio">${q ? 'Ninguém com esse nome.' : 'Nenhum amigo ainda. Clique no ícone de adicionar, ali em cima.'}</div>`);
@@ -2812,6 +2850,7 @@ function desenharAmigos(){
     acaoAmigo(b.dataset.am, b.dataset.c);
   });
   L.querySelectorAll('[data-entrar]').forEach(b=>b.onclick=()=>escolherDeckEEntrar(JSON.parse(b.dataset.entrar)));
+  L.querySelectorAll('[data-assistir]').forEach(b=>b.onclick=()=>assistirMesa(JSON.parse(b.dataset.assistir)));
   L.querySelectorAll('[data-ver]').forEach(b=>b.onclick=()=>verPerfilAmigo(b.dataset.ver));
 }
 // perfil de um amigo (o que ele mesmo vê na tela Perfil: banner, foto, frase, estatísticas, decks, últimas partidas)
@@ -3033,6 +3072,93 @@ $('#pfZerar').onclick = async ()=>{
 };
 $('#btnSair').onclick = ()=>{ if(confirm('Sair desta partida? Você desiste do jogo.')) post('/api/sair'); };
 $('#fimNovo').onclick = ()=>{ post('/api/sair'); irPara('menu'); };
+$('#fimRevanche').onclick = async ()=>{
+  $('#fimRevanche').disabled = true;
+  const r = await post('/api/mesa/revanche', {});
+  $('#fimRevanche').disabled = false;
+  if (r.erro){ avisoLocal(r.erro); return; }
+  if (r.mesa){ irPara('criar'); avisoLocal('Sala da revanche criada: convide a galera pelo botão Amigos.'); }
+};
+
+// ---------------- espectador
+function desenharFaixaEspectador(){
+  let f = $('#faixaEspec');
+  if (!f){ f = document.createElement('div'); f.id = 'faixaEspec'; f.className = 'oculto'; document.body.appendChild(f); }
+  const on = !!(E && E.assistindo && E.fase === 'jogo');
+  f.classList.toggle('oculto', !on);
+  document.body.classList.toggle('modoEspectador', on);
+  if (on && !f.dataset.feito){
+    f.dataset.feito = '1';
+    f.innerHTML = `<span class="olhoEspec">${OLHO_SVG}</span> Você está <b>assistindo</b>: as mãos ficam escondidas <button class="peq" id="pararAssistir">Parar de assistir</button>`;
+    $('#pararAssistir').onclick = ()=>{ post('/api/sair'); irPara('menu'); };
+  }
+  if (!on) delete f.dataset.feito;
+}
+async function assistirMesa(sala){
+  avisoLocal('Entrando como espectador...');
+  if (sala.servidor) await post('/api/config', {servidor: sala.servidor});
+  const r = await post('/api/mesa/assistir', {mesa: sala.mesa});
+  if (r.erro){ avisoLocal(r.erro); return; }
+  painelAmigosAberto = false; $('#painelAmigos').classList.add('oculto');
+}
+
+// ---------------- resumo da partida
+const CORES_RES = ['#E4C874','#6f9fc4','#B85742','#7FA063','#A487C4','#d07a3a'];
+let resumoAtual = null;
+function desenharResumo(R){
+  const box = $('#fimResumo');
+  if (!R || !(R.jogadores||[]).length){ box.innerHTML = ''; return; }
+  if (resumoAtual === R) return; resumoAtual = R;
+  const cor = n => CORES_RES[Math.max(0, R.ordem.indexOf(n)) % CORES_RES.length];
+  const elimTurno = n => { const e = (R.eliminacoes||[]).find(x=>x.nome===n); return e ? e.turno : 9999; };
+  const classif = [...R.jogadores].sort((a,b)=>elimTurno(b.nome)-elimTurno(a.nome) || (b.vidaFinal||0)-(a.vidaFinal||0));
+  const avDe = n => { const c = ((E && E.cartoes)||[]).find(x=>x.jogador===n); return c && c.avatar ? `<span class="rsAv" style="background-image:url('${c.avatar}')"></span>` : `<span class="rsAv" style="background:${cor(n)}">${esc((n||'?')[0])}</span>`; };
+
+  // classificação
+  let h = `<div class="rsInfo">${R.turnos} turnos · ${R.minutos} min</div><div class="rsPodio">${classif.map((j,i)=>{
+    const e = j.eliminado;
+    const sit = !e ? (i===0 ? 'Vencedor' : `${j.vidaFinal ?? '?'} de vida`)
+      : e.como === 'saiu' ? `Saiu no turno ${e.turno}` : `Eliminado no turno ${e.turno}${e.por?` por <b>${esc(e.por)}</b>`:''}`;
+    return `<div class="rsLugar ${i===0?'primeiro':''}" style="--c:${cor(j.nome)}"><div class="rsPos">${i+1}º</div>${avDe(j.nome)}<div><b>${esc(j.nome)}</b><span>${sit}</span></div></div>`; }).join('')}</div>`;
+
+  // tabela de dano: linha = quem causou, coluna = quem recebeu
+  const ns = R.ordem;
+  h += `<h3 class="subt">Dano causado</h3><div class="rsTabWrap"><table class="rsTab"><tr><th>de ↓ / em →</th>${ns.map(n=>`<th style="color:${cor(n)}">${esc(n)}</th>`).join('')}<th>Total</th></tr>
+    ${ns.map(a=>{ const lin = (R.dano||{})[a] || {}, cmd = (R.danoCmd||{})[a] || {}; const tot = Object.values(lin).reduce((x,y)=>x+y,0);
+      return `<tr><th style="color:${cor(a)}">${esc(a)}</th>${ns.map(b=> a===b ? '<td class="rsX">—</td>' : `<td>${lin[b]||0}${cmd[b]?`<small title="dano de comandante">★${cmd[b]}</small>`:''}</td>`).join('')}<td><b>${tot}</b></td></tr>`; }).join('')}
+  </table></div><div class="dicaMenu" style="background:none;border:none;padding:0">★ = parte que foi dano de comandante</div>`;
+
+  // vida por turno
+  const vt = R.vidaPorTurno || [];
+  if (vt.length > 1){
+    const W = 640, H = 170, P = 26;
+    const maxV = Math.max(40, ...vt.flatMap(f=>Object.values(f.vidas))), minV = Math.min(0, ...vt.flatMap(f=>Object.values(f.vidas)));
+    const x = i => P + i*(W-2*P)/(vt.length-1), y = v => H-P - (v-minV)*(H-2*P)/((maxV-minV)||1);
+    const linhas = ns.map(n=>{ const pts = vt.map((f,i)=>f.vidas[n]===undefined?null:`${x(i).toFixed(1)},${y(f.vidas[n]).toFixed(1)}`).filter(Boolean);
+      return `<polyline points="${pts.join(' ')}" fill="none" stroke="${cor(n)}" stroke-width="2.5" stroke-linejoin="round"/>`; }).join('');
+    const marcas = vt.map((f,i)=> (i % Math.ceil(vt.length/12) === 0) ? `<text x="${x(i)}" y="${H-8}" text-anchor="middle">${f.turno}</text>` : '').join('');
+    h += `<h3 class="subt">Vida por turno</h3><svg class="rsGraf" viewBox="0 0 ${W} ${H}"><line x1="${P}" x2="${W-P}" y1="${y(0)}" y2="${y(0)}" class="zero"/>${linhas}${marcas}</svg>
+      <div class="rsLegenda">${ns.map(n=>`<span><i style="background:${cor(n)}"></i>${esc(n)}</span>`).join('')}</div>`;
+  }
+
+  // destaques
+  const melhor = (campo) => [...R.jogadores].sort((a,b)=>(b[campo]||0)-(a[campo]||0))[0];
+  const golpe = [...R.jogadores].filter(j=>j.maiorGolpe).sort((a,b)=>b.maiorGolpe.n-a.maiorGolpe.n)[0];
+  const dest = [];
+  if (golpe) dest.push(['Maior golpe', `${golpe.maiorGolpe.n} de dano`, `${golpe.nome} em ${golpe.maiorGolpe.em} com ${golpe.maiorGolpe.carta} (turno ${golpe.maiorGolpe.turno})`]);
+  const dc = melhor('danoCausado'); if (dc && dc.danoCausado) dest.push(['Mais dano causado', dc.danoCausado, dc.nome]);
+  const dr = melhor('danoRecebido'); if (dr && dr.danoRecebido) dest.push(['Saco de pancada', `${dr.danoRecebido} recebido`, dr.nome]);
+  const mg = melhor('magias'); if (mg && mg.magias) dest.push(['Mais mágicas', mg.magias, mg.nome]);
+  const cp = melhor('compras'); if (cp && cp.compras) dest.push(['Mais cartas compradas', cp.compras, cp.nome]);
+  const vg = melhor('vidaGanha'); if (vg && vg.vidaGanha) dest.push(['Mais vida ganha', vg.vidaGanha, vg.nome]);
+  const el = [...R.jogadores].sort((a,b)=>(b.eliminou||[]).length-(a.eliminou||[]).length)[0]; if (el && (el.eliminou||[]).length) dest.push(['Carrasco', `${el.eliminou.length} eliminação(ões)`, `${el.nome}: ${el.eliminou.join(', ')}`]);
+  if (dest.length) h += `<h3 class="subt">Destaques</h3><div class="rsDest">${dest.map(([t,v,q])=>`<div><small>${t}</small><b>${esc(String(v))}</b><span>${esc(q)}</span></div>`).join('')}</div>`;
+
+  // carta MVP de cada um
+  const mvps = R.jogadores.filter(j=>j.mvp);
+  if (mvps.length) h += `<h3 class="subt">Carta MVP de cada um</h3><div class="rsMvp">${mvps.map(j=>`<div style="--c:${cor(j.nome)}"><img src="${imgCarta({nome:j.mvp.carta},'art')}" alt=""><div><b>${esc(j.mvp.carta)}</b><span>${esc(j.nome)} · ${j.mvp.dano} de dano</span></div></div>`).join('')}</div>`;
+  box.innerHTML = h;
+}
 
 // ---------------- desenho ----------------
 const PASSOS = [['Untap','Desvirar'],['Upkeep','Manutenção'],['Draw','Compra'],['Precombat Main','Principal 1'],['Begin Combat','Início combate'],['Declare Attackers','Atacantes'],['Declare Blockers','Bloqueadores'],['First Strike Damage','Dano inicial'],['Combat Damage','Dano'],['End Combat','Fim combate'],['Postcombat Main','Principal 2'],['End Turn','Final'],['Cleanup','Limpeza']];
@@ -3053,11 +3179,15 @@ function desenhar(){
     const r = E.resultado||{};
     $('#fimTit').textContent = r.venceu===true ? 'Vitória!' : r.venceu===false ? 'Derrota' : 'Fim de jogo';
     $('#fimTxt').textContent = (r.texto||'').split('\n').map(tr).join('\n');
+    if (r.assistindo) $('#fimTit').textContent = 'Fim da partida';
+    desenharResumo(r.resumo);
+    $('#fimRevanche').classList.toggle('oculto', !r.revanche);
   } else $('#fim').classList.add('oculto');
   if (!E.jogo) return;
   if (E.prompt && E.prompt.seq !== ultimoSeq){ ultimoSeq = E.prompt.seq; respondido = !!E.prompt.respondido; abrirModalSePreciso(); }
   else if (E.prompt && E.prompt.respondido) respondido = true;
   desenharTopo(); desenharMesa(); desenharMao(); desenharPrompt(); desenharLateral();
+  desenharFaixaEspectador();
 }
 
 let partidaSalvaIgnorada = false;

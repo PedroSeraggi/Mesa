@@ -309,6 +309,7 @@ public class Ponte implements MageClient {
             m.put("resultado", resultado);
             m.put("pedido", pedido);
             m.put("reconexao", reconexao);
+            m.put("assistindo", assistindo);
             if ("lobby".equals(fase)) m.put("partidaSalva", partidaSalvaInfo());
             m.put("cartoes", "jogo".equals(fase) || "fim".equals(fase) ? cartoesPartida : null);
             return m;
@@ -601,6 +602,156 @@ public class Ponte implements MageClient {
     // Perfil: nome no servidor, cor do avatar e estatísticas das partidas
     final Object travaPerfil = new Object();
     JsonObject perfil = null;
+    // =====================================================================
+    // Resumo da partida: a ponte lê o histórico ("X loses 3 life at combat from Y [id]", "TURN 5 for Z (40 - 38)"...)
+    // e as fotos da mesa, e monta dano entre jogadores, eliminações, vida por turno e destaques.
+    static class Estatisticas {
+        String gameId; long inicio = System.currentTimeMillis();
+        List<String> ordem = new ArrayList<>();
+        Map<String, Map<String, Integer>> dano = new LinkedHashMap<>(), danoCmd = new LinkedHashMap<>();
+        Map<String, Integer> magias = new HashMap<>(), compras = new HashMap<>(), vidaGanha = new HashMap<>(), ataques = new HashMap<>();
+        Map<String, String> donoCarta = new HashMap<>();          // [id] da carta -> jogador
+        Map<String, String> ultimoAgressor = new HashMap<>();     // vítima -> quem tirou vida por último
+        Map<String, Integer> danoPorCarta = new HashMap<>();      // "jogador|carta" -> dano total
+        Map<String, Object[]> maiorGolpe = new HashMap<>();       // jogador -> {n, carta, vítima, turno}
+        List<Map<String, Object>> eliminacoes = new ArrayList<>();
+        List<Map<String, Object>> vidaPorTurno = new ArrayList<>();
+        Set<String> comandantes = new HashSet<>();
+        String atacante = null; int turno = 0;
+
+        static final java.util.regex.Pattern TURNO = java.util.regex.Pattern.compile("^TURN (\\d+) for (.+?) \\(([-\\d ]+)\\)");
+        static final java.util.regex.Pattern ATACA = java.util.regex.Pattern.compile("^(.+?) attacks (.+?) with \\d+ creature");
+        static final java.util.regex.Pattern PERDE = java.util.regex.Pattern.compile("^(.+?) loses (\\d+) life( at combat)? from (.+?) \\[([0-9a-f]+)\\]");
+        static final java.util.regex.Pattern LANCA = java.util.regex.Pattern.compile("^(.+?) casts (.+?) \\[([0-9a-f]+)\\]");
+        static final java.util.regex.Pattern POE = java.util.regex.Pattern.compile("^(.+?) (?:plays|puts) (.+?) \\[([0-9a-f]+)\\]");
+        static final java.util.regex.Pattern COMPRA = java.util.regex.Pattern.compile("^(.+?) draws (a|\\d+) cards?");
+        static final java.util.regex.Pattern GANHA = java.util.regex.Pattern.compile("^(.+?) gains (\\d+) life");
+
+        static void soma(Map<String, Integer> m, String k, int n) { m.merge(k, n, Integer::sum); }
+        static void soma2(Map<String, Map<String, Integer>> m, String a, String b, int n) { m.computeIfAbsent(a, x -> new LinkedHashMap<>()).merge(b, n, Integer::sum); }
+
+        void linha(String bruta) {
+            String t = bruta.replaceAll("<[^>]+>", "").trim();
+            java.util.regex.Matcher m;
+            if ((m = TURNO.matcher(t)).find()) {
+                turno = Integer.parseInt(m.group(1)); atacante = null;
+                String[] v = m.group(3).trim().split("\\s*-\\s*");
+                // quem já foi eliminado some da linha "TURN": usa só os que continuam vivos, na mesma ordem
+                List<String> vivos = new ArrayList<>(ordem);
+                if (vivos.size() != v.length) vivos.removeIf(n -> eliminacoes.stream().anyMatch(e -> n.equals(e.get("nome"))));
+                if (vivos.size() == v.length) {
+                    Map<String, Object> f = new LinkedHashMap<>(); f.put("turno", turno);
+                    Map<String, Integer> vidas = new LinkedHashMap<>();
+                    for (int i = 0; i < v.length; i++) try { vidas.put(vivos.get(i), Integer.parseInt(v[i].trim())); } catch (NumberFormatException ignored) { }
+                    f.put("vidas", vidas); vidaPorTurno.add(f);
+                }
+            } else if ((m = ATACA.matcher(t)).find()) {
+                atacante = m.group(1); soma(ataques, atacante, 1);
+            } else if ((m = PERDE.matcher(t)).find()) {
+                String vitima = m.group(1), carta = m.group(4), id = m.group(5);
+                int n = Integer.parseInt(m.group(2));
+                String quem = donoCarta.get(id);
+                if (quem == null && m.group(3) != null) quem = atacante;
+                if (quem == null || quem.equals(vitima)) return;
+                soma2(dano, quem, vitima, n);
+                if (m.group(3) != null && comandantes.contains(carta)) soma2(danoCmd, quem, vitima, n);
+                ultimoAgressor.put(vitima, quem);
+                soma(danoPorCarta, quem + "|" + carta, n);
+                Object[] g = maiorGolpe.get(quem);
+                if (g == null || (Integer) g[0] < n) maiorGolpe.put(quem, new Object[]{n, carta, vitima, turno});
+            } else if ((m = LANCA.matcher(t)).find()) {
+                soma(magias, m.group(1), 1); donoCarta.put(m.group(3), m.group(1));
+            } else if ((m = POE.matcher(t)).find()) {
+                donoCarta.put(m.group(3), m.group(1));
+            } else if ((m = COMPRA.matcher(t)).find()) {
+                if (turno > 0) soma(compras, m.group(1), m.group(2).equals("a") ? 1 : Integer.parseInt(m.group(2)));
+            } else if ((m = GANHA.matcher(t)).find()) {
+                soma(vidaGanha, m.group(1), Integer.parseInt(m.group(2)));
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        void foto(Map<String, Object> jogo) {
+            if (jogo == null) return;
+            List<Map<String, Object>> js = (List<Map<String, Object>>) jogo.get("jogadores");
+            if (js == null) return;
+            if (ordem.isEmpty()) for (Map<String, Object> p : js) ordem.add((String) p.get("nome"));
+            int t = jogo.get("turno") instanceof Number ? ((Number) jogo.get("turno")).intValue() : turno;
+            for (Map<String, Object> p : js) {
+                String nome = (String) p.get("nome");
+                for (Object c : (List<Object>) p.getOrDefault("comando", Collections.emptyList()))
+                    if (c instanceof Map) comandantes.add(String.valueOf(((Map<String, Object>) c).get("nome")));
+                int vida = p.get("vida") instanceof Number ? ((Number) p.get("vida")).intValue() : 1;
+                boolean saiu = Boolean.TRUE.equals(p.get("saiu"));
+                if ((vida <= 0 || saiu) && eliminacoes.stream().noneMatch(e -> nome.equals(e.get("nome")))) {
+                    Map<String, Object> e = new LinkedHashMap<>();
+                    e.put("nome", nome); e.put("turno", t);
+                    e.put("por", vida <= 0 ? ultimoAgressor.get(nome) : null);
+                    e.put("como", vida <= 0 ? "vida" : "saiu");
+                    eliminacoes.add(e);
+                }
+            }
+        }
+
+        Map<String, Object> resumo(Map<String, Object> jogo, String vencedorTexto) {
+            foto(jogo);
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("turnos", turno);
+            r.put("minutos", Math.max(1, (System.currentTimeMillis() - inicio) / 60000));
+            r.put("ordem", ordem);
+            r.put("dano", dano); r.put("danoCmd", danoCmd);
+            r.put("eliminacoes", eliminacoes);
+            r.put("vidaPorTurno", vidaPorTurno);
+            List<Map<String, Object>> jog = new ArrayList<>();
+            for (String nome : ordem) {
+                Map<String, Object> x = new LinkedHashMap<>();
+                x.put("nome", nome);
+                int causado = dano.getOrDefault(nome, Collections.emptyMap()).values().stream().mapToInt(Integer::intValue).sum();
+                int recebido = 0; for (Map<String, Integer> d : dano.values()) recebido += d.getOrDefault(nome, 0);
+                int cmd = danoCmd.getOrDefault(nome, Collections.emptyMap()).values().stream().mapToInt(Integer::intValue).sum();
+                x.put("danoCausado", causado); x.put("danoRecebido", recebido); x.put("danoCmd", cmd);
+                x.put("magias", magias.getOrDefault(nome, 0)); x.put("compras", compras.getOrDefault(nome, 0));
+                x.put("vidaGanha", vidaGanha.getOrDefault(nome, 0)); x.put("ataques", ataques.getOrDefault(nome, 0));
+                Object[] g = maiorGolpe.get(nome);
+                if (g != null) { Map<String, Object> gm = new LinkedHashMap<>(); gm.put("n", g[0]); gm.put("carta", g[1]); gm.put("em", g[2]); gm.put("turno", g[3]); x.put("maiorGolpe", gm); }
+                String mvp = null; int mvpN = 0;
+                for (Map.Entry<String, Integer> e : danoPorCarta.entrySet()) if (e.getKey().startsWith(nome + "|") && e.getValue() > mvpN) { mvpN = e.getValue(); mvp = e.getKey().substring(nome.length() + 1); }
+                if (mvp != null) { Map<String, Object> mm = new LinkedHashMap<>(); mm.put("carta", mvp); mm.put("dano", mvpN); x.put("mvp", mm); }
+                List<String> matou = new ArrayList<>();
+                for (Map<String, Object> e : eliminacoes) if (nome.equals(e.get("por"))) matou.add((String) e.get("nome"));
+                x.put("eliminou", matou);
+                eliminacoes.stream().filter(e -> nome.equals(e.get("nome"))).findFirst().ifPresent(e -> x.put("eliminado", e));
+                try {
+                    for (Map<String, Object> p : (List<Map<String, Object>>) jogo.get("jogadores")) if (nome.equals(p.get("nome"))) x.put("vidaFinal", p.get("vida"));
+                } catch (Exception ignored) { }
+                jog.add(x);
+            }
+            r.put("jogadores", jog);
+            r.put("texto", vencedorTexto);
+            return r;
+        }
+    }
+    volatile Estatisticas stats = null;
+    volatile boolean assistindo = false;
+    /** Assistir a uma partida (sem ver mãos, sem jogar). O servidor responde com WATCHGAME. */
+    void assistir(UUID mesa) throws Exception {
+        sairDoJogoAtual();
+        sairDaSala();
+        conectar();
+        synchronized (trava) { fase = "iniciando"; erro = null; jogo = null; prompt = null; resultado = null; log.clear(); avisos.clear(); }
+        status("Entrando como espectador...");
+        mudou();
+        assistindo = true; tableId = mesa; playerId = null;
+        if (!session.watchTable(roomId, mesa)) {
+            assistindo = false; tableId = null;
+            synchronized (trava) { fase = "lobby"; }
+            mudou();
+            throw new IllegalStateException("Não deu para assistir: a partida pode ter acabado.");
+        }
+    }
+    // para a revanche: como foi criada a última partida
+    Map<String, Object> ultimaCriacao = null;
+
     String deckAtual = "";
     List<String> oponentesAtuais = new ArrayList<>();
 
@@ -999,6 +1150,11 @@ public class Ponte implements MageClient {
     }
     /** Sala em que estou (para os amigos entrarem), só se ela estiver num servidor que eles alcançam. */
     Map<String, Object> salaParaAmigos() {
+        if ("jogo".equals(fase) && tableId != null && !souAnfitriao()) {   // em partida: os amigos podem assistir
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("servidor", servidorBruto()); r.put("mesa", tableId.toString()); r.put("emJogo", true); r.put("livres", 0);
+            return r;
+        }
         if (!"sala".equals(fase) || tableId == null || session == null || souAnfitriao()) return null;
         try {
             Optional<TableView> t = session.getTable(roomId, tableId);
@@ -1687,6 +1843,24 @@ public class Ponte implements MageClient {
                 case "sair":
                     sairDaSala();
                     break;
+                case "assistir":
+                    assistir(UUID.fromString(b.get("mesa").getAsString()));
+                    break;
+                case "revanche": {
+                    Map<String, Object> u = ultimaCriacao;
+                    if (u == null) throw new IllegalStateException("A revanche é com quem criou a sala.");
+                    sairDoJogoAtual();
+                    synchronized (trava) { fase = "lobby"; resultado = null; }
+                    if ("bots".equals(u.get("tipo"))) {
+                        @SuppressWarnings("unchecked") List<String> ops = (List<String>) u.get("oponentes");
+                        new Thread(() -> { try { criarPartida((String) u.get("deck"), ops, ((Number) u.get("nivel")).intValue()); }
+                            catch (Throwable t) { synchronized (trava) { fase = "lobby"; erro = String.valueOf(t.getMessage()); } mudou(); } }).start();
+                    } else {
+                        @SuppressWarnings("unchecked") List<String> bots = (List<String>) u.get("bots");
+                        criarMesaAmigos((String) u.get("deck"), ((Number) u.get("lugares")).intValue(), bots, ((Number) u.get("nivel")).intValue(), (String) u.get("nome"));
+                    }
+                    break;
+                }
                 default:
                     break;
             }
@@ -1762,6 +1936,9 @@ public class Ponte implements MageClient {
         }
         deckAtual = meuDeck;
         oponentesAtuais = new ArrayList<>(decksBots);
+        ultimaCriacao = new LinkedHashMap<>();
+        ultimaCriacao.put("tipo", "sala"); ultimaCriacao.put("deck", meuDeck); ultimaCriacao.put("lugares", lugares);
+        ultimaCriacao.put("bots", new ArrayList<>(decksBots)); ultimaCriacao.put("nivel", skill); ultimaCriacao.put("nome", nomeMesa);
         synchronized (trava) { fase = "sala"; erro = null; jogo = null; prompt = null; resultado = null; log.clear(); avisos.clear(); }
         status("Esperando os amigos entrarem...");
         mudou();
@@ -1782,6 +1959,7 @@ public class Ponte implements MageClient {
         }
         deckAtual = meuDeck;
         oponentesAtuais = new ArrayList<>();
+        ultimaCriacao = null;   // entrou na sala de outra pessoa: a revanche é com o dono
         synchronized (trava) { fase = "sala"; erro = null; jogo = null; prompt = null; resultado = null; log.clear(); avisos.clear(); }
         status("Você entrou na mesa. Esperando o dono começar...");
         mudou();
@@ -1842,6 +2020,8 @@ public class Ponte implements MageClient {
         conectar();
         deckAtual = meuDeck;
         oponentesAtuais = new ArrayList<>(oponentes);
+        ultimaCriacao = new LinkedHashMap<>();
+        ultimaCriacao.put("tipo", "bots"); ultimaCriacao.put("deck", meuDeck); ultimaCriacao.put("oponentes", new ArrayList<>(oponentes)); ultimaCriacao.put("nivel", skill);
         synchronized (trava) { fase = "iniciando"; }
         status("Carregando os decks...");
 
@@ -1925,6 +2105,12 @@ public class Ponte implements MageClient {
     final Set<UUID> abandonados = ConcurrentHashMap.newKeySet();
 
     void sairDoJogoAtual() {
+        if (assistindo) {
+            UUID g = gameId;
+            assistindo = false; gameId = null; tableId = null; gameChatId = null;
+            try { if (g != null && session != null) session.stopWatching(g); } catch (Exception ignored) { }
+            return;
+        }
         apagarPartida();
         UUID g = gameId, t = tableId;
         if (g != null) abandonados.add(g);
@@ -2086,10 +2272,24 @@ public class Ponte implements MageClient {
             if (gameId == null || (o != null && !o.equals(gameId) && !o.equals(tableId))) return;
         }
         switch (met) {
+            case WATCHGAME: {
+                TableClientMessage m = (TableClientMessage) d;
+                if (!assistindo || tableId == null || !tableId.equals(m.getCurrentTableId())) break;
+                gameId = m.getGameId() != null ? m.getGameId() : cb.getObjectId(); playerId = null;   // no WATCHGAME o jogo vem como id da mensagem
+                stats = new Estatisticas(); stats.gameId = String.valueOf(gameId);
+                session.watchGame(gameId);
+                try { session.getGameChatId(gameId).ifPresent(id -> { gameChatId = id; session.joinChat(id); }); } catch (Exception ignored) { }
+                synchronized (trava) { fase = "jogo"; erro = null; }
+                status("Assistindo");
+                mudou();
+                break;
+            }
             case START_GAME: {
                 TableClientMessage m = (TableClientMessage) d;
                 gameId = m.getGameId();
                 playerId = m.getPlayerId();
+                if (stats == null || !String.valueOf(gameId).equals(stats.gameId)) { stats = new Estatisticas(); stats.gameId = String.valueOf(gameId); }
+                assistindo = false;
                 session.joinGame(gameId);
                 final int fotosAntes = fotos; final UUID gId = gameId;
                 new Thread(() -> {   // às vezes (reconexão) o estado da partida se perde logo depois do login: pede de novo até chegar
@@ -2128,6 +2328,8 @@ public class Ponte implements MageClient {
                     log.add(l);
                     while (log.size() > 250) log.removeFirst();
                 }
+                Estatisticas st = stats;
+                if (st != null) try { st.linha(String.valueOf(m.getMessage())); } catch (Exception ignored) { }
                 mudou();
                 break;
             }
@@ -2283,6 +2485,8 @@ public class Ponte implements MageClient {
                         resultado = new LinkedHashMap<>();
                         resultado.put("texto", d == null ? "Fim de jogo" : d.toString());
                     }
+                    if (!resultado.containsKey("resumo") && stats != null) try { resultado.put("resumo", stats.resumo(jogo, String.valueOf(resultado.get("texto")))); } catch (Exception ignored) { }
+                    if (assistindo) resultado.put("assistindo", true);
                 }
                 mudou();
                 break;
@@ -2295,10 +2499,12 @@ public class Ponte implements MageClient {
                     resultado = new LinkedHashMap<>();
                     resultado.put("venceu", g.getWins() > 0);
                     resultado.put("texto", limpar(g.getGameInfo()));
+                    if (stats != null) try { resultado.put("resumo", stats.resumo(jogo, limpar(g.getGameInfo()))); } catch (Exception e) { e.printStackTrace(); }
+                    resultado.put("revanche", ultimaCriacao != null && !assistindo);
                 }
                 int turnos = 0;
                 try { turnos = ((Number) jogo.get("turno")).intValue(); } catch (Exception ignored) { }
-                registrarPartida(g.getWins() > 0, turnos);
+                if (!assistindo) registrarPartida(g.getWins() > 0, turnos);
                 mudou();
                 break;
             }
@@ -2354,6 +2560,8 @@ public class Ponte implements MageClient {
             jogo = mapearJogo(g, false);
             if (!"fim".equals(fase)) fase = "jogo";
         }
+        Estatisticas st = stats;
+        if (st != null) try { st.foto(jogo); } catch (Exception ignored) { }
         mudou();
     }
 
