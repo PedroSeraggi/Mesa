@@ -1998,6 +1998,7 @@ public class Ponte implements MageClient {
             JsonObject b = "POST".equals(ex.getRequestMethod()) ? corpo(ex) : new JsonObject();
             switch (acao) {
                 case "criar": {
+                    opcoesSala = b.has("opcoes") && b.get("opcoes").isJsonObject() ? b.getAsJsonObject("opcoes") : new JsonObject();
                     List<String> bots = new ArrayList<>();
                     if (b.has("bots")) b.getAsJsonArray("bots").forEach(e -> bots.add(e.getAsString()));
                     criarMesaAmigos(b.get("deck").getAsString(), b.get("lugares").getAsInt(), bots,
@@ -2058,6 +2059,9 @@ public class Ponte implements MageClient {
         }
     }
 
+    // opções extras da sala (Criar sala → Mais opções); valem também para a revanche
+    volatile JsonObject opcoesSala = new JsonObject();
+    static int opc(JsonObject o, String k, int padrao) { try { return o.has(k) && !o.get(k).isJsonNull() ? o.get(k).getAsInt() : padrao; } catch (Exception e) { return padrao; } }
     MatchOptions opcoesCommander(String nomeMesa, int humanos, int bots) {
         GameTypeView tipo = null;
         for (GameTypeView g : session.getGameTypes()) if (g.getName().equals("Commander Free For All")) tipo = g;
@@ -2071,10 +2075,17 @@ public class Ponte implements MageClient {
         op.setAttackOption(MultiplayerAttackOption.MULTIPLE);
         op.setRange(RangeOfInfluence.ALL);
         op.setWinsNeeded(1);
-        op.setMatchTimeLimit(MatchTimeLimit.NONE);
+        JsonObject o = opcoesSala == null ? new JsonObject() : opcoesSala;
+        op.setFreeMulligans(Math.max(0, Math.min(2, opc(o, "mulligans", 0))));
+        int vida = opc(o, "vida", 40);
+        if (vida != 40 && vida > 0) { op.setCustomStartLifeEnabled(true); op.setCustomStartLife(vida); }
+        int min = opc(o, "tempo", 0);
+        MatchTimeLimit lim = MatchTimeLimit.NONE;
+        for (MatchTimeLimit t : MatchTimeLimit.values()) if (t.name().matches("MIN_+" + min)) lim = t;
+        op.setMatchTimeLimit(lim);
         op.setSkillLevel(SkillLevel.CASUAL);
-        op.setRollbackTurnsAllowed(true);
-        op.setSpectatorsAllowed(false);
+        op.setRollbackTurnsAllowed(opc(o, "voltarTurnos", 1) == 1);
+        op.setSpectatorsAllowed(true);   // assistir é sempre permitido
         op.setQuitRatio(100);
         op.setMinimumRating(0);
         return op;
@@ -2232,7 +2243,7 @@ public class Ponte implements MageClient {
         op.setMatchTimeLimit(MatchTimeLimit.NONE);
         op.setSkillLevel(SkillLevel.CASUAL);
         op.setRollbackTurnsAllowed(true);
-        op.setSpectatorsAllowed(false);
+        op.setSpectatorsAllowed(true);   // amigos podem assistir também às partidas contra bots e o chefe
         op.setQuitRatio(100);       // mesa local: aceita qualquer taxa de desistência (sair no meio conta como desistência)
         op.setMinimumRating(0);
 

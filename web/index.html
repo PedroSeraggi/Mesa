@@ -489,6 +489,9 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 #vsChefe .vsCarregando.on{opacity:.85}
 #vsChefe .vsCarregando i{display:inline-block;animation:vsPonto 1.2s infinite}#vsChefe .vsCarregando i:nth-child(2){animation-delay:.2s}#vsChefe .vsCarregando i:nth-child(3){animation-delay:.4s}
 @keyframes vsPonto{50%{opacity:.2}}
+.maisOpcTit{align-self:flex-start;background:none!important;border:none!important;color:var(--ouro);font-family:var(--ff-titulo);font-size:13px;letter-spacing:.06em;cursor:pointer;padding:6px 0 2px!important;display:flex;align-items:center;gap:6px}
+.maisOpcTit .seta{display:inline-block;transition:transform .15s;color:var(--txt2)}.maisOpcTit .seta.aberta{transform:rotate(90deg)}
+.maisOpc{display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--borda2);padding:4px 0 4px 12px}.maisOpc.oculto{display:none}
 .rmsg{max-width:88%;padding:8px 11px;border-radius:10px;line-height:1.4;font-size:14px;white-space:normal;word-wrap:break-word;user-select:text;-webkit-user-select:text}
 .rmsg.eu{align-self:flex-end;background:#3a2a14;border:1px solid #6b5426}
 .rmsg.ia{align-self:flex-start;background:var(--bg2);border:1px solid var(--borda2)}
@@ -1168,6 +1171,14 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
           <label>Bots completando<select id="jgBots"></select></label>
           <div id="jgBotsDecks" class="ops"></div>
           <label>Nível dos bots<select id="jgNivel"><option value="4">Fácil</option><option value="7" selected>Normal</option><option value="8">Difícil</option></select></label>
+          <button type="button" class="maisOpcTit" id="jgMaisOpc"><span class="seta">▸</span> Mais opções</button>
+          <div class="maisOpc oculto" id="jgOpcoes">
+            <label>Mulligans gratuitos<select id="jgMulligan"><option value="0" selected>Nenhum</option><option value="1">1 gratuito</option><option value="2">2 gratuitos</option></select></label>
+            <label>Vida inicial<select id="jgVida"><option value="20">20</option><option value="30">30</option><option value="40" selected>40 (padrão)</option><option value="50">50</option><option value="60">60</option></select></label>
+            <label>Limite de tempo da partida<select id="jgTempo"><option value="0" selected>Sem limite</option><option value="30">30 minutos</option><option value="45">45 minutos</option><option value="60">1 hora</option><option value="90">1h30</option><option value="120">2 horas</option></select></label>
+            <label class="radioLinha"><input type="checkbox" id="jgVoltar" checked> Permitir voltar turnos (os outros precisam aceitar)</label>
+            <div class="dicaMenu" style="background:none;border:none;padding:0">Os amigos sempre podem assistir à partida.</div>
+          </div>
           <button class="pri" id="jgCriar">Criar sala</button>
         </div>
       </div>
@@ -1645,11 +1656,13 @@ async function atualizarMesas(){
     if (res.erro){ erroMesa(res.erro); b.disabled = false; }
   });
 }
+$('#jgMaisOpc').onclick = ()=>{ const o = $('#jgOpcoes'); o.classList.toggle('oculto'); $('#jgMaisOpc .seta').classList.toggle('aberta', !o.classList.contains('oculto')); };
 $('#jgCriar').onclick = async ()=>{
   $('#jgErro').textContent = ''; $('#jgCriar').disabled = true;
   localSet('meuDeck', $('#jgDeckCriar').value);
   const res = await post('/api/mesa/criar', {deck: $('#jgDeckCriar').value, lugares: +$('#jgLugares').value,
-    bots: [...document.querySelectorAll('.jgBotDeck')].map(s=>s.value), nivel: +$('#jgNivel').value, nome: $('#jgNome').value});
+    bots: [...document.querySelectorAll('.jgBotDeck')].map(s=>s.value), nivel: +$('#jgNivel').value, nome: $('#jgNome').value,
+    opcoes: {mulligans: +$('#jgMulligan').value, vida: +$('#jgVida').value, tempo: +$('#jgTempo').value, voltarTurnos: $('#jgVoltar').checked ? 1 : 0}});
   $('#jgCriar').disabled = false;
   if (res.erro) erroMesa(res.erro);
 };
