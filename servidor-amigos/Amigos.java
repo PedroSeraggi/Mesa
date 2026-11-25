@@ -194,16 +194,21 @@ public class Amigos {
         boolean venceu = p.get("venceu").getAsBoolean();
         double mult = p.has("multiplicador") ? p.get("multiplicador").getAsDouble() : 1.0;
         int elim = p.getAsJsonArray("eliminou").size();
-        int criaturas = Math.min(15, p.get("criaturas").getAsInt()), compras = Math.min(30, p.get("compras").getAsInt());
+        int criaturasReais = p.get("criaturas").getAsInt(), comprasReais = p.get("compras").getAsInt();
+        int criaturas = Math.min(15, criaturasReais), compras = Math.min(30, comprasReais);
         List<Map<String, Object>> ganhos = new ArrayList<>();
-        java.util.function.BiConsumer<String, Integer> ganho = (motivo, xp) -> { if (xp > 0) { Map<String, Object> g = new LinkedHashMap<>(); g.put("motivo", motivo); g.put("xp", xp); ganhos.add(g); } };
+        // cada linha: motivo, quantidade (ou null), XP, se bateu o limite, se sofre o desconto dos bots
+        class G { void add(String motivo, Integer qtd, int xp, boolean max, boolean bot) {
+            if (xp <= 0) return; Map<String, Object> g = new LinkedHashMap<>(); g.put("motivo", motivo); if (qtd != null) g.put("qtd", qtd); g.put("xp", xp); if (max) g.put("max", true); if (bot) g.put("bot", true); ganhos.add(g); } }
+        G ganho = new G();
+        boolean desconto = mult < 1.0;
         if (turnos >= 3) {
-            ganho.accept("Jogar a partida", (int) Math.round(50 * mult));
-            if (venceu) ganho.accept("Vitória", (int) Math.round(100 * mult));
-            if (elim > 0) ganho.accept(elim + " eliminação(ões)", (int) Math.round(20 * elim * mult));
-            if (criaturas > 0) ganho.accept(criaturas + " criatura(s) derrotada(s)", (int) Math.round(3 * criaturas * mult));
-            if (compras > 0) ganho.accept(compras + " carta(s) comprada(s)", (int) Math.round(compras * mult));
-            if (venceu && !hoje().equals(u.diaVitoria)) { u.diaVitoria = hoje(); ganho.accept("Primeira vitória do dia", 100); }
+            ganho.add("Jogar a partida", null, (int) Math.round(50 * mult), false, desconto);
+            if (venceu) ganho.add("Vitória", null, (int) Math.round(100 * mult), false, desconto);
+            if (elim > 0) ganho.add("Jogadores eliminados", elim, (int) Math.round(20 * elim * mult), false, desconto);
+            if (criaturas > 0) ganho.add("Criaturas abatidas", criaturasReais, (int) Math.round(3 * criaturas * mult), criaturasReais >= 15, desconto);
+            if (compras > 0) ganho.add("Cartas compradas", comprasReais, (int) Math.round(compras * mult), comprasReais >= 30, desconto);
+            if (venceu && !hoje().equals(u.diaVitoria)) { u.diaVitoria = hoje(); ganho.add("Primeira vitória do dia", null, 100, false, false); }
             // missões
             missoesDoDia(u);
             Map<String, Integer> soma = new HashMap<>();
@@ -214,7 +219,7 @@ public class Amigos {
             for (Map.Entry<String, Integer> e : soma.entrySet()) u.progresso.merge(e.getKey(), e.getValue(), Integer::sum);
             for (Object[] m : missoesDoDia(u)) {
                 if (u.missoesFeitas.contains((String) m[0])) continue;
-                if (u.progresso.getOrDefault((String) m[4], 0) >= (Integer) m[2]) { u.missoesFeitas.add((String) m[0]); ganho.accept("Missão: " + m[1], (Integer) m[3]); }
+                if (u.progresso.getOrDefault((String) m[4], 0) >= (Integer) m[2]) { u.missoesFeitas.add((String) m[0]); ganho.add("Missão: " + m[1], null, (Integer) m[3], false, false); }
             }
         }
         int antes = (Integer) nivelInfo(u).get("nivel");
@@ -242,6 +247,7 @@ public class Amigos {
         sujo = true;
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("ganhos", ganhos);
+        r.put("multiplicador", mult);
         r.put("total", ganhos.stream().mapToInt(g -> (Integer) g.get("xp")).sum());
         Map<String, Object> ni = nivelInfo(u);
         r.put("nivel", ni); r.put("subiu", (Integer) ni.get("nivel") > antes);

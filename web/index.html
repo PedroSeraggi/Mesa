@@ -385,6 +385,13 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 #caixaMissoes.oculto{display:none}
 #caixaMissoes .nvBloco{padding:0 14px}
 .cmCab{padding:0 14px}.cmCab b{display:block;font-family:var(--ff-titulo);color:var(--ouro);font-size:15px;letter-spacing:.06em}.cmCab span{font-size:12px;color:var(--txt2)}
+.xpTab{border-collapse:collapse;width:100%;font-size:13.5px}
+.xpTab td{padding:4px 6px;border-bottom:1px solid #ffffff10}
+.xpTab .q{color:var(--txt2);text-align:right;width:60px}.xpTab .v{color:#ffe08a;text-align:right;width:80px;white-space:nowrap}
+.xpTab .m{width:44px;font-size:10.5px;font-weight:700;color:#e8a28f;letter-spacing:.06em}
+.xpTab tr.tot td{border-bottom:none;font-family:var(--ff-titulo);font-size:15px;color:var(--ouro);padding-top:8px}
+.xpPct{font-size:10.5px;color:#9cc4e8;border:1px solid #6f9fc466;border-radius:999px;padding:0 5px}
+.xpNota{font-size:12px;color:var(--txt2)}
 .rmsg{max-width:88%;padding:8px 11px;border-radius:10px;line-height:1.4;font-size:14px;white-space:normal;word-wrap:break-word;user-select:text;-webkit-user-select:text}
 .rmsg.eu{align-self:flex-end;background:#3a2a14;border:1px solid #6b5426}
 .rmsg.ia{align-self:flex-start;background:var(--bg2);border:1px solid var(--borda2)}
@@ -3225,7 +3232,10 @@ function desenharXpFim(r){
   box.innerHTML = `<div class="xpFim">
     <div class="xpTopo"><b>+${x.total} XP</b>${x.subiu?`<span class="xpSubiu">Subiu para o nível ${x.nivel.nivel}!</span>`:''}</div>
     ${barraNivel(x.nivel)}
-    <div class="xpGanhos">${(x.ganhos||[]).map(g=>`<span>${esc(g.motivo)} <b>+${g.xp}</b></span>`).join('') || '<span>Partida curta demais (menos de 3 turnos): sem XP.</span>'}</div>
+    ${(x.ganhos||[]).length ? `<table class="xpTab">${x.ganhos.map(g=>`<tr><td>${esc(g.motivo)}${g.bot && x.multiplicador < 1 ? ` <small class="xpPct">${Math.round(x.multiplicador*100)}%</small>` : ''}</td><td class="q">${g.qtd!=null?`${g.qtd}x`:''}</td><td class="v">+${g.xp} XP</td><td class="m">${g.max?'MAX':''}</td></tr>`).join('')}
+      <tr class="tot"><td>Total</td><td></td><td class="v">+${x.total} XP</td><td></td></tr></table>
+      ${x.multiplicador && x.multiplicador < 1 ? `<div class="xpNota">Partida com bots: os itens com % valem ${Math.round(x.multiplicador*100)}% (fácil 30%, normal 40%, difícil 50%).</div>` : ''}`
+      : '<div class="xpNota">Partida curta demais (menos de 3 turnos): sem XP.</div>'}
   </div>`;
 }
 
