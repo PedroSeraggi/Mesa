@@ -46,6 +46,8 @@ public class Amigos {
         Map<String, List<Map<String, Object>>> derrotaramChefe = new HashMap<>();   // ciclo -> [{codigo, quando}]
         Map<String, String> chefePorCiclo = new HashMap<>();   // ciclo -> arquivo do chefe (em chefes/usados)
         String fabricaUltima = ""; boolean fabricaPendente = false;
+        Set<String> ciclosPremiados = new HashSet<>();      // ciclos cujo 1º lugar já ganhou o prêmio
+        Map<String, Object> liderChefe = null;              // último a assumir o 1º lugar (para o aviso)
     }
     static Banco b = new Banco();
     static volatile boolean sujo = false;
@@ -69,7 +71,7 @@ public class Amigos {
         srv.start();
         // grava no arquivo a cada 20 s se algo mudou ("visto por último" muda o tempo todo; não precisa gravar a cada ping)
         new Timer(true).scheduleAtFixedRate(new TimerTask() { public void run() { gravar(); } }, 20_000, 20_000);
-        new Timer(true).scheduleAtFixedRate(new TimerTask() { public void run() { try { synchronized (b) { talvezRodarFabrica(false); } } catch (Exception e) { e.printStackTrace(); } } }, 60_000, 300_000);
+        new Timer(true).scheduleAtFixedRate(new TimerTask() { public void run() { try { synchronized (b) { talvezRodarFabrica(false); premiarCiclosFechados(); } } catch (Exception e) { e.printStackTrace(); } } }, 60_000, 300_000);
         Runtime.getRuntime().addShutdownHook(new Thread(Amigos::gravar));
         System.out.println("Amigos da Mesa no ar na porta " + porta);
     }
@@ -201,6 +203,10 @@ public class Amigos {
         int turnos = p.get("turnos").getAsInt();
         boolean venceu = p.get("venceu").getAsBoolean();
         double mult = p.has("multiplicador") ? p.get("multiplicador").getAsDouble() : 1.0;
+        String cicloChefe = str(p, "chefe");
+        boolean primeiraContraChefe = venceuPartida(p) && !cicloChefe.isEmpty() && cicloChefe.equals(cicloAtual())
+                && b.derrotaramChefe.getOrDefault(cicloChefe, Collections.emptyList()).stream().noneMatch(d -> u.codigo.equals(d.get("codigo")));
+        if (primeiraContraChefe) mult = 1.0;   // a primeira vitória contra o chefe vale 100%
         int elim = p.getAsJsonArray("eliminou").size();
         int criaturasReais = p.get("criaturas").getAsInt(), comprasReais = p.get("compras").getAsInt();
         int criaturas = Math.min(15, criaturasReais), compras = Math.min(30, comprasReais);
@@ -220,10 +226,22 @@ public class Amigos {
             String cicloPartida = str(p, "chefe");
             if (venceu && !cicloPartida.isEmpty() && cicloPartida.equals(cicloAtual())) {
                 List<Map<String, Object>> der = b.derrotaramChefe.computeIfAbsent(cicloPartida, k -> new ArrayList<>());
-                if (der.stream().noneMatch(d -> u.codigo.equals(d.get("codigo")))) {
-                    Map<String, Object> d = new LinkedHashMap<>(); d.put("codigo", u.codigo); d.put("quando", System.currentTimeMillis()); der.add(d);
+                String liderAntes = der.isEmpty() ? null : String.valueOf(ranking(der).get(0).get("codigo"));
+                int vida = p.has("vida") ? p.get("vida").getAsInt() : 0;
+                Map<String, Object> minha = der.stream().filter(d -> u.codigo.equals(d.get("codigo"))).findFirst().orElse(null);
+                if (minha == null) {
+                    Map<String, Object> d = new LinkedHashMap<>(); d.put("codigo", u.codigo); d.put("quando", System.currentTimeMillis());
+                    d.put("turnos", turnos); d.put("vida", vida); der.add(d);
                     ganho.add("Derrotou o Chefe do dia", null, 250, false, false);
                     soma(u.recordes, "chefesDerrotados", 1);
+                } else if (melhor(turnos, vida, minha)) {   // vitória melhor que a anterior: atualiza a marca no ranking
+                    minha.put("turnos", turnos); minha.put("vida", vida); minha.put("quando", System.currentTimeMillis());
+                }
+                String liderAgora = String.valueOf(ranking(der).get(0).get("codigo"));
+                if (u.codigo.equals(liderAgora) && !liderAgora.equals(liderAntes)) {
+                    Map<String, Object> l = new LinkedHashMap<>();
+                    l.put("ciclo", cicloPartida); l.put("codigo", u.codigo); l.put("nome", u.nome); l.put("turnos", turnos); l.put("vida", vida); l.put("quando", System.currentTimeMillis());
+                    b.liderChefe = l;
                 }
             }
             // missões
@@ -265,6 +283,7 @@ public class Amigos {
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("ganhos", ganhos);
         r.put("multiplicador", mult);
+        if (primeiraContraChefe) r.put("xpCheioChefe", true);
         r.put("total", ganhos.stream().mapToInt(g -> (Integer) g.get("xp")).sum());
         Map<String, Object> ni = nivelInfo(u);
         r.put("nivel", ni); r.put("subiu", (Integer) ni.get("nivel") > antes);
@@ -369,7 +388,44 @@ public class Amigos {
             Map<String, Object> x = resumo(o); x.put("quando", d.get("quando")); der.add(x);
         }
         r.put("derrotaram", der); r.put("euVenci", euVenci);
+        List<Map<String, Object>> rk = new ArrayList<>();
+        for (Map<String, Object> d : ranking(b.derrotaramChefe.getOrDefault(ciclo, Collections.emptyList()))) {
+            Usuario o = porCodigo(String.valueOf(d.get("codigo"))); if (o == null) continue;
+            Map<String, Object> x = resumo(o); x.put("turnos", d.get("turnos")); x.put("vida", d.get("vida")); x.put("quando", d.get("quando")); x.put("eu", o == u);
+            rk.add(x);
+        }
+        r.put("ranking", rk);
         return r;
+    }
+
+    static boolean venceuPartida(JsonObject p) { return p.has("venceu") && p.get("venceu").getAsBoolean(); }
+    static int numero(Object o, int padrao) { return o instanceof Number ? ((Number) o).intValue() : padrao; }
+    /** a nova marca (turnos, vida) é melhor que a guardada? menos turnos, depois mais vida */
+    static boolean melhor(int turnos, int vida, Map<String, Object> d) {
+        int t = numero(d.get("turnos"), 9999), v = numero(d.get("vida"), 0);
+        return turnos < t || (turnos == t && vida > v);
+    }
+    /** ordem do ranking: menos turnos, mais vida, quem venceu primeiro */
+    static List<Map<String, Object>> ranking(List<Map<String, Object>> der) {
+        List<Map<String, Object>> l = new ArrayList<>(der);
+        l.sort(Comparator.<Map<String, Object>>comparingInt(d -> numero(d.get("turnos"), 9999))
+                .thenComparing(Comparator.<Map<String, Object>>comparingInt(d -> numero(d.get("vida"), 0)).reversed())
+                .thenComparingLong(d -> d.get("quando") instanceof Number ? ((Number) d.get("quando")).longValue() : Long.MAX_VALUE));
+        return l;
+    }
+    /** Às 20h o ciclo fecha: o 1º lugar ganha +100 XP (uma vez por ciclo). */
+    static void premiarCiclosFechados() {
+        String atual = cicloAtual();
+        for (Map.Entry<String, List<Map<String, Object>>> e : b.derrotaramChefe.entrySet()) {
+            String ciclo = e.getKey();
+            if (ciclo.compareTo(atual) >= 0 || b.ciclosPremiados.contains(ciclo) || e.getValue().isEmpty()) continue;
+            Map<String, Object> top = ranking(e.getValue()).get(0);
+            top.put("primeiro", true);
+            Usuario u = porCodigo(String.valueOf(top.get("codigo")));
+            if (u != null) { u.xp += 100; soma(u.recordes, "chefesPrimeiro", 1); }
+            b.ciclosPremiados.add(ciclo); sujo = true;
+            System.out.println("Chefe " + ciclo + ": 1º lugar " + (u == null ? "?" : u.nome) + " ganhou +100 XP");
+        }
     }
 
     static void soma(JsonObject o, String k, int n) { o.addProperty(k, num(o, k) + n); }
@@ -430,6 +486,7 @@ public class Amigos {
         r.put("codigo", u.codigo);
         r.put("nivel", nivelInfo(u));
         r.put("missoes", missoesJson(u));
+        if (b.liderChefe != null && cicloAtual().equals(b.liderChefe.get("ciclo"))) r.put("liderChefe", b.liderChefe);   // aviso de novo 1º lugar
         List<Map<String, Object>> amigos = new ArrayList<>(), pedidos = new ArrayList<>(), online = new ArrayList<>(), convites = new ArrayList<>();
         List<String> enviados = new ArrayList<>();
         for (Usuario o : b.porId.values()) {

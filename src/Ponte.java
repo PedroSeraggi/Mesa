@@ -940,6 +940,7 @@ public class Ponte implements MageClient {
                 p.addProperty("compras", ((Number) eu.getOrDefault("compras", 0)).intValue());
                 p.addProperty("magias", ((Number) eu.getOrDefault("magias", 0)).intValue());
                 p.addProperty("dano", ((Number) eu.getOrDefault("danoCausado", 0)).intValue());
+                if (eu.get("vidaFinal") instanceof Number) p.addProperty("vida", ((Number) eu.get("vidaFinal")).intValue());
                 p.addProperty("danoCmd", ((Number) eu.getOrDefault("danoCmd", 0)).intValue());
                 if (eu.get("maiorGolpe") != null) p.add("maiorGolpe", GSON.toJsonTree(eu.get("maiorGolpe")));
                 p.add("jogadores", GSON.toJsonTree(nomes));

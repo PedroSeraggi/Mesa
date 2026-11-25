@@ -395,7 +395,7 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .cartaoChefe{position:relative;border-radius:12px;overflow:hidden;border:1px solid #e8a83088;background:#2a1208 center 25%/cover no-repeat;margin:4px 0 10px;box-shadow:0 0 24px #b8573233,0 10px 30px #000a;min-height:270px;display:flex}
 .cartaoChefe::before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#0c0503f2 0%,#0c0503b0 38%,#0c050322 70%,transparent 100%)}
 .cartaoChefe.oculto{display:none}
-.chDentro{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;padding:14px 16px;width:100%}
+.chDentro{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;padding:44px 16px 14px;width:100%;box-sizing:border-box}
 .chRotulo{position:absolute;top:12px;left:16px;right:16px}
 .chRotulo{display:flex;justify-content:space-between;align-items:center;font-family:var(--ff-titulo);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#ff9a5a;text-shadow:0 0 10px #ff5a2a88}
 .chTempo{letter-spacing:.04em;text-transform:none;font-size:11.5px;color:#f3d9c0;background:#00000066;border-radius:999px;padding:2px 8px}
@@ -407,6 +407,12 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .chLinha button{background:linear-gradient(#e8703a,#b8452a)!important;border-color:#ff9a5a!important;color:#fff!important}
 .chDer{display:flex;align-items:center;gap:4px;font-size:12px;color:#d9c2a8;flex-wrap:wrap}
 .chDerAv .amAv{width:24px;height:24px;font-size:11px}.chDerAv .amAv u.nvSelo{display:none}
+.chRank{display:flex;flex-direction:column;gap:3px;background:#00000066;border-radius:9px;padding:6px 8px;margin-top:2px}
+.chRankTit{font-family:var(--ff-titulo);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#ff9a5a}
+.chRankLin{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#f3e6c8}.chRankLin b{width:20px;color:var(--ouro);font-family:var(--ff-titulo)}
+.chRankLin .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chRankLin .rd{font-size:11.5px;color:#d9c2a8;white-space:nowrap}
+.chRankLin.eu .nm{color:#ffe08a}
+.chRankMais,.chRankDica{font-size:11px;color:#bfa88f}
 .chErro{font-size:12.5px;color:#e8a28f}
 .emblemaTile{position:relative;width:calc(var(--carta-w,92px)*1.35);aspect-ratio:4/3;border-radius:9px;overflow:hidden;background:#2a1b0e center/cover no-repeat;border:1px solid #c9a24a;box-shadow:0 0 14px #c9a24a44,0 4px 12px #000a;display:flex;flex-direction:column;justify-content:flex-end;padding:6px 8px;box-sizing:border-box;cursor:default}
 .emblemaTile::before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#0c0805ee 0%,#0c080566 45%,transparent 75%)}
@@ -2836,6 +2842,7 @@ async function atualizarAmigos(){
   if (painelAmigosAberto) desenharAmigos();
   desenharConvites();
   desenharMissoes();
+  avisarLiderChefe();
 }
 function avAmigo(a, online){
   const ini = esc(((a.nome||'?')[0]||'?').toUpperCase());
@@ -3246,7 +3253,9 @@ function desenharChefe(){
     ${C.euVenci ? '<div class="chVenci">Você já derrotou o chefe deste ciclo! Bônus de +250 XP recebido.</div>' : '<div class="chBonus">Primeira vitória: <b>+250 XP</b></div>'}
     <div class="chLinha"><select id="chDeck">${(decks||[]).map(d=>`<option value="${esc(d.arquivo)}" ${d.arquivo===salvo?'selected':''}>${esc(nomeDeckCurto(d))}</option>`).join('')}</select>
       <button class="pri" id="chEnfrentar">${C.euVenci ? 'Enfrentar de novo' : 'Enfrentar'}</button></div>
-    ${der.length ? `<div class="chDer"><span>Derrotaram:</span>${der.map(a=>`<span class="chDerAv" title="${esc(a.nome)}">${avAmigo(a)}</span>`).join('')}</div>` : '<div class="chDer"><span>Ninguém derrotou ainda.</span></div>'}
+    ${(C.ranking||[]).length ? `<div class="chRank"><div class="chRankTit">Ranking de hoje</div>${C.ranking.slice(0,3).map((a,i)=>`<div class="chRankLin ${a.eu?'eu':''}"><b>${i+1}º</b><span class="chDerAv">${avAmigo(a)}</span><span class="nm">${esc(a.nome)}</span><span class="rd">rodada ${Math.ceil((a.turnos||0)/2)} · ${a.vida} de vida</span></div>`).join('')}
+      ${C.ranking.length > 3 ? `<div class="chRankMais">e mais ${C.ranking.length-3} que venceram</div>` : ''}<div class="chRankDica">Às 20h o 1º lugar ganha +100 XP</div></div>`
+      : '<div class="chDer"><span>Ninguém derrotou ainda. O 1º lugar às 20h ganha +100 XP.</span></div>'}
   </div>`;
   $('#chEnfrentar').onclick = async ()=>{
     const deck = $('#chDeck').value; if (!deck){ avisoLocal('Escolha um deck.'); return; }
@@ -3261,6 +3270,18 @@ function desenharChefe(){
     t.textContent = `troca em ${tempoAte(chefeInfo.fim)}`; }, 1000);
 }
 $('#mnJogar').addEventListener('click', async ()=>{ if (!decks.length) try { decks = await (await fetch('/api/decks')).json(); } catch(e){} carregarChefe(); });
+
+// aviso quando alguém assume o 1º lugar do Chefe do dia
+function avisarLiderChefe(){
+  const l = amigos && amigos.foto && amigos.foto.liderChefe;
+  if (!l || l.codigo === amigos.foto.codigo) return;
+  const chave = l.ciclo + '|' + l.codigo + '|' + l.quando;
+  if (localGet('liderVisto') === chave) return;
+  localSet('liderVisto', chave);
+  if (Date.now() - l.quando > 6*3600000) return;   // aviso velho: não mostra
+  avisoLocal(`${l.nome} assumiu o 1º lugar do Chefe do dia: rodada ${Math.ceil((l.turnos||0)/2)} com ${l.vida} de vida!`);
+  if (chefeInfo) carregarChefe(true);
+}
 
 // ---------------- nível e missões
 let caixaMissoesAberta = false;
@@ -3299,6 +3320,7 @@ function desenharXpFim(r){
     ${barraNivel(x.nivel)}
     ${(x.ganhos||[]).length ? `<table class="xpTab">${x.ganhos.map(g=>`<tr><td>${esc(g.motivo)}${g.bot && x.multiplicador < 1 ? ` <small class="xpPct">${Math.round(x.multiplicador*100)}%</small>` : ''}</td><td class="q">${g.qtd!=null?`${g.qtd}x`:''}</td><td class="v">+${g.xp} XP</td><td class="m">${g.max?'MAX':''}</td></tr>`).join('')}
       <tr class="tot"><td>Total</td><td></td><td class="v">+${x.total} XP</td><td></td></tr></table>
+      ${x.xpCheioChefe ? `<div class="xpNota">Primeira vitória contra este chefe: XP cheio (100%).</div>` : ''}
       ${x.multiplicador && x.multiplicador < 1 ? `<div class="xpNota">Partida com bots: os itens com % valem ${Math.round(x.multiplicador*100)}% (fácil 30%, normal 40%, difícil 50%, Chefe do dia 70%).</div>` : ''}`
       : '<div class="xpNota">Partida curta demais (menos de 3 turnos): sem XP.</div>'}
   </div>`;
