@@ -44,6 +44,8 @@ public class Amigos {
         Set<String> pedidos = new LinkedHashSet<>();      // "DE>PARA"
         List<Convite> convites = new ArrayList<>();
         Map<String, List<Map<String, Object>>> derrotaramChefe = new HashMap<>();   // ciclo -> [{codigo, quando}]
+        Map<String, String> chefePorCiclo = new HashMap<>();   // ciclo -> arquivo do chefe (em chefes/usados)
+        String fabricaUltima = ""; boolean fabricaPendente = false;
     }
     static Banco b = new Banco();
     static volatile boolean sujo = false;
@@ -60,11 +62,14 @@ public class Amigos {
         srv.createContext("/perfil", ex -> tratar(ex, Amigos::perfil));
         srv.createContext("/partida", ex -> tratar(ex, Amigos::partida));
         srv.createContext("/chefe", ex -> tratar(ex, Amigos::chefe));
+        srv.createContext("/fabrica", ex -> tratar(ex, c -> { usuario(c); if (c.has("rodar")) talvezRodarFabrica(true);
+            Map<String, Object> r = new LinkedHashMap<>(); r.put("rodando", fabricaRodando); r.put("fila", arquivosChefes().size()); r.put("ultima", b.fabricaUltima); r.put("pendente", b.fabricaPendente); return r; }));
         srv.createContext("/saude", ex -> responder(ex, 200, "{\"ok\":true}"));
         srv.setExecutor(Executors.newFixedThreadPool(8));
         srv.start();
         // grava no arquivo a cada 20 s se algo mudou ("visto por último" muda o tempo todo; não precisa gravar a cada ping)
         new Timer(true).scheduleAtFixedRate(new TimerTask() { public void run() { gravar(); } }, 20_000, 20_000);
+        new Timer(true).scheduleAtFixedRate(new TimerTask() { public void run() { try { synchronized (b) { talvezRodarFabrica(false); } } catch (Exception e) { e.printStackTrace(); } } }, 60_000, 300_000);
         Runtime.getRuntime().addShutdownHook(new Thread(Amigos::gravar));
         System.out.println("Amigos da Mesa no ar na porta " + porta);
     }
@@ -282,16 +287,64 @@ public class Amigos {
         l.sort(Comparator.comparing(java.nio.file.Path::toString));
         return l;
     }
-    static JsonObject chefeDoCiclo() throws IOException {
-        List<java.nio.file.Path> l = arquivosChefes();
-        if (l.isEmpty()) return null;
-        long dia = inicioCiclo().toLocalDate().toEpochDay();
-        // ordem embaralhada fixa, para não repetir o mesmo chefe antes de passar por todos
-        List<java.nio.file.Path> ordem = new ArrayList<>(l);
-        long volta = dia / ordem.size();
-        Collections.shuffle(ordem, new Random(volta * 31 + 7));
-        java.nio.file.Path f = ordem.get((int) (dia % ordem.size()));
-        return JsonParser.parseString(new String(Files.readAllBytes(f), StandardCharsets.UTF_8)).getAsJsonObject();
+    static java.nio.file.Path pastaChefes() { return DADOS.toAbsolutePath().getParent().resolve("chefes"); }
+    /** Cada ciclo (20h) pega o chefe mais antigo da fila (chefes/*.json) e o move para chefes/usados/.
+     *  Fila vazia: repete o chefe usado que está há mais tempo sem aparecer. */
+    static synchronized JsonObject chefeDoCiclo() throws IOException {
+        String ciclo = cicloAtual();
+        java.nio.file.Path usados = pastaChefes().resolve("usados");
+        Files.createDirectories(usados);
+        String arq = b.chefePorCiclo.get(ciclo);
+        if (arq == null || !Files.exists(usados.resolve(arq))) {
+            List<java.nio.file.Path> fila = arquivosChefes();
+            fila.sort(Comparator.comparingLong(f -> { try { return Files.getLastModifiedTime(f).toMillis(); } catch (IOException e) { return 0L; } }));
+            if (!fila.isEmpty()) {
+                java.nio.file.Path f = fila.get(0);
+                arq = f.getFileName().toString();
+                Files.move(f, usados.resolve(arq), StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                Map<String, String> ultimoUso = new HashMap<>();
+                for (Map.Entry<String, String> e : b.chefePorCiclo.entrySet()) ultimoUso.merge(e.getValue(), e.getKey(), (x, y) -> x.compareTo(y) > 0 ? x : y);
+                List<String> todos = new ArrayList<>();
+                try (DirectoryStream<java.nio.file.Path> ds = Files.newDirectoryStream(usados, "*.json")) { for (java.nio.file.Path f : ds) todos.add(f.getFileName().toString()); }
+                if (todos.isEmpty()) return null;
+                todos.sort(Comparator.comparing(n -> ultimoUso.getOrDefault(n, "")));
+                arq = todos.get(0);
+            }
+            b.chefePorCiclo.put(ciclo, arq); sujo = true;
+        }
+        JsonObject o = JsonParser.parseString(new String(Files.readAllBytes(usados.resolve(arq)), StandardCharsets.UTF_8)).getAsJsonObject();
+        return o;
+    }
+
+    // ---------------- Fábrica de chefes: quarta às 6h completa a fila até 8 (e tenta todo dia às 6h se não conseguiu) ----------------
+    static volatile boolean fabricaRodando = false;
+    static void talvezRodarFabrica(boolean forcar) {
+        java.time.ZonedDateTime agora = java.time.ZonedDateTime.now(BR);
+        String hoje = agora.toLocalDate().toString();
+        boolean quarta = agora.getDayOfWeek() == java.time.DayOfWeek.WEDNESDAY;
+        if (!forcar && (agora.getHour() < 6 || hoje.equals(b.fabricaUltima) || !(quarta || b.fabricaPendente || arquivosChefes().isEmpty()))) return;
+        if (fabricaRodando) return;
+        fabricaRodando = true; b.fabricaUltima = hoje; sujo = true;
+        new Thread(() -> {
+            try {
+                java.nio.file.Path tmp = java.nio.file.Paths.get("/tmp/fabrica");
+                Files.createDirectories(tmp.resolve("db"));
+                java.nio.file.Path dbOrig = java.nio.file.Paths.get(Optional.ofNullable(System.getenv("XMAGE")).orElse("/xmage")).resolve("db");
+                try (DirectoryStream<java.nio.file.Path> ds = Files.newDirectoryStream(dbOrig, "cards*")) { for (java.nio.file.Path f : ds) Files.copy(f, tmp.resolve("db").resolve(f.getFileName()), StandardCopyOption.REPLACE_EXISTING); }
+                String xm = Optional.ofNullable(System.getenv("XMAGE")).orElse("/xmage");
+                ProcessBuilder pb = new ProcessBuilder("java", "-Xmx900m", "-Dfile.encoding=UTF-8",
+                        "-cp", "/srv/classes-fabrica:" + xm + "/lib/*:" + xm + "/plugins/mage-deck-constructed-1.4.63.jar",
+                        "Fabrica", pastaChefes().toString(), DADOS.toAbsolutePath().getParent().resolve("fabrica.json").toString(), "8");
+                pb.directory(tmp.toFile()); pb.redirectErrorStream(true);
+                pb.redirectOutput(ProcessBuilder.Redirect.appendTo(DADOS.toAbsolutePath().getParent().resolve("fabrica.log").toFile()));
+                int cod = pb.start().waitFor();
+                int fila = arquivosChefes().size();
+                b.fabricaPendente = fila < 8; sujo = true;
+                System.out.println("Fábrica de chefes terminou (código " + cod + "): fila com " + fila);
+            } catch (Exception e) { e.printStackTrace(); b.fabricaPendente = true; sujo = true; }
+            finally { fabricaRodando = false; }
+        }, "fabrica").start();
     }
     static Object chefe(JsonObject c) throws IOException {
         Usuario u = usuario(c);
@@ -300,6 +353,7 @@ public class Amigos {
         if (ch == null) { r.put("vazio", true); return r; }
         String ciclo = cicloAtual();
         r.put("ciclo", ciclo);
+        r.put("fila", arquivosChefes().size());
         r.put("fim", inicioCiclo().plusDays(1).toInstant().toEpochMilli());
         r.put("nome", str(ch, "nome"));
         r.put("comandante", ch.get("comandante"));
