@@ -438,6 +438,48 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .secChefesLista.oculto{display:none}
 .deckGanho{background:linear-gradient(90deg,#b8452a55,#00000000);border-left:3px solid #ff9a5a;padding:6px 10px;border-radius:6px;font-size:13px}
 .contaGal b{color:#ffe08a}
+#vsChefe{position:fixed;inset:0;z-index:9500;pointer-events:none;display:none;font-family:'EB Garamond',serif;color:#f3e6c8}
+#vsChefe.on{display:block;pointer-events:auto}
+#vsChefe .vsFundo{position:absolute;inset:0;background:radial-gradient(ellipse at center,#1a0d08e6 0%,#050302f2 75%);opacity:0;animation:vsEscurece 1s ease forwards}
+@keyframes vsEscurece{to{opacity:1}}
+#vsChefe.saindo .vsFundo{opacity:1;animation:vsClareia .7s .8s ease forwards}
+@keyframes vsClareia{from{opacity:1}to{opacity:0}}
+#vsChefe.saindo .vsLado.esq{animation:vsSaiEsq .9s cubic-bezier(.6,0,.85,.4) forwards}
+#vsChefe.saindo .vsLado.dir{animation:vsSaiDir .9s cubic-bezier(.6,0,.85,.4) forwards}
+@keyframes vsSaiEsq{from{opacity:1;transform:translateX(0) rotateY(14deg)}to{opacity:0;transform:translateX(-60vw) rotateY(35deg)}}
+@keyframes vsSaiDir{from{opacity:1;transform:translateX(0) rotateY(-14deg)}to{opacity:0;transform:translateX(60vw) rotateY(-35deg)}}
+#vsChefe.saindo .vsMeio,#vsChefe.saindo .vsRisco,#vsChefe.saindo .vsCarregando{opacity:0!important;transition:opacity .4s}
+#vsChefe .vsFaiscas{position:absolute;inset:0;pointer-events:none}
+#vsChefe .vsRisco{position:absolute;left:50%;top:-10%;width:4px;height:120%;background:linear-gradient(180deg,transparent,#ffe08a 30%,#fff 50%,#ffe08a 70%,transparent);transform:translateX(-50%) rotate(28deg) scaleY(0);box-shadow:0 0 18px #ffd34a,0 0 40px #ff9a3a88;opacity:.9;animation:vsRisco .5s 1.1s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes vsRisco{to{transform:translateX(-50%) rotate(28deg) scaleY(1)}}
+#vsChefe .vsPalco{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:min(18vw,260px);perspective:1200px}
+#vsChefe .vsLado{display:flex;flex-direction:column;align-items:center;gap:18px;opacity:0}
+#vsChefe .vsLado.esq{transform:translateX(-60vw) rotateY(35deg);animation:vsEntraEsq 1.3s .4s cubic-bezier(.16,.9,.25,1) forwards}
+#vsChefe .vsLado.dir{transform:translateX(60vw) rotateY(-35deg);animation:vsEntraDir 1.3s .7s cubic-bezier(.16,.9,.25,1) forwards}
+@keyframes vsEntraEsq{to{opacity:1;transform:translateX(0) rotateY(14deg)}}
+@keyframes vsEntraDir{to{opacity:1;transform:translateX(0) rotateY(-14deg)}}
+#vsChefe .vsFlutua{transform-style:preserve-3d;animation:vsFlutua 4.2s ease-in-out infinite}
+#vsChefe .dir .vsFlutua{animation-delay:-2.1s}
+@keyframes vsFlutua{0%,100%{transform:translateY(0) rotateX(4deg) rotateZ(-1deg)}50%{transform:translateY(-16px) rotateX(-4deg) rotateZ(1deg)}}
+#vsChefe .vsCarta{position:relative;width:min(24vw,300px);aspect-ratio:63/88;border-radius:4.5%/3.2%;overflow:hidden;background:#111 center/cover no-repeat}
+#vsChefe .esq .vsCarta{box-shadow:0 0 0 2px #ffe08a,0 0 26px 6px #ffd34acc,0 0 70px 18px #ff9a3a55;animation:vsAuraOuro 2.4s ease-in-out infinite}
+#vsChefe .dir .vsCarta{box-shadow:0 0 0 2px #ff9a7a,0 0 26px 6px #ff5a3acc,0 0 70px 18px #b8200a66;animation:vsAuraVerm 2.4s ease-in-out infinite}
+@keyframes vsAuraOuro{50%{box-shadow:0 0 0 2px #fff3c0,0 0 36px 10px #ffd34aee,0 0 100px 30px #ff9a3a77}}
+@keyframes vsAuraVerm{50%{box-shadow:0 0 0 2px #ffc0b0,0 0 36px 10px #ff5a3aee,0 0 100px 30px #d0300a88}}
+#vsChefe .vsCarta::after{content:'';position:absolute;inset:-40%;background:linear-gradient(115deg,transparent 40%,#ffffff55 48%,#ffffffaa 50%,#ffffff55 52%,transparent 60%);transform:translateX(-70%);animation:vsReflexo 3.2s 1.4s ease-in-out infinite}
+#vsChefe .dir .vsCarta::after{animation-delay:2.2s}
+@keyframes vsReflexo{0%{transform:translateX(-70%)}35%,100%{transform:translateX(70%)}}
+#vsChefe .vsNome{font-family:var(--ff-titulo);font-weight:800;font-size:clamp(14px,1.6vw,22px);letter-spacing:.06em;text-align:center;max-width:min(26vw,320px);text-shadow:0 2px 10px #000,0 0 18px #000}
+#vsChefe .esq .vsNome{color:var(--ouro)}#vsChefe .dir .vsNome{color:#ffb09a}
+#vsChefe .vsPapel{font-size:13px;letter-spacing:.3em;text-transform:uppercase;opacity:.75;margin-top:-12px}
+#vsChefe .vsMeio{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--ff-titulo);font-weight:800;font-size:clamp(60px,9vw,140px);color:#fff3c0;text-shadow:0 0 12px #ffd34a,0 0 40px #ff7a2a,0 6px 0 #6a3a10;opacity:0;animation:vsBate .55s 1.85s cubic-bezier(.2,1.6,.4,1) forwards}
+@keyframes vsBate{0%{opacity:0;transform:translate(-50%,-50%) scale(3)}70%{opacity:1;transform:translate(-50%,-50%) scale(.92)}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+#vsChefe.tremer .vsPalco{animation:vsTremer .35s linear}
+@keyframes vsTremer{20%{transform:translate(6px,-4px)}40%{transform:translate(-5px,3px)}60%{transform:translate(4px,4px)}80%{transform:translate(-3px,-2px)}}
+#vsChefe .vsCarregando{position:absolute;left:50%;bottom:9vh;transform:translateX(-50%);font-family:var(--ff-titulo);letter-spacing:.25em;text-transform:uppercase;font-size:13px;color:#d9c2a8;opacity:0;transition:opacity .5s}
+#vsChefe .vsCarregando.on{opacity:.85}
+#vsChefe .vsCarregando i{display:inline-block;animation:vsPonto 1.2s infinite}#vsChefe .vsCarregando i:nth-child(2){animation-delay:.2s}#vsChefe .vsCarregando i:nth-child(3){animation-delay:.4s}
+@keyframes vsPonto{50%{opacity:.2}}
 .rmsg{max-width:88%;padding:8px 11px;border-radius:10px;line-height:1.4;font-size:14px;white-space:normal;word-wrap:break-word;user-select:text;-webkit-user-select:text}
 .rmsg.eu{align-self:flex-end;background:#3a2a14;border:1px solid #6b5426}
 .rmsg.ia{align-self:flex-start;background:var(--bg2);border:1px solid var(--borda2)}
@@ -3310,8 +3352,10 @@ function desenharChefe(){
     const deck = $('#chDeck').value; if (!deck){ avisoLocal('Escolha um deck.'); return; }
     localSet('meuDeck', deck);
     $('#chEnfrentar').disabled = true; $('#chEnfrentar').textContent = 'Preparando o chefe...';
+    const meu = ((decks||[]).find(d=>d.arquivo===deck)||{}).comandantes || [];
+    const fim = telaVsChefe(meu[0] || {nome: nomeDeckCurto((decks||[]).find(d=>d.arquivo===deck)||{nome:'Você'})}, C.comandante || {nome:C.nome});
     const r = await post('/api/chefe', {deck});
-    if (r.erro){ avisoLocal(r.erro); desenharChefe(); }
+    if (r.erro){ fim(r.erro); avisoLocal(r.erro); desenharChefe(); }
   };
   clearInterval(chefeTimer);
   chefeTimer = setInterval(()=>{ const t = $('#chTempo'); if (!t || !chefeInfo || !chefeInfo.fim){ clearInterval(chefeTimer); return; }
@@ -3330,6 +3374,47 @@ function avisarLiderChefe(){
   if (Date.now() - l.quando > 6*3600000) return;   // aviso velho: não mostra
   avisoLocal(`${l.nome} assumiu o 1º lugar do Chefe do dia: rodada ${Math.ceil((l.turnos||0)/2)} com ${l.vida} de vida!`);
   if (chefeInfo) carregarChefe(true);
+}
+
+// ---------------- tela de entrada do Chefe do dia (VS) ----------------
+// Fundo escurece, os dois comandantes entram flutuando com brilho, o VS bate com choque de espadas.
+// Fica no mínimo 6 s e segura ("Embaralhando...") até a partida estar pronta.
+function telaVsChefe(cmdEu, cmdChefe){
+  let vs = $('#vsChefe');
+  if (!vs){ vs = document.createElement('div'); vs.id = 'vsChefe'; document.body.appendChild(vs); }
+  vs.innerHTML = `<div class="vsFundo"></div><canvas class="vsFaiscas"></canvas><div class="vsRisco"></div>
+    <div class="vsPalco">
+      <div class="vsLado esq"><div class="vsFlutua"><div class="vsCarta" style="background-image:url('${imgCarta(cmdEu)}')"></div></div><div class="vsNome">${esc(cmdEu.nome||'')}</div><div class="vsPapel">Você</div></div>
+      <div class="vsLado dir"><div class="vsFlutua"><div class="vsCarta" style="background-image:url('${imgCarta(cmdChefe)}')"></div></div><div class="vsNome">${esc(cmdChefe.nome||'')}</div><div class="vsPapel">Chefe do dia</div></div>
+    </div><div class="vsMeio">VS</div><div class="vsCarregando">Embaralhando<i>.</i><i>.</i><i>.</i></div>`;
+  vs.className = ''; void vs.offsetWidth; vs.classList.add('on');
+  const cv = vs.querySelector('.vsFaiscas'), cx = cv.getContext('2d'); cv.width = innerWidth; cv.height = innerHeight;
+  let part = [], brasas = false, vivo = true, encerrado = false;
+  const cartas = vs.querySelectorAll('.vsCarta');
+  const brasa = (el, cores)=>{ const r = el.getBoundingClientRect(); if (!r.width) return;
+    part.push({b:1, x:r.left + r.width/2 + (Math.random()-.5)*r.width*1.5, y:r.top + r.height*(.65 + Math.random()*.45), vx:(Math.random()-.5)*.5, vy:-(.5+Math.random()*1.3),
+      v:1, d:.004+Math.random()*.006, c:cores[Math.floor(Math.random()*cores.length)], r:.8+Math.random()*2.2, f:Math.random()*6}); };
+  const tBrasas = setInterval(()=>{ if (!brasas) return; for (let i=0;i<3;i++){ brasa(cartas[0], ['#ffe08a','#ffb347','#fff3c0']); brasa(cartas[1], ['#ff5a3a','#ff8a4a','#ffb09a']); } }, 60);
+  (function passo(){ if (!vivo) return; cx.clearRect(0,0,cv.width,cv.height); part = part.filter(p=>p.v > 0);
+    for (const p of part){ if (p.b){ p.f += .05; p.x += p.vx + Math.sin(p.f)*.4; p.y += p.vy; p.v -= p.d; } else { p.x += p.vx; p.y += p.vy; p.vy += .18; p.vx *= .98; p.v -= .018; }
+      cx.globalAlpha = Math.max(0,p.v); cx.fillStyle = p.c; cx.shadowColor = p.c; cx.shadowBlur = 10; cx.beginPath(); cx.arc(p.x,p.y,p.r,0,Math.PI*2); cx.fill(); }
+    requestAnimationFrame(passo); })();
+  setTimeout(()=>{ brasas = true; }, 1300);
+  setTimeout(()=>{   // o VS bate: faíscas, tremor e choque de espadas no volume de efeitos
+    for (let i=0;i<90;i++){ const a = Math.random()*Math.PI*2, v = 3+Math.random()*9; part.push({x:innerWidth/2, y:innerHeight/2, vx:Math.cos(a)*v, vy:Math.sin(a)*v-2, v:1, c:['#ffe08a','#ff9a3a','#fff3c0'][i%3], r:1+Math.random()*2.5}); }
+    vs.classList.add('tremer');
+    if (cfgApp.somFx !== false){ const au = new Audio('sons/espadas/choque1.ogg'); au.volume = Math.min(1, (cfgApp.volFx ?? 50) / 1000 * 2.5); au.play().catch(()=>{}); }
+  }, 2000);
+  const inicio = Date.now();
+  const sair = ()=>{ if (encerrado) return; encerrado = true; clearInterval(tChecar); vs.classList.add('saindo'); brasas = false;
+    setTimeout(()=>{ vivo = false; clearInterval(tBrasas); vs.className = ''; vs.innerHTML = ''; }, 1550); };
+  const tChecar = setInterval(()=>{
+    const pronta = E && E.fase === 'jogo' && E.jogo;
+    const passou = Date.now() - inicio;
+    if (passou >= 6000 && !pronta){ const c = vs.querySelector('.vsCarregando'); if (c) c.classList.add('on'); }
+    if ((passou >= 6000 && pronta) || passou > 90000 || (E && E.fase === 'lobby' && E.erro && passou > 2000)) sair();
+  }, 250);
+  return ()=>sair();   // erro ao começar: fecha na hora
 }
 
 // ---------------- nível e missões
