@@ -1702,6 +1702,8 @@ function desenharBotsJogar(){
   const dupla = $('#jgModoJogo').value === '2v2';
   if (dupla){ $('#jgLugares').value = '4'; if (!$('#jgBots').options.length || +$('#jgBots').value !== 2){ $('#jgBots').innerHTML = '<option value="2">2 bots</option>'; } }
   $('#jgLugares').disabled = dupla; $('#jgBots').disabled = dupla;
+  if (dupla) $('#jgVida').value = '60'; else if ($('#jgVida').disabled) $('#jgVida').value = '40';
+  $('#jgVida').disabled = dupla;
   if (dupla){ $('#jgBots').innerHTML = '<option value="2">2 bots</option>'; $('#jgBots').value = '2';
     $('#jgBotsDecks').innerHTML = [0,1].map(i=>`<select class="jgBotDeck">${opcoesDeck(d=>`<option value="${esc(d.arquivo)}">Bot ${i+1}: ${esc(nomeDeckCurto(d))}</option>`)}</select>`).join('');
     const arqs = decks.map(d=>d.arquivo); document.querySelectorAll('.jgBotDeck').forEach((s,i)=>{ s.value = arqs[(i+1)%arqs.length]; });

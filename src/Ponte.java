@@ -2154,7 +2154,7 @@ public class Ponte implements MageClient {
         op.setWinsNeeded(1);
         JsonObject o = opcoesSala == null ? new JsonObject() : opcoesSala;
         op.setFreeMulligans(Math.max(0, Math.min(2, opc(o, "mulligans", 0))));
-        int vida = opc(o, "vida", 40);
+        int vida = dupla ? 60 : opc(o, "vida", 40);   // 2v2: cada um começa com 60
         if (vida != 40 && vida > 0) { op.setCustomStartLifeEnabled(true); op.setCustomStartLife(vida); }
         int min = opc(o, "tempo", 0);
         MatchTimeLimit lim = MatchTimeLimit.NONE;
