@@ -292,6 +292,31 @@ html.modoDesenho #mesa,html.modoDesenho #mesa *{cursor:crosshair!important}
 .apCaixa .pfCapa{margin:0 -20px;flex:none}
 .apSit{margin-top:44px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13.5px}
 .apOn{color:#9fe08a}.apOff{color:var(--txt2)}
+.bnEu{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--borda);background:#00000033}
+.bnAvGrande{width:50px!important;height:50px!important;font-size:20px}
+.bnAvGrande i{width:14px!important;height:14px!important}
+.bnEuInfo{flex:1;min-width:0;line-height:1.3}
+.bnEuInfo b{display:block;font-family:var(--ff-titulo);font-size:16px;color:#f3e6c8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bnVerde{color:#8fd77a!important}.bnCinza{color:var(--txt2)}
+.bnCod{text-align:right;cursor:pointer;line-height:1.1}.bnCod small{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt2)}
+.bnCod b{color:var(--ouro);letter-spacing:.12em;font-size:13px}
+.bnBarra{display:flex;gap:6px;padding:10px 12px;align-items:center}
+.bnIcone{width:36px;height:34px;flex:none;display:grid;place-items:center;border:1px solid var(--borda2);border-radius:7px;background:#ffffff0d;color:var(--txt);cursor:pointer;padding:0!important}
+.bnIcone:hover,.bnIcone.on{border-color:var(--ouro);color:var(--ouro)}
+.bnBusca{flex:1;position:relative}.bnBusca input{width:100%;height:34px;padding-right:30px;box-sizing:border-box}
+.bnBusca span{position:absolute;right:9px;top:9px;color:var(--txt2);pointer-events:none}
+.bnAdd{display:flex;gap:6px;padding:0 12px 10px}.bnAdd input{flex:1;min-width:0}.bnAdd.oculto{display:none}
+.bnLista{flex:1;overflow:auto;padding-bottom:10px}
+.bnTitGrupo{display:flex;align-items:center;gap:6px;padding:9px 14px 5px;font-size:13.5px;color:var(--txt);cursor:pointer;user-select:none}
+.bnTitGrupo:hover{color:var(--ouro)}
+.bnTitGrupo .seta{display:inline-block;font-size:11px;color:var(--txt2);transition:transform .15s}.bnTitGrupo .seta.aberta{transform:rotate(90deg)}
+.bnItem{display:flex;align-items:center;gap:10px;padding:6px 14px;cursor:default}
+.bnItem:hover{background:#ffffff0a}
+.bnItem.off .amAv{filter:grayscale(.6) brightness(.75)}.bnItem.off .amInfo b{color:var(--txt2)}
+.bnAcoes{display:flex;gap:4px;align-items:center;opacity:0;transition:opacity .12s}
+.bnItem:hover .bnAcoes,.bnAcoes.sempre{opacity:1}
+.bnAcoes button{padding:4px 9px;font-size:12px}
+.bnVazio{padding:4px 14px;background:none!important;border:none!important}
 .rmsg{max-width:88%;padding:8px 11px;border-radius:10px;line-height:1.4;font-size:14px;white-space:normal;word-wrap:break-word;user-select:text;-webkit-user-select:text}
 .rmsg.eu{align-self:flex-end;background:#3a2a14;border:1px solid #6b5426}
 .rmsg.ia{align-self:flex-start;background:var(--bg2);border:1px solid var(--borda2)}
@@ -2687,39 +2712,81 @@ function quandoVisto(ms){
   const m = Math.round((Date.now()-ms)/60000);
   return m < 60 ? `visto há ${Math.max(1,m)} min` : m < 1440 ? `visto há ${Math.round(m/60)} h` : `visto há ${Math.round(m/1440)} dia(s)`;
 }
+// painel de amigos no estilo do Battle.net: você em cima, botões de adicionar e busca, grupos que abrem e fecham
+const OLHO_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const ADD_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M19 8v6M16 11h6"/></svg>';
+const BUSCA_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
+let amBusca = '', amAddAberto = false, amFechados = new Set(JSON.parse(localGet('amFechados')||'[]'));
+function quandoOffline(ms){
+  if (!ms) return 'Offline';
+  const m = Math.round((Date.now()-ms)/60000);
+  if (m < 60) return `Offline há ${Math.max(1,m)} min`;
+  if (m < 1440) return `Offline há ${Math.round(m/60)} h`;
+  const d = Math.round(m/1440);
+  return d < 31 ? `Offline há ${d} dia${d>1?'s':''}` : d < 365 ? `Offline há ${Math.round(d/30)} ${Math.round(d/30)>1?'meses':'mês'}` : `Offline há ${Math.round(d/365)} ano(s)`;
+}
 function desenharAmigos(){
   const box = $('#painelAmigos'); const A = amigos || {};
-  let corpo = '';
-  {
-    const f = A.foto;
-    if (A.erro) corpo += `<div class="amErro">${esc(A.erro)}</div>`;
-    if (f){
-      const conv = A.possoConvidar;
-      corpo += `<div class="amCod">Seu código: <b id="amMeuCod" title="Clique para copiar">${esc(f.codigo)}</b> · passe para os amigos te adicionarem</div>`;
-      if ((f.pedidos||[]).length) corpo += `<div><div class="amSec">Pedidos de amizade</div>${f.pedidos.map(a=>`<div class="amItem">${avAmigo(a)}<div class="amInfo"><b>${esc(a.nome)}</b><span>quer ser seu amigo</span></div><button class="amOlho" title="Ver perfil" data-ver="${a.codigo}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button><button class="pri" data-am="aceitar" data-c="${a.codigo}">Aceitar</button><button data-am="recusar" data-c="${a.codigo}">Recusar</button></div>`).join('')}</div>`;
-      corpo += `<div><div class="amSec">Amigos</div>${(f.amigos||[]).length ? f.amigos.map(a=>{
-        const sala = a.online && a.sala && a.sala.livres > 0 && a.sala.mesa !== A.minhaMesa ? a.sala : null;
-        return `<div class="amItem">${avAmigo(a, a.online)}<div class="amInfo"><b>${esc(a.nome)}</b><span>${a.online ? esc(a.status||'online') : quandoVisto(a.visto)}</span></div><button class="amOlho" title="Ver perfil" data-ver="${a.codigo}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
-          ${sala ? `<button class="pri" data-entrar="${esc(JSON.stringify(sala))}">Entrar</button>` : ''}
-          ${conv && a.online && !(a.sala && a.sala.mesa === A.minhaMesa) ? `<button data-am="convidar" data-c="${a.codigo}">Convidar</button>` : ''}
-          <button class="amX" title="Remover amigo" data-am="remover" data-c="${a.codigo}" data-n="${esc(a.nome)}">✕</button></div>`; }).join('')
-        : '<div class="dicaMenu">Nenhum amigo ainda. Adicione pelo código ou pelo nome.</div>'}</div>`;
-      corpo += `<div><div class="amSec">Adicionar amigo</div><div class="amAdd"><input id="amNovo" placeholder="Código (ex.: K7M2QX) ou nome"><button class="pri" id="amPedir">Adicionar</button></div></div>`;
-      const outros = (f.online||[]);
-      if (outros.length) corpo += `<div><div class="amSec">Online agora</div>${outros.map(a=>`<div class="amItem">${avAmigo(a, true)}<div class="amInfo"><b>${esc(a.nome)}</b><span>${(f.enviados||[]).includes(a.codigo)?'pedido enviado':'na Mesa agora'}</span></div><button class="amOlho" title="Ver perfil" data-ver="${a.codigo}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button>${(f.enviados||[]).includes(a.codigo)?'':`<button data-am="pedir" data-c="${a.codigo}">+ Adicionar</button>`}</div>`).join('')}</div>`;
-    } else if (!A.erro) corpo += '<div class="dicaMenu">Conectando...</div>';
+  if (!box.querySelector('#amLista')){
+    box.innerHTML = `<div class="bnEu" id="amEu"></div>
+      <div class="bnBarra"><button class="bnIcone" id="amBtAdd" title="Adicionar amigo">${ADD_SVG}</button>
+        <div class="bnBusca"><input id="amBusca" placeholder="Buscar amigo"><span>${BUSCA_SVG}</span></div>
+        <button class="bnIcone" id="amFechar" title="Fechar">✕</button></div>
+      <div class="bnAdd oculto" id="amAddBox"><input id="amNovo" placeholder="Código (ex.: K7M2QX) ou nome"><button class="pri" id="amPedir">Adicionar</button></div>
+      <div class="bnLista" id="amLista"></div>`;
+    $('#amFechar').onclick = ()=>{ painelAmigosAberto = false; box.classList.add('oculto'); };
+    $('#amBtAdd').onclick = ()=>{ amAddAberto = !amAddAberto; $('#amAddBox').classList.toggle('oculto', !amAddAberto); $('#amBtAdd').classList.toggle('on', amAddAberto); if (amAddAberto) $('#amNovo').focus(); };
+    $('#amBusca').value = amBusca;
+    $('#amBusca').oninput = ()=>{ amBusca = $('#amBusca').value; desenharAmigos(); };
+    const pedir = ()=>{ const v = $('#amNovo').value.trim(); if (v){ acaoAmigo('pedir', v); $('#amNovo').value = ''; } };
+    $('#amPedir').onclick = pedir; $('#amNovo').onkeydown = e=>{ if (e.key==='Enter') pedir(); };
   }
-  box.innerHTML = `<div class="amCab"><h3>Amigos</h3><button class="peq" id="amFechar">✕</button></div><div class="amCorpo">${corpo}</div>`;
-  $('#amFechar').onclick = ()=>{ painelAmigosAberto = false; box.classList.add('oculto'); };
-  if ($('#amMeuCod')) $('#amMeuCod').onclick = ()=>{ try{ navigator.clipboard.writeText($('#amMeuCod').textContent); avisoLocal('Código copiado.'); }catch(e){} };
-  const pedir = ()=>{ const v = $('#amNovo').value.trim(); if (v) acaoAmigo('pedir', v); };
-  if ($('#amPedir')){ $('#amPedir').onclick = pedir; $('#amNovo').onkeydown = e=>{ if (e.key==='Enter') pedir(); }; }
-  box.querySelectorAll('[data-am]').forEach(b=>b.onclick=()=>{
+  // você, em cima
+  const f = A.foto, eu = perfilAtual || {};
+  const meuNome = eu.nome || 'Você';
+  const conectado = f && !A.erro;
+  const meuAv = eu.avatar ? `style="background-image:url('${eu.avatar}')"` : `style="background:${esc(eu.cor||'#A487C4')}"`;
+  $('#amEu').innerHTML = `<div class="amAv bnAvGrande" ${meuAv}>${eu.avatar?'':esc((meuNome[0]||'?').toUpperCase())}<i class="${conectado?'on':''}"></i></div>
+    <div class="bnEuInfo"><b>${esc(meuNome)}</b><span class="${conectado?'bnVerde':'bnCinza'}">${conectado?'Online':'Desconectado'}</span></div>
+    ${f ? `<div class="bnCod" title="Seu código: passe para os amigos te adicionarem (clique para copiar)"><small>código</small><b id="amMeuCod">${esc(f.codigo)}</b></div>` : ''}`;
+  if ($('#amMeuCod')) $('#amMeuCod').parentElement.onclick = ()=>{ try{ navigator.clipboard.writeText(f.codigo); avisoLocal('Código copiado.'); }catch(e){} };
+
+  // lista
+  const q = amBusca.trim().toLowerCase(), bate = a => !q || (a.nome||'').toLowerCase().includes(q);
+  const grupo = (id, titulo, itens) => {
+    const fechado = amFechados.has(id);
+    return `<div class="bnGrupo"><div class="bnTitGrupo" data-grupo="${id}"><span class="seta ${fechado?'':'aberta'}">▸</span>${titulo}</div>${fechado ? '' : itens}</div>`;
+  };
+  let h = '';
+  if (A.erro) h += `<div class="amErro" style="padding:8px 14px">${esc(A.erro)}</div>`;
+  if (f){
+    const conv = A.possoConvidar;
+    const pedidos = (f.pedidos||[]).filter(bate);
+    if (pedidos.length) h += grupo('pedidos', `Pedidos de amizade - ${pedidos.length}`, pedidos.map(a=>`<div class="bnItem">${avAmigo(a)}<div class="amInfo"><b>${esc(a.nome)}</b><span>quer ser seu amigo</span></div>
+      <div class="bnAcoes sempre"><button class="amOlho" title="Ver perfil" data-ver="${a.codigo}">${OLHO_SVG}</button><button class="pri" data-am="aceitar" data-c="${a.codigo}">Aceitar</button><button data-am="recusar" data-c="${a.codigo}">Recusar</button></div></div>`).join(''));
+    const todos = f.amigos||[], lista = todos.filter(bate), on = todos.filter(a=>a.online).length;
+    h += grupo('amigos', `Amigos - ${on}/${todos.length}`, lista.length ? lista.map(a=>{
+      const sala = a.online && a.sala && a.sala.livres > 0 && a.sala.mesa !== A.minhaMesa ? a.sala : null;
+      const podeConv = conv && a.online && !(a.sala && a.sala.mesa === A.minhaMesa);
+      return `<div class="bnItem ${a.online?'':'off'}">${avAmigo(a, a.online)}<div class="amInfo"><b>${esc(a.nome)}</b><span class="${a.online?'bnVerde':''}">${a.online ? esc(a.status ? a.status[0].toUpperCase()+a.status.slice(1) : 'Online') : quandoOffline(a.visto)}</span></div>
+        <div class="bnAcoes ${sala?'sempre':''}"><button class="amOlho" title="Ver perfil" data-ver="${a.codigo}">${OLHO_SVG}</button>
+        ${sala ? `<button class="pri" data-entrar="${esc(JSON.stringify(sala))}">Entrar</button>` : ''}
+        ${podeConv ? `<button data-am="convidar" data-c="${a.codigo}">Convidar</button>` : ''}
+        <button class="amX" title="Remover amigo" data-am="remover" data-c="${a.codigo}" data-n="${esc(a.nome)}">✕</button></div></div>`; }).join('')
+      : `<div class="dicaMenu bnVazio">${q ? 'Ninguém com esse nome.' : 'Nenhum amigo ainda. Clique no ícone de adicionar, ali em cima.'}</div>`);
+    const outros = (f.online||[]).filter(bate);
+    if (outros.length) h += grupo('online', `Na Mesa agora - ${outros.length}`, outros.map(a=>{ const env = (f.enviados||[]).includes(a.codigo);
+      return `<div class="bnItem">${avAmigo(a, true)}<div class="amInfo"><b>${esc(a.nome)}</b><span>${env?'Pedido enviado':'Online'}</span></div>
+      <div class="bnAcoes"><button class="amOlho" title="Ver perfil" data-ver="${a.codigo}">${OLHO_SVG}</button>${env?'':`<button data-am="pedir" data-c="${a.codigo}">+ Adicionar</button>`}</div></div>`; }).join(''));
+  } else if (!A.erro) h += '<div class="dicaMenu bnVazio">Conectando...</div>';
+  const L = $('#amLista'); L.innerHTML = h;
+  L.querySelectorAll('[data-grupo]').forEach(t=>t.onclick=()=>{ const g = t.dataset.grupo; amFechados.has(g) ? amFechados.delete(g) : amFechados.add(g); localSet('amFechados', JSON.stringify([...amFechados])); desenharAmigos(); });
+  L.querySelectorAll('[data-am]').forEach(b=>b.onclick=()=>{
     if (b.dataset.am==='remover' && !confirm(`Remover ${b.dataset.n} dos amigos?`)) return;
     acaoAmigo(b.dataset.am, b.dataset.c);
   });
-  box.querySelectorAll('[data-entrar]').forEach(b=>b.onclick=()=>escolherDeckEEntrar(JSON.parse(b.dataset.entrar)));
-  box.querySelectorAll('[data-ver]').forEach(b=>b.onclick=()=>verPerfilAmigo(b.dataset.ver));
+  L.querySelectorAll('[data-entrar]').forEach(b=>b.onclick=()=>escolherDeckEEntrar(JSON.parse(b.dataset.entrar)));
+  L.querySelectorAll('[data-ver]').forEach(b=>b.onclick=()=>verPerfilAmigo(b.dataset.ver));
 }
 // perfil de um amigo (o que ele mesmo vê na tela Perfil: banner, foto, frase, estatísticas, decks, últimas partidas)
 async function verPerfilAmigo(codigo){
