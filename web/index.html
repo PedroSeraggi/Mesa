@@ -1205,6 +1205,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
       <label class="radioLinha"><input type="checkbox" id="cfgAtaque"> Animação de ataque (a carta vai até o alvo e bate)</label>
       <label class="radioLinha"><input type="checkbox" id="cfgSemEfeitosMenu"> Remover efeitos especiais do menu</label>
       <label class="radioLinha"><input type="checkbox" id="cfgReduzir"> Reduzir todas as animações (para PCs mais lentos)</label>
+      <label class="radioLinha"><input type="checkbox" id="cfgConfirmarPassar"> Perguntar "tem certeza?" ao passar a minha fase principal</label>
     </div>
     <div class="blocoJogar">
       <div class="tituloBloco">Som</div>
@@ -2182,6 +2183,8 @@ function desenharConfig(){
   $('#cfgVolFx').oninput = e=>{ cfgApp.volFx = +e.target.value; $('#cfgVolFxTxt').textContent = cfgApp.volFx + '%'; salvarCfgApp(); };
   $('#cfgSomTeste').onclick = ()=>{ Sons.tocar('lancar','R'); setTimeout(()=>Sons.tocar('impacto','R'), 550); };
   $('#cfgReduzir').onchange = e=>{ cfgApp.reduzir = e.target.checked; salvarCfgApp(); };
+  $('#cfgConfirmarPassar').checked = !!cfgApp.confirmarPassar;
+  $('#cfgConfirmarPassar').onchange = e=>{ cfgApp.confirmarPassar = e.target.checked; salvarCfgApp(); };
   $('#cfgMusica').onchange = e=>{ cfgApp.musica = e.target.checked; salvarCfgApp(); desenharConfig(); };
   $('#cfgVolume').oninput = e=>{ cfgApp.volume = +e.target.value; $('#cfgVolumeTxt').textContent = cfgApp.volume + '%'; musica.volume(cfgApp.volume/100); localSet('cfgApp', JSON.stringify(cfgApp)); };
   musica.carregar().then(n=>{
@@ -4593,6 +4596,19 @@ function mostrarPreview(id){
 }
 
 // ---------------- prompt ----------------
+// pergunta "tem certeza?" ao passar na SUA fase principal (se ativado em Configurações)
+function confirmarPasseMain(fazer){
+  const j = E && E.jogo;
+  const minhaMain = j && j.ativoId === E.eu && /main/i.test(j.passo||'');
+  if (!cfgApp.confirmarPassar || !minhaMain){ fazer(); return; }
+  const qual = /postcombat/i.test(j.passo||'') ? 'segunda fase principal' : 'primeira fase principal';
+  abrirModal(`<h3 class="subt" style="margin:0">Passar a ${qual}?</h3>
+    <div>Você ainda está na sua ${qual}. Se passar agora, não vai poder mais jogar terrenos e feitiços nesta fase.</div>
+    <div class="linhaBts" style="justify-content:flex-end"><button id="cpNao">Não, continuar jogando</button><button class="pri" id="cpSim">Sim, passar</button></div>`);
+  $('#cpNao').onclick = ()=>fecharModal(true);
+  $('#cpSim').onclick = ()=>{ fecharModal(true); fazer(); };
+  setTimeout(()=>$('#cpNao') && $('#cpNao').focus(), 50);
+}
 function textoPassos(){ return [
   ['PASS_PRIORITY_UNTIL_STACK_RESOLVED','Até resolver a pilha'],
   ['PASS_PRIORITY_UNTIL_TURN_END_STEP','Até o fim deste turno'],
@@ -4640,7 +4656,7 @@ function desenharPrompt(){
         sub = 'Responda com uma mágica instantânea ou habilidade, ou clique em "Resolver" embaixo da pilha.';
       } else {
         sub = 'Clique numa carta jogável (verde) para jogar ou ativar.';
-        h += B(p.botao && p.botao!=='Passar' ? p.botao : 'Passar fase','bool',false,'pri');
+        h += B(p.botao && p.botao!=='Passar' ? p.botao : 'Passar fase','bool',false,'pri btnPassarFase');
         const meuTurno = E.jogo.ativoId === E.eu;
         h += meuTurno
           ? `<button id="btnEncerrar" title="Termina o seu turno: pula combate, segunda fase principal e etapa final">Encerrar meu turno</button>`
@@ -4661,6 +4677,9 @@ function desenharPrompt(){
   msgEl.innerHTML = `${simbolos(msg)}${sub?`<small>${esc(sub)}</small>`:''}${msg!==msgOrig?`<small class="orig">${simbolos(msgOrig)}</small>`:''}`;
   bt.innerHTML = h;
   bt.querySelectorAll('button[data-t]').forEach(b=>b.onclick=()=>responder(b.dataset.t, JSON.parse(b.dataset.v)));
+  // "Confirmar antes de passar a fase principal" (Configurações): o primeiro clique fica só na Mesa
+  const pf = bt.querySelector('.btnPassarFase');
+  if (pf){ const original = pf.onclick; pf.onclick = ()=>confirmarPasseMain(()=>original()); }
   const mais = $('#btnMais'); if (mais) mais.onclick=(ev)=>{ ev.stopPropagation(); menuPassarAberto=!menuPassarAberto; desenharPrompt(); };
   const enc = $('#btnEncerrar'); if (enc) enc.onclick = ()=>{ const meu = E.jogo.jogadores.some(p=>p.eu && p.ativo);
     // no turno dos outros: "até o MEU próximo turno" (o "próximo turno" às vezes atravessava a sua fase principal)
