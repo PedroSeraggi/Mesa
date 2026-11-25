@@ -111,6 +111,7 @@ function somImpacto(vol){
   r.connect(bp).connect(rg).connect(saida); r.start(t); r.stop(t+.35);
 }
 
+function tocarBum(vol, tom=1){ try { const a = new Audio('sons/impacto/bum.ogg'); a.volume = Math.max(0, Math.min(1, vol)); a.playbackRate = tom; a.preservesPitch = false; a.play().catch(()=>{}); } catch(e){} }
 let timers = [];
 function limpar(){ timers.forEach(clearTimeout); timers = []; }
 function depois(ms, f){ timers.push(setTimeout(f, ms)); }
@@ -134,7 +135,7 @@ function entrada(rapida){
   depois(tIn*1000 + flutua, ()=>{ ent.classList.add('cai'); });
   // impacto
   depois(tIn*1000 + flutua + queda, ()=>{
-    somImpacto(.6);
+    tocarBum(.9);
     ent.querySelector('.carta').classList.add('assenta');
     ent.querySelector('.clarao').classList.add('vai'); ent.querySelector('.onda').classList.add('vai');
     for (let i=0;i<26;i++){ const p = document.createElement('div'); p.className = 'poeira'; const g = Math.random()*Math.PI*2, r = 60 + Math.random()*200;

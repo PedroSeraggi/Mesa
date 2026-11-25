@@ -4616,6 +4616,7 @@ function ecSomImpacto(vol){
   const rg = a.createGain(); rg.gain.setValueAtTime(.9, t); rg.gain.exponentialRampToValueAtTime(.001, t+.3);
   r.connect(bp).connect(rg).connect(saida); r.start(t); r.stop(t+.35);
 }
+function tocarBum(vol, tom=1){ try { const a = new Audio('sons/impacto/bum.ogg'); a.volume = Math.max(0, Math.min(1, vol)); a.playbackRate = tom; a.preservesPitch = false; a.play().catch(()=>{}); } catch(e){} }
 let ecTimers = [];
 function telaEntradaCmd(p, c, rapida){
   ecTimers.forEach(clearTimeout); ecTimers = [];
@@ -4639,7 +4640,7 @@ function telaEntradaCmd(p, c, rapida){
   try { if (vol) ecSomChegada(.35 * vol); } catch(e){}
   depois(tIn*1000 + flutua, ()=>el.classList.add('cai'));
   depois(tIn*1000 + flutua + queda, ()=>{
-    try { if (vol) ecSomImpacto(.6 * vol); } catch(e){}
+    if (vol) tocarBum(.9 * Math.min(1, vol));   // "Muffled Distant Explosion" (CC0)
     const carta = el.querySelector('.ecCarta'); if (carta) carta.classList.add('assenta');
     el.querySelectorAll('.ecClarao,.ecOnda').forEach(x=>x.classList.add('vai'));
     for (let i=0;i<26;i++){ const pz = document.createElement('div'); pz.className = 'ecPoeira'; const g = Math.random()*Math.PI*2, rr = 60 + Math.random()*200;
