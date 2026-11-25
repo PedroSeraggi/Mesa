@@ -14,12 +14,14 @@ import java.util.concurrent.Executors;
  * Lista de amigos da Mesa. Roda no servidor do grupo (Zera), ao lado do servidor do XMage.
  *
  * Cada Mesa tem um id secreto (gerado nela) e um código curto público (6 letras, derivado do id),
- * que é o que se passa para os amigos. Todo pedido precisa da senha do grupo (cabeçalho X-Senha).
+ * que é o que se passa para os amigos. Só quem está no Tailscale do grupo alcança este serviço.
+ * Se a variável SENHA existir, todo pedido também precisa dela (cabeçalho X-Senha).
  *
  *   POST /ping  {id, nome, avatar, status, sala}  -> amigos, pedidos, convites, quem mais está online
  *   POST /acao  {id, acao: pedir|aceitar|recusar|remover|convidar|descartar, codigo|nome, sala, convite}
+ *   POST /perfil {id, codigo} -> perfil público de alguém (foto, banner, frase, estatísticas, decks)
  *
- * Variáveis: SENHA (obrigatória), PORTA (padrão 17190), DADOS (padrão ./dados.json).
+ * Variáveis: SENHA (opcional), PORTA (padrão 17190), DADOS (padrão ./dados.json).
  */
 public class Amigos {
     static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -28,7 +30,7 @@ public class Amigos {
     static Path DADOS;
 
     // ---- dados (tudo em memória; gravado no arquivo quando muda) ----
-    static class Usuario { String id, codigo, nome = "?", avatar = "", status = ""; JsonObject sala; long visto; }
+    static class Usuario { String id, codigo, nome = "?", avatar = "", status = ""; JsonObject sala, perfil; long visto; }
     static class Convite { String id, de, para; JsonObject sala; long quando; }
     static class Banco {
         Map<String, Usuario> porId = new LinkedHashMap<>();
@@ -40,8 +42,7 @@ public class Amigos {
     static volatile boolean sujo = false;
 
     public static void main(String[] a) throws Exception {
-        SENHA = System.getenv("SENHA");
-        if (SENHA == null || SENHA.trim().isEmpty()) { System.err.println("Defina a variável SENHA."); System.exit(1); }
+        SENHA = Optional.ofNullable(System.getenv("SENHA")).orElse("").trim();
         int porta = Integer.parseInt(Optional.ofNullable(System.getenv("PORTA")).orElse("17190"));
         DADOS = Paths.get(Optional.ofNullable(System.getenv("DADOS")).orElse("dados.json"));
         if (Files.exists(DADOS)) b = GSON.fromJson(new String(Files.readAllBytes(DADOS), StandardCharsets.UTF_8), Banco.class);
@@ -49,6 +50,7 @@ public class Amigos {
         HttpServer srv = HttpServer.create(new InetSocketAddress(porta), 50);
         srv.createContext("/ping", ex -> tratar(ex, Amigos::ping));
         srv.createContext("/acao", ex -> tratar(ex, Amigos::acao));
+        srv.createContext("/perfil", ex -> tratar(ex, Amigos::perfil));
         srv.createContext("/saude", ex -> responder(ex, 200, "{\"ok\":true}"));
         srv.setExecutor(Executors.newFixedThreadPool(8));
         srv.start();
@@ -62,7 +64,7 @@ public class Amigos {
 
     static void tratar(HttpExchange ex, Rota r) throws IOException {
         try {
-            if (!SENHA.equals(ex.getRequestHeaders().getFirst("X-Senha"))) { responder(ex, 401, "{\"erro\":\"Senha do grupo errada.\"}"); return; }
+            if (!SENHA.isEmpty() && !SENHA.equals(ex.getRequestHeaders().getFirst("X-Senha"))) { responder(ex, 401, "{\"erro\":\"Senha do grupo errada.\"}"); return; }
             if (!"POST".equals(ex.getRequestMethod())) { responder(ex, 405, "{\"erro\":\"use POST\"}"); return; }
             JsonObject c = JsonParser.parseString(new String(ler(ex.getRequestBody()), StandardCharsets.UTF_8)).getAsJsonObject();
             Object res;
@@ -84,9 +86,22 @@ public class Amigos {
         if (av.isEmpty() || av.startsWith("data:image/")) u.avatar = av;
         u.status = texto(c, "status", 80, "");
         u.sala = c.has("sala") && c.get("sala").isJsonObject() ? c.getAsJsonObject("sala") : null;
+        if (c.has("perfil") && c.get("perfil").isJsonObject()) u.perfil = c.getAsJsonObject("perfil");   // só vem quando muda
         u.visto = System.currentTimeMillis();
         sujo = true;
         return foto(u);
+    }
+
+    static Object perfil(JsonObject c) {
+        Usuario eu = usuario(c);
+        Usuario o = porCodigo(texto(c, "codigo", 10, ""));
+        if (o == null) throw new IllegalArgumentException("Não achei esse jogador.");
+        Map<String, Object> r = resumo(o);
+        boolean on = System.currentTimeMillis() - o.visto < ONLINE_MS;
+        r.put("online", on); r.put("visto", o.visto); r.put("amigo", b.amizades.contains(par(eu, o)));
+        if (on) r.put("status", o.status);
+        r.put("perfil", o.perfil);
+        return r;
     }
 
     static Object acao(JsonObject c) {

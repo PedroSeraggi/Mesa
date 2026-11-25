@@ -1014,12 +1014,11 @@ public class Ponte implements MageClient {
     }
     JsonObject postAmigos(String rota, JsonObject corpo) throws IOException {
         String senha = senhaGrupo();
-        if (senha.isEmpty()) throw new IllegalStateException("Coloque a senha do grupo.");
         HttpURLConnection c = (HttpURLConnection) new URL("http://" + enderecoZera() + ":" + PORTA_AMIGOS + "/" + rota).openConnection();
         c.setRequestMethod("POST"); c.setDoOutput(true);
         c.setConnectTimeout(4000); c.setReadTimeout(8000);
         c.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-        c.setRequestProperty("X-Senha", senha);
+        if (!senha.isEmpty()) c.setRequestProperty("X-Senha", senha);
         try (OutputStream o = c.getOutputStream()) { o.write(GSON.toJson(corpo).getBytes(StandardCharsets.UTF_8)); }
         int cod = c.getResponseCode();
         InputStream in = cod >= 400 ? c.getErrorStream() : c.getInputStream();
@@ -1039,15 +1038,65 @@ public class Ponte implements MageClient {
         Map<String, Object> sl = salaParaAmigos(); if (sl != null) b.add("sala", GSON.toJsonTree(sl));
         return b;
     }
+    String perfilEnviado = null; long perfilEnviadoEm = 0;
+    /** O que os amigos veem no perfil: foto, banner, frase, estatísticas, decks mais jogados e últimas partidas. */
+    Map<String, Object> perfilPublico() {
+        JsonObject p;
+        synchronized (travaPerfil) { p = perfil().deepCopy(); }
+        Map<String, Object> r = new LinkedHashMap<>();
+        for (String k : new String[]{"nome", "cor", "banner", "frase"}) if (p.has(k) && !p.get(k).isJsonNull()) r.put(k, p.get(k).getAsString());
+        if (p.has("avatar")) r.put("avatar", p.get("avatar").getAsString());
+        List<Map<String, Object>> partidas = new ArrayList<>();
+        Map<String, int[]> porDeck = new LinkedHashMap<>();
+        int vit = 0, total = 0;
+        if (p.has("partidas")) for (com.google.gson.JsonElement e : p.getAsJsonArray("partidas")) {
+            JsonObject x = e.getAsJsonObject();
+            boolean v = x.has("venceu") && x.get("venceu").getAsBoolean();
+            String dk = x.has("deck") ? x.get("deck").getAsString() : "?";
+            total++; if (v) vit++;
+            int[] c = porDeck.computeIfAbsent(dk, k -> new int[2]); c[0]++; if (v) c[1]++;
+            partidas.add(GSON.fromJson(x, Map.class));
+        }
+        r.put("partidas", total); r.put("vitorias", vit);
+        List<Map<String, Object>> decks = new ArrayList<>();
+        porDeck.entrySet().stream().sorted((a, b2) -> b2.getValue()[0] != a.getValue()[0] ? b2.getValue()[0] - a.getValue()[0] : b2.getValue()[1] - a.getValue()[1]).limit(6).forEach(en -> {
+            Map<String, Object> d = new LinkedHashMap<>();
+            d.put("nome", en.getKey()); d.put("jogos", en.getValue()[0]); d.put("vitorias", en.getValue()[1]);
+            try {   // comandante do deck (para a arte)
+                Path arq = DECKS.resolve(en.getKey() + ".dck");
+                if (!Files.exists(arq)) arq = DECKS.resolve(en.getKey() + ".txt");
+                if (Files.exists(arq)) {
+                    List<Map<String, Object>> cmds = new ArrayList<>();
+                    for (Object[] x : lerCartas(arq)) if ((Boolean) x[4]) { Map<String, Object> c = new LinkedHashMap<>(); c.put("nome", x[1]); c.put("set", x[2]); c.put("num", x[3]); cmds.add(c); }
+                    d.put("cmds", cmds);
+                }
+            } catch (Exception ignored) { }
+            decks.add(d);
+        });
+        r.put("decks", decks);
+        Collections.reverse(partidas);
+        r.put("ultimas", partidas.size() > 10 ? partidas.subList(0, 10) : partidas);
+        return r;
+    }
     void pingAmigos() {
         synchronized (travaAmigos) {
-            try { amigosFoto = GSON.fromJson(postAmigos("ping", corpoAmigos()), Map.class); amigosErro = null; }
-            catch (Exception e) { amigosErro = e.getMessage() == null ? "Sem conexão com a lista de amigos." : e.getMessage(); }
+            JsonObject corpo = corpoAmigos();
+            String pf = null;
+            try {
+                pf = GSON.toJson(perfilPublico());
+                if (!pf.equals(perfilEnviado) || System.currentTimeMillis() - perfilEnviadoEm > 300_000) corpo.add("perfil", JsonParser.parseString(pf));
+                else pf = null;
+            } catch (Exception ignored) { pf = null; }
+            try {
+                amigosFoto = GSON.fromJson(postAmigos("ping", corpo), Map.class); amigosErro = null;
+                if (pf != null) { perfilEnviado = pf; perfilEnviadoEm = System.currentTimeMillis(); }
+            }
+            catch (Exception e) { amigosErro = (e instanceof IOException) ? "Sem conexão com o servidor do grupo. O Tailscale está ligado?" : (e.getMessage() == null ? "Sem conexão com a lista de amigos." : e.getMessage()); }
         }
     }
     void lacoAmigos() {
         while (true) {
-            try { if (!senhaGrupo().isEmpty()) pingAmigos(); } catch (Throwable ignored) { }
+            try { pingAmigos(); } catch (Throwable ignored) { }
             try { Thread.sleep(10_000); } catch (InterruptedException e) { return; }
         }
     }
@@ -1056,6 +1105,12 @@ public class Ponte implements MageClient {
             if ("POST".equals(ex.getRequestMethod())) {
                 JsonObject b = corpo(ex);
                 String acao = b.get("acao").getAsString();
+                if (acao.equals("perfil")) {
+                    JsonObject c = new JsonObject();
+                    c.addProperty("id", idMesa()); c.add("codigo", b.get("codigo"));
+                    json(ex, 200, GSON.fromJson(postAmigos("perfil", c), Map.class));
+                    return;
+                }
                 if (acao.equals("senha")) {
                     synchronized (this) {
                         config().addProperty("senhaGrupo", b.get("senha").getAsString().trim());
@@ -1075,7 +1130,7 @@ public class Ponte implements MageClient {
                 }
             }
             Map<String, Object> r = new LinkedHashMap<>();
-            r.put("configurado", !senhaGrupo().isEmpty());
+            r.put("configurado", true);
             r.put("erro", amigosErro);
             r.put("foto", amigosFoto);
             r.put("possoConvidar", salaParaAmigos() != null);
