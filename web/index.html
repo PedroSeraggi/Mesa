@@ -415,6 +415,13 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .chRankLin .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chRankLin .rd{font-size:11.5px;color:#d9c2a8;white-space:nowrap}
 .chRankLin.eu .nm{color:#ffe08a}
 .chRankMais,.chRankDica{font-size:11px;color:#bfa88f}
+.chLinha{justify-content:center}.chLinha button{min-width:60%;padding:9px 18px!important;font-size:15px}
+.escDeckCab{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.escDeckLista{overflow:auto;max-height:62vh;display:flex;flex-direction:column;gap:10px;padding:2px}
+.edEscolha{cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s}
+.edEscolha:hover{transform:translateY(-2px);border-color:var(--borda2)}
+.edEscolha.sel{border-color:var(--ouro)!important;box-shadow:0 0 0 2px var(--ouro),0 0 18px #E4C87466}
+.escDeckBts{justify-content:flex-end}
 .chErro{font-size:12.5px;color:#e8a28f}
 .emblemaTile{position:relative;width:calc(var(--carta-w,92px)*1.35);aspect-ratio:4/3;border-radius:9px;overflow:hidden;background:#2a1b0e center/cover no-repeat;border:1px solid #c9a24a;box-shadow:0 0 14px #c9a24a44,0 4px 12px #000a;display:flex;flex-direction:column;justify-content:flex-end;padding:6px 8px;box-sizing:border-box;cursor:default}
 .emblemaTile::before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#0c0805ee 0%,#0c080566 45%,transparent 75%)}
@@ -3344,14 +3351,35 @@ function desenharChefe(){
     <div class="chNome">${esc(cmd.nome || C.nome)}</div>
     <div class="chSub">${esc(C.nome)} · 1 contra 1</div>
     ${C.euVenci ? '<div class="chVenci">Você já derrotou o chefe deste ciclo! Bônus de +250 XP recebido.</div>' : '<div class="chBonus">Primeira vitória: <b>+250 XP</b></div>'}
-    <div class="chLinha"><select id="chDeck">${opcoesDeck(d=>`<option value="${esc(d.arquivo)}" ${d.arquivo===salvo?'selected':''}>${esc(nomeDeckCurto(d))}</option>`)}</select>
-      <button class="pri" id="chEnfrentar">${C.euVenci ? 'Enfrentar de novo' : 'Enfrentar'}</button></div>
+    <div class="chLinha"><button class="pri" id="chEnfrentar">${C.euVenci ? 'Enfrentar de novo' : 'Enfrentar'}</button></div>
     ${(C.ranking||[]).length ? `<div class="chRank"><div class="chRankTit">Ranking de hoje</div>${C.ranking.slice(0,3).map((a,i)=>`<div class="chRankLin ${a.eu?'eu':''}"><b>${i+1}º</b><span class="chDerAv">${avAmigo(a)}</span><span class="nm">${esc(a.nome)}</span><span class="rd">rodada ${Math.ceil((a.turnos||0)/2)} · ${a.vida} de vida</span></div>`).join('')}
       ${C.ranking.length > 3 ? `<div class="chRankMais">e mais ${C.ranking.length-3} que venceram</div>` : ''}<div class="chRankDica">Às 20h o 1º lugar ganha +100 XP</div></div>`
       : '<div class="chDer"><span>Ninguém derrotou ainda. O 1º lugar às 20h ganha +100 XP.</span></div>'}
   </div>`;
-  $('#chEnfrentar').onclick = async ()=>{
-    const deck = $('#chDeck').value; if (!deck){ avisoLocal('Escolha um deck.'); return; }
+  $('#chEnfrentar').onclick = ()=>escolherDeckChefe(C, salvo);
+  clearInterval(chefeTimer);
+  chefeTimer = setInterval(()=>{ const t = $('#chTempo'); if (!t || !chefeInfo || !chefeInfo.fim){ clearInterval(chefeTimer); return; }
+    if (Date.now() >= chefeInfo.fim){ clearInterval(chefeTimer); carregarChefe(true); return; }
+    t.textContent = `troca em ${tempoAte(chefeInfo.fim)}`; }, 1000);
+}
+// escolher o deck para enfrentar o chefe: cartões com a arte do comandante, igual à tela Decks
+async function escolherDeckChefe(C, salvo){
+  if (!(decks||[]).length) try { decks = await (await fetch('/api/decks')).json(); } catch(e){}
+  let escolhido = (decks||[]).some(d=>d.arquivo===salvo) ? salvo : null;
+  const cartao = d=>{ const cmd = (d.comandantes||[])[0];
+    return `<div class="deckCard edEscolha ${d.arquivo===escolhido?'sel':''}" data-arq="${esc(d.arquivo)}"><div class="arteDeck" ${cmd?`style="background-image:url('${imgCarta(cmd,'art')}')"`:''}></div><div class="infoDeck">
+      <b>${esc(nomeDeckCurto(d))}</b><small>${cmd ? esc((d.comandantes||[]).map(c=>c.nome).join(' + ')) : 'sem comandante'}</small></div></div>`; };
+  const meus = (decks||[]).filter(d=>!d.chefe), chefes = (decks||[]).filter(d=>d.chefe);
+  const cx = abrirModal(`<div class="escDeckCab"><h3 class="subt" style="margin:0">Escolha seu deck contra ${esc((C.comandante||{}).nome || C.nome)}</h3><button class="peq" id="escFechar">✕</button></div>
+    <div class="escDeckLista"><div class="listaDecks">${meus.map(cartao).join('')}</div>
+    ${chefes.length ? `<div class="secChefesTit" style="cursor:default">Decks de chefe</div><div class="listaDecks">${chefes.map(cartao).join('')}</div>` : ''}</div>
+    <div class="linhaBts escDeckBts"><button id="escCancelar">Cancelar</button><button class="pri" id="escConfirmar" ${escolhido?'':'disabled'}>Confirmar</button></div>`);
+  cx.querySelectorAll('.edEscolha').forEach(el=>el.onclick=()=>{ escolhido = el.dataset.arq; cx.querySelectorAll('.edEscolha').forEach(x=>x.classList.toggle('sel', x===el)); $('#escConfirmar').disabled = false; });
+  cx.querySelectorAll('.edEscolha').forEach(el=>el.ondblclick=()=>{ escolhido = el.dataset.arq; $('#escConfirmar').click(); });
+  $('#escFechar').onclick = $('#escCancelar').onclick = ()=>fecharModal(true);
+  $('#escConfirmar').onclick = async ()=>{
+    const deck = escolhido; if (!deck) return;
+    fecharModal(true);
     localSet('meuDeck', deck);
     $('#chEnfrentar').disabled = true; $('#chEnfrentar').textContent = 'Preparando o chefe...';
     const meu = ((decks||[]).find(d=>d.arquivo===deck)||{}).comandantes || [];
@@ -3359,10 +3387,6 @@ function desenharChefe(){
     const r = await post('/api/chefe', {deck});
     if (r.erro){ fim(r.erro); avisoLocal(r.erro); desenharChefe(); }
   };
-  clearInterval(chefeTimer);
-  chefeTimer = setInterval(()=>{ const t = $('#chTempo'); if (!t || !chefeInfo || !chefeInfo.fim){ clearInterval(chefeTimer); return; }
-    if (Date.now() >= chefeInfo.fim){ clearInterval(chefeTimer); carregarChefe(true); return; }
-    t.textContent = `troca em ${tempoAte(chefeInfo.fim)}`; }, 1000);
 }
 $('#mnJogar').addEventListener('click', async ()=>{ if (!decks.length) try { decks = await (await fetch('/api/decks')).json(); } catch(e){} carregarChefe(); });
 
