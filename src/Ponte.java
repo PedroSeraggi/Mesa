@@ -121,7 +121,7 @@ public class Ponte implements MageClient {
         srv.createContext("/api/prefs", ex -> {   // configurações da tela (cursor, música, volume...) num arquivo: não somem se o navegador limpar os dados
             Path f = MESA.resolve("prefs.json");
             try {
-                synchronized (this) {
+                synchronized (travaPrefs) {
                     JsonObject o = Files.exists(f) ? JsonParser.parseString(new String(Files.readAllBytes(f), StandardCharsets.UTF_8)).getAsJsonObject() : new JsonObject();
                     if ("POST".equals(ex.getRequestMethod())) {
                         JsonObject b = corpo(ex);
@@ -1179,7 +1179,12 @@ public class Ponte implements MageClient {
         return r;
     }
     /** automatico=true: a conexão caiu com a Mesa aberta (tenta por ~3 min); false: a pessoa clicou em "Voltar". */
-    synchronized void reconectar(boolean automatico) {
+    final Object travaReconexao = new Object(), travaPrefs = new Object();
+    /** Não segura a trava geral (this): enquanto tenta voltar, o resto da Mesa (tela, configurações) continua respondendo. */
+    void reconectar(boolean automatico) {
+        synchronized (travaReconexao) { reconectarDeVerdade(automatico); }
+    }
+    void reconectarDeVerdade(boolean automatico) {
         JsonObject o = lerPartida();
         if (o == null || reconectando || (gameId != null && "jogo".equals(fase) && jogo != null && !automatico)) return;
         reconectando = true;
