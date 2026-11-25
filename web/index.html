@@ -1024,8 +1024,20 @@ let respondido = false;
 let menuPassarAberto = false;
 let avisosVistos = new Set();
 
-function localGet(k){ try{return localStorage.getItem(k)}catch(e){return null} }
-function localSet(k,v){ try{localStorage.setItem(k,v)}catch(e){} }
+// Configurações: ficam num arquivo da Mesa (prefs.json, pela ponte) e numa cópia no navegador.
+// O arquivo vale mais: se o navegador apagar os dados (limpeza, outro navegador), nada se perde.
+const PREFS_SO_NAVEGADOR = new Set(['tiposCartas']);   // caches grandes: só no navegador
+const PREFS = (()=>{ try { const x = new XMLHttpRequest(); x.open('GET','/api/prefs',false); x.send();
+  if (x.status === 200){ const o = JSON.parse(x.responseText)||{}; for (const k in o){ try{ localStorage.setItem(k, o[k]); }catch(e){} } return o; } } catch(e){} return null; })();
+// primeira vez com o arquivo: leva o que já estava no navegador para ele
+if (PREFS && !Object.keys(PREFS).length){ try { for (let i=0;i<localStorage.length;i++){ const k = localStorage.key(i); if (!PREFS_SO_NAVEGADOR.has(k)) fetch('/api/prefs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k, v:localStorage.getItem(k)})}).catch(()=>{}); } } catch(e){} }
+function localGet(k){ if (PREFS && k in PREFS) return PREFS[k]; try{return localStorage.getItem(k)}catch(e){return null} }
+function localSet(k,v){
+  try{localStorage.setItem(k,v)}catch(e){}
+  if (PREFS_SO_NAVEGADOR.has(k)) return;
+  if (PREFS) PREFS[k] = String(v);
+  fetch('/api/prefs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k, v:String(v)})}).catch(()=>{});
+}
 function esc(s){ return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 // tira as tags HTML de um texto. Antes criava um documento inteiro a cada chamada (milhares por atualização
 // do histórico = tela travando); agora usa um único elemento e lembra dos textos já limpos.
@@ -1207,7 +1219,7 @@ function responder(t, v){
 }
 function conectarEventos(){
   const es = new EventSource('/api/eventos');
-  es.onmessage = ev => { E = JSON.parse(ev.data); desenhar(); };
+  es.onmessage = ev => { E = JSON.parse(ev.data); aplicarArtes(); desenhar(); };
   es.onerror = () => { es.close(); setTimeout(conectarEventos, 1500); };
 }
 
@@ -2597,10 +2609,22 @@ async function escolherArteToken(arq, cartas, t, escolhas){
   const pd = $('#tkPadrao'); if (pd) pd.onclick = ()=>{ const n = Object.assign({}, escolhas); delete n[t.name]; salvar(n); };
 }
 // na partida: ficha de um jogador usa a arte que ele escolheu para o deck dele
+// troca, em todas as zonas, a imagem pela arte que o dono escolheu (cartas que o XMage não tem na edição pedida e fichas)
+function aplicarArtes(){
+  const j = E && E.jogo; if (!j || !(E.cartoes||[]).some(x=>x.artes || x.tokens)) return;
+  for (const p of j.jogadores||[]){
+    for (const z of ['campo','cemiterio','exilio','comando']) if (Array.isArray(p[z])) p[z] = p[z].map(c=>arteToken(p, c));
+    if (p.topo) p.topo = arteToken(p, p.topo);
+    if (p.eu && Array.isArray(j.mao)) j.mao = j.mao.map(c=>arteToken(p, c));
+  }
+}
+// e carta cuja edição escolhida o XMage não tem (ele troca por outra): mostra a escolhida
 function arteToken(p, c){
-  if (!c || !c.ficha) return c;
+  if (!c || !p) return c;
   const cart = ((E && E.cartoes) || []).find(x=>x.jogador===p.nome);
-  const e = cart && cart.tokens && cart.tokens[c.nome];
+  if (!cart) return c;
+  const nm = String(c.nome||'').split(' // ')[0];
+  const e = c.ficha ? (cart.tokens && cart.tokens[c.nome]) : (cart.artes && cart.artes[nm]);
   return e ? Object.assign({}, c, {set: e.set, num: e.num}) : c;
 }
 

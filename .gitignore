@@ -2,6 +2,7 @@
 .env
 perfil*.json
 config*.json
+prefs*.json
 paradas.json
 historico-decks.json
 tokens-decks.json

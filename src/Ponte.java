@@ -116,6 +116,21 @@ public class Ponte implements MageClient {
             json(ex, 200, Collections.singletonMap("versao", v));
         });
         srv.createContext("/api/atualizar", this::rotaAtualizar);
+        srv.createContext("/api/prefs", ex -> {   // configurações da tela (cursor, música, volume...) num arquivo: não somem se o navegador limpar os dados
+            Path f = MESA.resolve("prefs.json");
+            try {
+                synchronized (this) {
+                    JsonObject o = Files.exists(f) ? JsonParser.parseString(new String(Files.readAllBytes(f), StandardCharsets.UTF_8)).getAsJsonObject() : new JsonObject();
+                    if ("POST".equals(ex.getRequestMethod())) {
+                        JsonObject b = corpo(ex);
+                        String k = b.get("k").getAsString();
+                        if (b.has("v") && !b.get("v").isJsonNull()) o.addProperty(k, b.get("v").getAsString()); else o.remove(k);
+                        Files.write(f, GSON.toJson(o).getBytes(StandardCharsets.UTF_8));
+                    }
+                    json(ex, 200, o);
+                }
+            } catch (Exception e) { json(ex, 200, new JsonObject()); }
+        });
         srv.createContext("/api/reconectar", ex -> {   // voltar para a partida em andamento (caiu, fechou ou travou)
             try {
                 if ("POST".equals(ex.getRequestMethod())) {
@@ -515,6 +530,12 @@ public class Ponte implements MageClient {
             String set = c.has("set") && !c.get("set").isJsonNull() ? c.get("set").getAsString().toUpperCase() : "";
             String num = c.has("num") && !c.get("num").isJsonNull() ? c.get("num").getAsString() : "";
             boolean cmd = c.has("comandante") && c.get("comandante").getAsBoolean();
+            if (set.isEmpty() || num.isEmpty()) {
+                try {
+                    List<mage.cards.repository.CardInfo> ci = mage.cards.repository.CardRepository.instance.findCards(n);
+                    if (!ci.isEmpty()) { set = ci.get(0).getSetCode(); num = ci.get(0).getCardNumber(); }
+                } catch (Exception ignored) { }
+            }
             if (set.isEmpty() || num.isEmpty()) semEdicao = true;
             sb.append(cmd ? "SB: " : "").append(q).append(set.isEmpty() || num.isEmpty() ? " [:]" : " [" + set + ":" + num + "]").append(' ').append(n).append('\n');
             total += q;
@@ -1234,6 +1255,18 @@ public class Ponte implements MageClient {
             }
         } catch (Exception ignored) { }
         c.put("cmds", cmd);
+        try {
+            Map<String, Object> artes = new LinkedHashMap<>();
+            for (Object[] x : lerCartas(DECKS.resolve(deckArq))) {
+                String st = (String) x[2], nm = (String) x[3];
+                if (st.isEmpty() || nm.isEmpty()) continue;
+                if (mage.cards.repository.CardRepository.instance.findCard(st, nm) == null) {
+                    Map<String, Object> a = new LinkedHashMap<>(); a.put("set", st); a.put("num", nm);
+                    artes.put((String) x[1], a);
+                }
+            }
+            if (!artes.isEmpty()) c.put("artes", artes);
+        } catch (Exception ignored) { }
         try {   // tokens com arte escolhida para este deck (os outros jogadores veem a mesma arte)
             Path f = MESA.resolve("tokens-decks.json");
             if (deckArq != null && Files.exists(f)) {
@@ -2406,6 +2439,13 @@ public class Ponte implements MageClient {
                 }
                 if (b == null && !ficha && !nome.isEmpty()) {
                     b = baixar("https://api.scryfall.com/cards/named?exact=" + enc(nome) + "&format=image&version=" + ver);
+                    if (b != null && !set.isEmpty() && !num.isEmpty()) {   // reserva: mostra agora, tenta a edição certa da próxima vez
+                        ex.getResponseHeaders().set("Content-Type", "image/jpeg");
+                        ex.getResponseHeaders().set("Cache-Control", "no-store");
+                        ex.sendResponseHeaders(200, b.length);
+                        try (OutputStream o = ex.getResponseBody()) { o.write(b); }
+                        return;
+                    }
                 }
                 if (b == null && !nome.isEmpty()) {
                     byte[] js = baixar("https://api.scryfall.com/cards/search?unique=art&q=" + enc("!\"" + nome + "\" t:token"));
