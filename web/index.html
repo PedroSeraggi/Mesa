@@ -2620,8 +2620,9 @@ async function checarAtualizacao(){
     const box = $('#avisoVersao');
     box.innerHTML = `<b>Nova versão disponível: ${esc(rel.tag_name.replace(/^v/i,''))}</b>
       ${rel.body ? `<div class="notasVersao">${mdSimples(rel.body.slice(0,600))}</div>` : ''}
-      <div class="linhaBts"><button class="pri" id="btAtualizar">Atualizar agora</button><span class="dicaMenu">${Math.round(exe.size/1048576)} MB · perfil, decks e chave continuam</span></div>`;
+      <div class="linhaBts"><button class="pri" id="btAtualizar">Atualizar agora</button><button id="btDepoisAtt">Agora não</button><span class="dicaMenu">${Math.round(exe.size/1048576)} MB · perfil, decks e chave continuam</span></div>`;
     box.classList.remove('oculto');
+    $('#btDepoisAtt').onclick = ()=>box.classList.add('oculto');
     $('#btAtualizar').onclick = async ()=>{
       const b = $('#btAtualizar'); b.disabled = true; b.textContent = 'Baixando... (a Mesa fecha e o instalador abre)';
       const res = await post('/api/atualizar', {url: exe.browser_download_url});
