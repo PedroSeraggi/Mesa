@@ -28,7 +28,13 @@ Lista combinada para não esquecer. Nada disto está feito ainda.
 
 6. **Sequência de chefes:** vencer o chefe vários dias seguidos dá bônus (ex.: 3 dias seguidos, +100 XP) e um título no perfil.
 
-7. **Chefão de sábado:** um chefe especial uma vez por semana, com deck mais forte ou 2 contra 1 (chefe + lacaio), valendo mais XP. Ainda vamos pensar nos detalhes.
+7. **Chefão de sábado (jogadores contra chefes):**
+   - Começar com **2 contra 2** (2 jogadores contra os 2 chefes mais difíceis da semana); depois, **3 contra 3**.
+   - O XMage não tem times. O truque: **lugares alternados** (jogador, chefe, jogador, chefe) + **alcance de influência 1**. Cada um só afeta os vizinhos, então chefe não ataca chefe e jogador não machuca jogador (nem com "cada oponente...").
+   - A Mesa senta os chefes nos lugares certos conforme os amigos entram.
+   - Quando todos os chefes morrem, a Mesa declara **"Vitória do grupo!"** e encerra a partida (o XMage sozinho só termina com 1 sobrevivente).
+   - Todos ganham o mesmo XP e a **medalha dourada**. O **MVP** (quem mais causou dano aos chefes) ganha **+500 XP** e a **medalha mística roxa**, com brilho animado.
+   - 1 contra 2 ou 2 contra 3 não funcionam (os chefes ficariam vizinhos e se atacariam).
 
 ## Outras
 
