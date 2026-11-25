@@ -925,7 +925,8 @@ public class Ponte implements MageClient {
                 double mult = 1.0;
                 if (temBot) {
                     int nivel = ultimaCriacao != null && ultimaCriacao.get("nivel") instanceof Number ? ((Number) ultimaCriacao.get("nivel")).intValue() : 7;
-                    mult = nivel >= 8 ? 0.5 : nivel <= 4 ? 0.3 : 0.4;   // fácil 4 = 30%, normal 7 = 40%, difícil 8+ (e o chefe) = 50%
+                    mult = nivel >= 8 ? 0.5 : nivel <= 4 ? 0.3 : 0.4;   // fácil 4 = 30%, normal 7 = 40%, difícil 8 = 50%
+                    if (ultimaCriacao != null && "chefe".equals(ultimaCriacao.get("tipo"))) mult = 0.7;   // Chefe do dia: 70%
                 }
                 JsonObject p = new JsonObject();
                 p.addProperty("gameId", gid.toString());

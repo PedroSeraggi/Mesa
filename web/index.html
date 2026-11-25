@@ -3293,7 +3293,7 @@ function desenharXpFim(r){
     ${barraNivel(x.nivel)}
     ${(x.ganhos||[]).length ? `<table class="xpTab">${x.ganhos.map(g=>`<tr><td>${esc(g.motivo)}${g.bot && x.multiplicador < 1 ? ` <small class="xpPct">${Math.round(x.multiplicador*100)}%</small>` : ''}</td><td class="q">${g.qtd!=null?`${g.qtd}x`:''}</td><td class="v">+${g.xp} XP</td><td class="m">${g.max?'MAX':''}</td></tr>`).join('')}
       <tr class="tot"><td>Total</td><td></td><td class="v">+${x.total} XP</td><td></td></tr></table>
-      ${x.multiplicador && x.multiplicador < 1 ? `<div class="xpNota">Partida com bots: os itens com % valem ${Math.round(x.multiplicador*100)}% (fácil 30%, normal 40%, difícil 50%).</div>` : ''}`
+      ${x.multiplicador && x.multiplicador < 1 ? `<div class="xpNota">Partida com bots: os itens com % valem ${Math.round(x.multiplicador*100)}% (fácil 30%, normal 40%, difícil 50%, Chefe do dia 70%).</div>` : ''}`
       : '<div class="xpNota">Partida curta demais (menos de 3 turnos): sem XP.</div>'}
   </div>`;
 }
