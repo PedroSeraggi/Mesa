@@ -45,7 +45,6 @@ PARTE 2 - PRIMEIRA VEZ NA MESA
    a foto e o banner, se quiser. Clique em "Salvar perfil".
 
 2. Vá em DECKS:
-   - Já vêm alguns decks prontos para testar.
    - "Colar lista": cola uma lista de deck (do Moxfield, Archidekt...).
    - "Novo deck": monta do zero buscando as cartas.
    - "Oráculo monta": descreve uma ideia e ele monta um deck.
