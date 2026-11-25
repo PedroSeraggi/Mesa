@@ -338,6 +338,7 @@ public class Ponte implements MageClient {
             m.put("pedido", pedido);
             m.put("reconexao", reconexao);
             m.put("assistindo", assistindo);
+            m.put("modo2v2", modo2v2);
             if ("lobby".equals(fase)) m.put("partidaSalva", partidaSalvaInfo());
             m.put("cartoes", "jogo".equals(fase) || "fim".equals(fase) ? cartoesPartida : null);
             return m;
@@ -867,6 +868,7 @@ public class Ponte implements MageClient {
         status("Entrando como espectador...");
         mudou();
         assistindo = true; tableId = mesa; playerId = null;
+        try { modo2v2 = session.getTable(roomId, mesa).map(t -> t.getTableName() != null && t.getTableName().startsWith(PREFIXO_2V2)).orElse(false); } catch (Exception e) { modo2v2 = false; }
         if (!session.watchTable(roomId, mesa)) {
             assistindo = false; tableId = null;
             synchronized (trava) { fase = "lobby"; }
@@ -2856,14 +2858,16 @@ public class Ponte implements MageClient {
     static final String PREFIXO_2V2 = "2v2 · ";
     volatile boolean modo2v2 = false, vitoriaTime = false;
     volatile String botPendente2v2 = null; volatile int nivelBot2v2 = 7;
-    /** O XMage só termina com 1 sobrevivente: quando os 2 bots caem, a Mesa declara a vitória do time e sai da partida. */
+    /** Cada time carrega a vida em duas metades (uma por jogador): se qualquer um do time cair, o time inteiro perde
+     *  e a partida acaba. A Mesa declara o resultado e sai (o XMage sozinho só termina com 1 sobrevivente). */
     void verificarVitoriaTime(GameView g) {
-        int bots = 0, botsVivos = 0, humanosVivos = 0;
+        int bots = 0, botsMortos = 0, humanos = 0, humanosMortos = 0;
         for (PlayerView p : g.getPlayers()) {
-            boolean vivo = !p.hasLeft() && p.getLife() > 0;
-            if (ehBot(p.getName())) { bots++; if (vivo) botsVivos++; } else if (vivo) humanosVivos++;
+            boolean morto = p.hasLeft() || p.getLife() <= 0;
+            if (ehBot(p.getName())) { bots++; if (morto) botsMortos++; } else { humanos++; if (morto) humanosMortos++; }
         }
-        if (bots < 2 || botsVivos > 0 || humanosVivos == 0) return;
+        if (bots < 2 || humanos < 2 || (botsMortos == 0 && humanosMortos == 0)) return;
+        boolean venceu = humanosMortos == 0;   // morreram dos dois lados ao mesmo tempo: conta como derrota
         vitoriaTime = true;
         UUID gid = gameId;
         int turnos = 0;
@@ -2873,14 +2877,15 @@ public class Ponte implements MageClient {
             fase = "fim";
             prompt = null;
             resultado = new LinkedHashMap<>();
-            resultado.put("venceu", true);
+            resultado.put("venceu", venceu);
             resultado.put("time", true);
-            resultado.put("texto", "Vitória do time! Os dois bots caíram.");
-            if (stats != null) try { resultado.put("resumo", stats.resumo(jogo, "Vitória do time!")); } catch (Exception ignored) { }
+            String txt = venceu ? "Vitória do time! Um dos bots caiu e levou o outro junto." : "Derrota do time. Um de vocês caiu e levou o parceiro junto.";
+            resultado.put("texto", txt);
+            if (stats != null) try { resultado.put("resumo", stats.resumo(jogo, txt)); } catch (Exception ignored) { }
             resultado.put("revanche", ultimaCriacao != null);
         }
-        registrarPartida(true, turnos);
-        if (gid != null) abandonados.add(gid);   // o resto da partida (parada, só com os dois jogadores) é ignorado
+        registrarPartida(venceu, turnos);
+        if (gid != null) abandonados.add(gid);   // o resto da partida é ignorado
         new Thread(() -> { try { Thread.sleep(1500); if (session != null && gid != null) session.quitMatch(gid); } catch (Exception ignored) { } }).start();
     }
 

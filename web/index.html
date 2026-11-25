@@ -457,6 +457,22 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 #ddEntra.dd-sai .dd-palco{transition:transform .8s cubic-bezier(.6,0,.4,1),opacity .8s;transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) scale(.28);opacity:.0}
 #ddEntra.dd-sai .dd-texto{animation:none;opacity:0;transition:opacity .3s}
 
+/* 2v2: barras de vida do time (cada jogador carrega metade; se uma zera, o time perde) */
+#vidaTime{position:fixed;top:54px;left:50%;transform:translateX(-50%);z-index:40;display:flex;flex-direction:column;gap:6px;pointer-events:none;width:min(460px,60vw)}
+#vidaTime.oculto{display:none}
+.vtLinha{display:flex;align-items:center;gap:8px;background:#0c0805cc;border:1px solid #c9a24a55;border-radius:10px;padding:4px 10px;box-shadow:0 4px 14px #0009}
+.vtTit{font-family:var(--ff-titulo);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ouro);width:62px;flex:none}
+.vtLinha.bots .vtTit{color:#ff9a7a}
+.vtBarra{flex:1;display:flex;gap:3px}
+.vtMetade{flex:1;position:relative;height:16px;background:#2a1d12;border-radius:4px;overflow:hidden}
+.vtMetade i{position:absolute;top:0;bottom:0;transition:width .5s ease}
+.vtMetade.esq i{right:0;border-radius:4px 0 0 4px}.vtMetade.dir i{left:0;border-radius:0 4px 4px 0}
+.vtMetade.esq i{left:auto}
+.vtMetade b{position:absolute;inset:0;display:flex;align-items:center;padding:0 6px;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000;white-space:nowrap;overflow:hidden}
+.vtMetade.esq b{justify-content:flex-start}.vtMetade.dir b{justify-content:flex-end}
+.vtMetade.baixa i{animation:vtPisca 1s ease-in-out infinite}
+@keyframes vtPisca{50%{filter:brightness(1.6)}}
+.vtNum{font-family:var(--ff-titulo);font-size:15px;color:#fff;width:28px;text-align:center;flex:none}
 .ddLista{columns:2;column-gap:18px;max-height:60vh;overflow:auto;font-size:13px;line-height:1.5}
 .chDentro{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;padding:44px 16px 14px;width:100%;box-sizing:border-box}
 .chRotulo{position:absolute;top:12px;left:16px;right:16px}
@@ -3730,7 +3746,7 @@ function desenhar(){
   if (E.fase==='fim'){
     $('#fim').classList.remove('oculto');
     const r = E.resultado||{};
-    $('#fimTit').textContent = r.venceu===true ? 'Vitória!' : r.venceu===false ? 'Derrota' : 'Fim de jogo';
+    $('#fimTit').textContent = r.venceu===true ? (r.time ? 'Vitória do time!' : 'Vitória!') : r.venceu===false ? (r.time ? 'Derrota do time' : 'Derrota') : 'Fim de jogo';
     $('#fimTxt').textContent = (r.texto||'').split('\n').map(tr).join('\n');
     if (r.assistindo) $('#fimTit').textContent = 'Fim da partida';
     desenharResumo(r.resumo);
@@ -3742,6 +3758,30 @@ function desenhar(){
   else if (E.prompt && E.prompt.respondido) respondido = true;
   desenharTopo(); desenharMesa(); desenharMao(); desenharPrompt(); desenharLateral();
   desenharFaixaEspectador();
+  desenharVidaTime();
+}
+
+// 2v2: duas barras (seu time e os bots); cada metade é a vida de um jogador e cai do centro para fora
+const vidaInicial = {};
+function desenharVidaTime(){
+  let box = $('#vidaTime');
+  if (!box){ box = document.createElement('div'); box.id = 'vidaTime'; document.body.appendChild(box); }
+  const js = (E && E.jogo && E.jogo.jogadores) || [];
+  const on = !!(E && E.modo2v2 && E.fase === 'jogo' && js.length === 4);
+  box.classList.toggle('oculto', !on);
+  if (!on) return;
+  const ehBotJ = j => /^(IA|Bot) \d+ /.test(j.nome||'');
+  const humanos = js.filter(j=>!ehBotJ(j)).sort((a,b)=>(b.eu?1:0)-(a.eu?1:0)), bots = js.filter(ehBotJ).sort((a,b)=>a.nome.localeCompare(b.nome));
+  const metade = (j, lado, cor)=>{
+    if (!(j.id in vidaInicial)) vidaInicial[j.id] = Math.max(1, j.vida);
+    const pct = Math.max(0, Math.min(100, j.vida / vidaInicial[j.id] * 100));
+    const nome = j.eu ? 'Você' : ehBotJ(j) ? j.nome.replace(/^(Bot|IA) (\d+) · .*/, 'Bot $2') : j.nome;
+    return `<div class="vtMetade ${lado} ${pct <= 25 ? 'baixa' : ''}" title="${esc(j.nome)}: ${j.vida} de vida"><i style="width:${pct}%;background:${cor}"></i><b>${esc(nome)}</b></div>`;
+  };
+  const linha = (cls, tit, a, b, corA, corB)=>`<div class="vtLinha ${cls}"><span class="vtTit">${tit}</span><span class="vtNum">${Math.max(0,a.vida)}</span>
+    <div class="vtBarra">${metade(a,'esq',corA)}${metade(b,'dir',corB)}</div><span class="vtNum">${Math.max(0,b.vida)}</span></div>`;
+  box.innerHTML = (humanos.length === 2 ? linha('time', 'Seu time', humanos[0], humanos[1], 'linear-gradient(90deg,#7a1a14,#d8402e)', 'linear-gradient(90deg,#c9a46a,#8a6a3a)') : '')
+    + (bots.length === 2 ? linha('bots', 'Bots', bots[0], bots[1], 'linear-gradient(90deg,#3a2a4a,#7a5a9a)', 'linear-gradient(90deg,#9a7ab8,#4a3a5a)') : '');
 }
 
 let partidaSalvaIgnorada = false;
