@@ -146,6 +146,25 @@ public class Ponte implements MageClient {
                 json(ex, 200, Collections.singletonMap("erro", e instanceof IOException ? "Sem conexão com o servidor do grupo. O Tailscale está ligado?" : String.valueOf(e.getMessage())));
             }
         });
+        srv.createContext("/api/maoParceiro", ex -> {   // 2v2: manda a minha mão e traz a do parceiro (via Zera)
+            try {
+                UUID g = gameId;
+                if (!modo2v2 || assistindo || g == null) { json(ex, 200, Collections.singletonMap("parceiros", new ArrayList<>())); return; }
+                JsonObject c = new JsonObject(); c.addProperty("id", idMesa()); c.addProperty("jogo", g.toString());
+                com.google.gson.JsonArray cs = new com.google.gson.JsonArray();
+                Map<String, Object> j = jogo;
+                Object mao = j == null ? null : j.get("mao");
+                if (mao instanceof List) for (Object o : (List<?>) mao) if (o instanceof Map) {
+                    Map<?, ?> m = (Map<?, ?>) o; JsonObject x = new JsonObject();
+                    for (String k : new String[]{"nome", "set", "num"}) if (m.get(k) != null) x.addProperty(k, String.valueOf(m.get(k)));
+                    cs.add(x);
+                }
+                c.add("cartas", cs);
+                json(ex, 200, postAmigos("mao", c));
+            } catch (Exception e) {
+                json(ex, 200, Collections.singletonMap("erro", "sem conexão com o servidor do grupo"));
+            }
+        });
         srv.createContext("/api/prefs", ex -> {   // configurações da tela (cursor, música, volume...) num arquivo: não somem se o navegador limpar os dados
             Path f = MESA.resolve("prefs.json");
             try {
@@ -1057,8 +1076,11 @@ public class Ponte implements MageClient {
     static final String[] ENDERECOS_ZERA = {"100.109.159.116", "192.168.15.13"};
     volatile String zeraEscolhido = null; volatile long zeraQuando = 0;
     String enderecoZera() {
-        String dev = System.getProperty("mesa.zera");   // testes: aponta para outro servidor XMage
+        String dev = System.getProperty("mesa.zera");   // testes: aponta para outro servidor XMage (a lista de amigos continua no Zera)
         if (dev != null && !dev.isEmpty()) return dev;
+        return enderecoZeraReal();
+    }
+    String enderecoZeraReal() {
         if (zeraEscolhido != null && System.currentTimeMillis() - zeraQuando < 60_000) return zeraEscolhido;
         String achou = null;
         for (String ip : ENDERECOS_ZERA) {
@@ -1365,7 +1387,7 @@ public class Ponte implements MageClient {
     }
     JsonObject postAmigos(String rota, JsonObject corpo) throws IOException {
         String senha = senhaGrupo();
-        HttpURLConnection c = (HttpURLConnection) new URL("http://" + enderecoZera() + ":" + PORTA_AMIGOS + "/" + rota).openConnection();
+        HttpURLConnection c = (HttpURLConnection) new URL("http://" + enderecoZeraReal() + ":" + PORTA_AMIGOS + "/" + rota).openConnection();
         c.setRequestMethod("POST"); c.setDoOutput(true);
         c.setConnectTimeout(4000); c.setReadTimeout(8000);
         c.setRequestProperty("Content-Type", "application/json; charset=utf-8");

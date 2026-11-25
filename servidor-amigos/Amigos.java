@@ -67,6 +67,7 @@ public class Amigos {
         srv.createContext("/partida", ex -> tratar(ex, Amigos::partida));
         srv.createContext("/chefe", ex -> tratar(ex, Amigos::chefe));
         srv.createContext("/deckDia", ex -> tratar(ex, Amigos::deckDia));
+        srv.createContext("/mao", ex -> tratar(ex, Amigos::mao));
         srv.createContext("/decksChefe", ex -> tratar(ex, c -> {   // todos os decks de chefe que a pessoa já ganhou (a Mesa baixa os que faltam)
             Usuario u = usuario(c); List<Map<String, Object>> l = new ArrayList<>();
             for (Map.Entry<String, List<Map<String, Object>>> e : b.derrotaramChefe.entrySet()) {
@@ -462,6 +463,30 @@ public class Amigos {
         }
         r.put("ranking", rk);
         return r;
+    }
+
+    // ---------------- 2v2: cada jogador vê a mão do parceiro (só na memória; some sozinho) ----------------
+    static final Map<String, Map<String, Object[]>> maos = new HashMap<>();   // jogo -> código -> {nome, cartas, quando}
+    static Object mao(JsonObject c) {
+        Usuario u = usuario(c);
+        String jogo = texto(c, "jogo", 64, "");
+        if (jogo.isEmpty()) throw new IllegalArgumentException("sem jogo");
+        long agora = System.currentTimeMillis();
+        List<Map<String, Object>> outros = new ArrayList<>();
+        synchronized (maos) {
+            maos.values().forEach(m -> m.values().removeIf(x -> agora - (Long) x[2] > 120_000));
+            maos.values().removeIf(Map::isEmpty);
+            Map<String, Object[]> m = maos.computeIfAbsent(jogo, k -> new HashMap<>());
+            if (c.has("cartas") && c.get("cartas").isJsonArray() && c.getAsJsonArray("cartas").size() <= 40)
+                m.put(u.codigo, new Object[]{u.nome, c.getAsJsonArray("cartas"), agora});
+            for (Map.Entry<String, Object[]> e : m.entrySet()) {
+                if (e.getKey().equals(u.codigo)) continue;
+                Map<String, Object> x = new LinkedHashMap<>();
+                x.put("nome", e.getValue()[0]); x.put("cartas", e.getValue()[1]); x.put("quando", e.getValue()[2]);
+                outros.add(x);
+            }
+        }
+        Map<String, Object> r = new LinkedHashMap<>(); r.put("parceiros", outros); return r;
     }
 
     // ---------------- Deck do dia: um deck variado para jogar contra um bot e conhecer ----------------

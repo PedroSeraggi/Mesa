@@ -516,6 +516,17 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 #entSala.sai .titulo,#entSala.sai .vs,#entSala.sai .txt{transition:opacity .3s;opacity:0}
 #entSala .faisca{position:absolute;left:50%;width:6px;height:6px;border-radius:50%;background:#ffe08a;box-shadow:0 0 10px #ff9a3a;animation:esFaisca .9s ease-out forwards}
 @keyframes esFaisca{from{opacity:1;transform:translate(0,0)}to{opacity:0;transform:translate(var(--x),var(--y))}}
+/* 2v2: mão do parceiro */
+#maoParc{position:fixed;left:12px;bottom:calc(var(--mao-h,190px) + 10px);z-index:45;display:flex;flex-direction:column;align-items:flex-start;gap:6px;max-width:min(760px,70vw)}
+#maoParc.oculto{display:none}
+#maoParc .mpBtn{font-family:var(--ff-titulo);font-size:12px;letter-spacing:.04em;background:#1a120ce6;border:1px solid #e0a04099;color:#f3e2c0;border-radius:999px;padding:5px 12px;cursor:pointer;box-shadow:0 4px 12px #0009}
+#maoParc .mpBtn:hover{border-color:var(--ouro);filter:brightness(1.15)}
+#maoParc .mpBtn .seta{display:inline-block;transition:transform .15s;margin-right:4px}#maoParc.aberta .mpBtn .seta{transform:rotate(90deg)}
+#maoParc .mpCartas{display:none;gap:6px;padding:8px;background:#0c0805e6;border:1px solid #e0a04066;border-radius:10px;overflow-x:auto;max-width:100%;box-shadow:0 8px 24px #000b}
+#maoParc.aberta .mpCartas{display:flex}
+#maoParc .mpCartas img{width:86px;border-radius:5px;flex:none;cursor:zoom-in;transition:transform .12s}
+#maoParc .mpCartas img:hover{transform:translateY(-4px)}
+#maoParc .mpVazio{color:#bfa88f;font-size:12.5px;padding:4px 6px}
 /* 2v2: barras de vida do time (cada jogador carrega metade; se uma zera, o time perde) */
 #vidaTime{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:40;display:flex;flex-direction:column;gap:6px;pointer-events:none;width:min(460px,60vw)}
 #vidaTime.oculto{display:none}
@@ -3902,6 +3913,38 @@ function desenhar(){
   desenharTopo(); desenharMesa(); desenharMao(); desenharPrompt(); desenharLateral();
   desenharFaixaEspectador();
   desenharVidaTime();
+  controlarMaoParceiro();
+}
+
+// 2v2: mão do parceiro (busca a cada 2 s pelo Zera; só para ver)
+let maoParcInfo = null, maoParcTimer = null, maoParcAberta = false, maoParcAssin = '';
+try { maoParcAberta = localGet('maoParcAberta') === '1'; } catch(e){}
+function controlarMaoParceiro(){
+  const on = !!(E && E.modo2v2 && E.fase === 'jogo' && !E.assistindo);
+  if (on && !maoParcTimer){ buscarMaoParceiro(); maoParcTimer = setInterval(buscarMaoParceiro, 2000); }
+  if (!on && maoParcTimer){ clearInterval(maoParcTimer); maoParcTimer = null; maoParcInfo = null; }
+  desenharMaoParceiro();
+}
+async function buscarMaoParceiro(){
+  try { maoParcInfo = await (await fetch('/api/maoParceiro')).json(); } catch(e){ maoParcInfo = null; }
+  desenharMaoParceiro();
+}
+function desenharMaoParceiro(){
+  let box = $('#maoParc');
+  if (!box){ box = document.createElement('div'); box.id = 'maoParc'; document.body.appendChild(box); }
+  const p = maoParcInfo && (maoParcInfo.parceiros||[])[0];
+  const on = !!(E && E.modo2v2 && E.fase === 'jogo' && !E.assistindo && maoParcInfo);
+  box.classList.toggle('oculto', !on);
+  if (!on) return;
+  box.classList.toggle('aberta', maoParcAberta);
+  const nome = p ? p.nome : 'parceiro', cartas = p ? (p.cartas||[]) : [];
+  const assin = JSON.stringify([nome, cartas, maoParcAberta, !!p]);
+  if (assin === maoParcAssin) return;   // nada mudou: não redesenha
+  maoParcAssin = assin;
+  box.innerHTML = `<button class="mpBtn"><span class="seta">▸</span>Mão de ${esc(nome)}${p ? ` (${cartas.length})` : ''}</button>
+    <div class="mpCartas">${!p ? '<span class="mpVazio">Seu parceiro precisa estar na Mesa 1.3 para mostrar a mão.</span>' : cartas.length ? cartas.map(c=>`<img src="${imgCarta(c)}" alt="${esc(c.nome)}" data-img="${esc(imgCarta(c))}">`).join('') : '<span class="mpVazio">Sem cartas na mão.</span>'}</div>`;
+  box.querySelector('.mpBtn').onclick = ()=>{ maoParcAberta = !maoParcAberta; try { localSet('maoParcAberta', maoParcAberta ? '1' : '0'); } catch(e){} desenharMaoParceiro(); };
+  box.querySelectorAll('[data-img]').forEach(el=>{ el.onmouseenter = ev=>{ const h = $('#hover'); h.innerHTML = `<img src="${el.dataset.img}" style="width:250px;border-radius:12px">`; h.classList.remove('oculto'); posicionarHover(ev); }; el.onmouseleave = esconderHover; });
 }
 
 // 2v2: duas barras (seu time e os bots); cada metade é a vida de um jogador e cai do centro para fora
