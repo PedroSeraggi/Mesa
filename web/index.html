@@ -411,6 +411,7 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .emblemaTile{position:relative;width:calc(var(--carta-w,92px)*1.35);aspect-ratio:4/3;border-radius:9px;overflow:hidden;background:#2a1b0e center/cover no-repeat;border:1px solid #c9a24a;box-shadow:0 0 14px #c9a24a44,0 4px 12px #000a;display:flex;flex-direction:column;justify-content:flex-end;padding:6px 8px;box-sizing:border-box;cursor:default}
 .emblemaTile::before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#0c0805ee 0%,#0c080566 45%,transparent 75%)}
 .emblemaTile span,.emblemaTile b{position:relative}
+.embQtd{position:absolute;top:5px;right:5px;z-index:1;font-style:normal;font-family:var(--ff-titulo);font-size:12px;font-weight:700;color:#1a1008;background:linear-gradient(#ffe08a,#c9a24a);border-radius:999px;padding:1px 8px;box-shadow:0 1px 4px #000a}
 .emblemaTile span{font-family:var(--ff-titulo);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ouro)}
 .emblemaTile b{font-size:12px;color:#f3e6c8;line-height:1.15}
 .rmsg{max-width:88%;padding:8px 11px;border-radius:10px;line-height:1.4;font-size:14px;white-space:normal;word-wrap:break-word;user-select:text;-webkit-user-select:text}
@@ -3828,6 +3829,12 @@ function jogaveisOcultos(){
   }).join('');
 }
 const PROT_PT = {white:'branco', blue:'azul', black:'preto', red:'vermelho', green:'verde', everything:'tudo', creatures:'criaturas', 'each color':'todas as cores', 'all colors':'todas as cores', 'monocolored':'monocoloridos', 'multicolored':'multicoloridos', instants:'mágicas instantâneas', sorceries:'feitiços', artifacts:'artefatos', enchantments:'encantamentos', 'the chosen color':'a cor escolhida', 'the chosen player':'o jogador escolhido'};
+// emblemas iguais (mesmo nome e mesmo texto) viram um quadro só com ×N
+function emblemasAgrupados(l){
+  const m = new Map();
+  for (const e of l){ const k = (e.nome||'') + '|' + (e.regras||[]).join('|'); if (m.has(k)) m.get(k)[1]++; else m.set(k, [e, 1]); }
+  return [...m.values()];
+}
 function ehComandante(c){ return !c.emblema && !/emblem|emblema|^the ring$|monarch|initiative|dungeon|masmorra/i.test((c.tipo||'') + ' ' + (c.nome||'')); }
 function nomeChave(k, c){
   const base = CHAVES[k] ? CHAVES[k][1] : k;
@@ -3889,8 +3896,8 @@ function tabuleiro(p, estilo){
   const cmds = (p.comando||[]).filter(ehComandante);
   const embl = (p.comando||[]).filter(c=>!ehComandante(c) && c.emblema);
   const ladoCmd = (cmds.length || embl.length) ? `<div class="ladoCmd">${cmds.length?`<div class="rotCmdLado">Comandante</div>${cmds.map(c=>cartaHtml(c)).join('')}`:''}
-    ${embl.map(e=>{ cacheCartas.set(e.id, e); const nm = String(e.nome||'').replace(/^emblem\s*/i,'');
-      return `<div class="emblemaTile" data-cid="${e.id}" style="background-image:url('${imgCarta(e,'art')}')"><span>${/ring/i.test(e.nome||'')?'O Anel':'Emblema'}</span><b>${esc(nm)}</b></div>`; }).join('')}</div>` : '';
+    ${emblemasAgrupados(embl).map(([e, qtd])=>{ cacheCartas.set(e.id, e); const nm = String(e.nome||'').replace(/^emblem\s*/i,''); const anel = /^the ring$/i.test(e.nome||'');
+      return `<div class="emblemaTile" data-cid="${e.id}" style="background-image:url('${imgCarta(e,'art')}')">${qtd>1?`<em class="embQtd" title="${qtd} emblemas iguais: o efeito acontece ${qtd} vezes">×${qtd}</em>`:''}${anel && nivelAnel(p)?`<em class="embQtd">nível ${nivelAnel(p)}/4</em>`:''}<span>${anel?'O Anel':'Emblema'}</span><b>${esc(nm)}</b></div>`; }).join('')}</div>` : '';
   const alvoJ = alvos.has(p.id) ? `<div class="faixaAlvoJog" data-jog="${p.id}">🎯 Clique aqui para escolher <b>${esc(p.nome)}</b> como alvo</div>` : '';
   return `<div class="tab ${p.ativo?'ativo':''} ${p.saiu?'saiu':''} ${alvos.has(p.id)?'tabAlvo':''}" ${p.eu?'data-eu="1"':''} style="${estilo||''}">${cab}${alvoJ}<div class="corpoTab"><div class="campo">${corpo}</div>${ladoCmd}</div></div>`;
 }
