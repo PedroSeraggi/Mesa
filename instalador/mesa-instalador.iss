@@ -1,7 +1,7 @@
 ; Instalador da Mesa 1.0 (Inno Setup 6)
 ; Gera: Instalar Mesa 1.0.exe
 
-#define Versao "1.3"
+#define Versao "1.3.1"
 
 [Setup]
 AppId={{6E1C7A52-3B8E-4C7D-9F1A-4D2B7C6E0A10}
