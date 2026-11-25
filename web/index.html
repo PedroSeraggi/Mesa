@@ -3624,6 +3624,7 @@ async function verPerfilAmigo(codigo){
         <div class="pfNomeBloco"><div class="pfNomeGrande">${esc(p.nome||r.nome||'?')} ${r.nivel?`<span class="nvChip grande">Nível ${r.nivel.nivel}</span>`:''}</div><div class="pfFrase">${esc(p.frase||'')}</div></div></div>
     </div>
     <div class="apSit">${situacao}<span class="amCod">código <b>${esc(r.codigo)}</b></span>${r.amigo?'':'<span class="apOff">· ainda não é seu amigo</span>'}</div>
+    ${conquistasAmigoHtml(r.conquistas)}
     ${r.perfil ? `
     <h3 class="subt">Deck mais usado</h3>
     ${fav ? `<div class="pfFav" style="${arte(fav)?`background-image:url('${arte(fav)}')`:''}"><div class="dentro"><div class="num">${fav.jogos}<small>partidas</small></div>
@@ -3656,6 +3657,13 @@ function confrontoHtml(r, p){
   return `<h3 class="subt">Confronto direto</h3>${h.join('') || '<div class="dicaMenu" style="background:none;border:none;padding:0">Vocês ainda não jogaram juntos (as partidas contam a partir desta versão).</div>'}${rv.length?`<div class="rsDest">${rv.join('')}</div>`:''}`;
 }
 // Galeria de chefes: medalha redonda com a arte do comandante; ouro = 1º lugar, prata = top 3, bronze = venceu
+// conquistas de um amigo: brasões das que ele já tem (passe o mouse para ver o nome), e quantas faltam
+function conquistasAmigoHtml(lista){
+  if (!lista || !lista.length) return '';
+  const feitas = lista.filter(c=>c.quando);
+  return `<h3 class="subt">Conquistas <small style="font-family:inherit;text-transform:none;letter-spacing:0;color:var(--txt3)">${feitas.length} de ${lista.length}</small></h3>
+    ${feitas.length ? `<div class="cqGrade">${feitas.map(conquistaHtml).join('')}</div>` : '<div class="pfVazio">Nenhuma conquista ainda.</div>'}`;
+}
 function galeriaChefesHtml(ts, meu){
   if (!(ts||[]).length) return '';
   const venc = ts.filter(t=>t.venceu).length;
