@@ -36,9 +36,9 @@ pt.WelcomeLabel2=Isto vai instalar a Mesa {#Versao} no seu computador: Commander
 Name: "atalho"; Description: "Criar atalho na área de trabalho"; GroupDescription: "Atalhos:"
 
 [Files]
+; a Mesa não leva decks prontos: a pasta decks\ é só de quem usa e o instalador nunca mexe nela
+; (se o pacote tiver uma por engano, ela fica de fora)
 Source: "Mesa\*"; DestDir: "{app}"; Excludes: "\mesa-xmage\decks\*"; Flags: ignoreversion recursesubdirs createallsubdirs
-; decks de exemplo: só entram na 1ª instalação (nunca sobrescrevem os decks de quem já usa)
-Source: "Mesa\mesa-xmage\decks\*"; DestDir: "{app}\mesa-xmage\decks"; Flags: onlyifdoesntexist recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\Mesa"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\Abrir Mesa.vbs"""; WorkingDir: "{app}"; IconFilename: "{app}\mesa-xmage\icone-mesa.ico"; Comment: "Commander com as regras do XMage"
