@@ -4450,7 +4450,14 @@ function jogaveisOcultos(){
   const add = l => (l||[]).forEach(c=>vistos.add(c.id));
   add(j.mao); add(j.pilha); j.jogadores.forEach(p=>{ add(p.campo); add(p.cemiterio); add(p.exilio); add(p.comando); if (p.topo) vistos.add(p.topo.id); });
   (j.zonas||[]).forEach(z=>add(z.cartas));
-  const extras = (j.jogaveis||[]).filter(id=>!vistos.has(id) && nomes[id]);
+  // habilidade de algo que já está à vista (ex.: o "{T}: Add {B}" do Darkbore Pathway, carta de duas faces
+  // cujo id da face no campo é outro): já dá para usar clicando na carta, então não vira um quadro sem arte
+  const norm = t => semHtml(String(t||'')).replace(/\s+/g,' ').trim().toLowerCase();
+  const regrasVistas = [];
+  j.jogadores.forEach(p=>['campo','comando','cemiterio','exilio'].forEach(z=>(p[z]||[]).forEach(c=>(c.regras||[]).forEach(r=>regrasVistas.push(norm(r))))));
+  const jaVisivel = id => (nomes[id]||[]).every(n=>{ const t = norm(n);
+    return t && !/^(cast|play|conjurar|jogar)\s/.test(t) && regrasVistas.some(r=>r.includes(t.replace(/\.$/,''))); });
+  const extras = (j.jogaveis||[]).filter(id=>!vistos.has(id) && nomes[id] && !jaVisivel(id));
   return extras.map(id=>{
     const jogada = String(nomes[id][0]||'');
     const nome = jogada.replace(/^(Cast|Play|Conjurar|Jogar)\s+/i,'').replace(/\s*\[[0-9a-z]{1,6}\]\s*$/i,'').replace(/\s*\(.*\)\s*$/,'').trim();
