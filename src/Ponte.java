@@ -1411,9 +1411,25 @@ public class Ponte implements MageClient {
             catch (Exception e) { amigosErro = (e instanceof IOException) ? "Sem conexão com o servidor do grupo. O Tailscale está ligado?" : (e.getMessage() == null ? "Sem conexão com a lista de amigos." : e.getMessage()); }
         }
     }
+    volatile boolean decksChefeSincronizados = false;
+    /** Baixa os decks de chefe que a pessoa já ganhou e ainda não tem (ex.: venceu numa versão antiga da Mesa). */
+    void sincronizarDecksChefe() {
+        try {
+            JsonObject c = new JsonObject(); c.addProperty("id", idMesa());
+            JsonObject r = postAmigos("decksChefe", c);
+            Path pasta = DECKS.resolve("chefes");
+            for (com.google.gson.JsonElement e : r.getAsJsonArray("decks")) {
+                JsonObject d = e.getAsJsonObject();
+                Path arq = pasta.resolve(arquivoSeguro(d.get("nome").getAsString()) + ".dck");
+                if (!Files.exists(arq)) { Files.createDirectories(pasta); Files.write(arq, d.get("deck").getAsString().getBytes(StandardCharsets.UTF_8)); }
+            }
+            decksChefeSincronizados = true;
+        } catch (Exception ignored) { }
+    }
     void lacoAmigos() {
         while (true) {
             try { pingAmigos(); } catch (Throwable ignored) { }
+            if (!decksChefeSincronizados && amigosErro == null) sincronizarDecksChefe();
             try { Thread.sleep(10_000); } catch (InterruptedException e) { return; }
         }
     }

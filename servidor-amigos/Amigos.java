@@ -64,6 +64,18 @@ public class Amigos {
         srv.createContext("/perfil", ex -> tratar(ex, Amigos::perfil));
         srv.createContext("/partida", ex -> tratar(ex, Amigos::partida));
         srv.createContext("/chefe", ex -> tratar(ex, Amigos::chefe));
+        srv.createContext("/decksChefe", ex -> tratar(ex, c -> {   // todos os decks de chefe que a pessoa já ganhou (a Mesa baixa os que faltam)
+            Usuario u = usuario(c); List<Map<String, Object>> l = new ArrayList<>();
+            for (Map.Entry<String, List<Map<String, Object>>> e : b.derrotaramChefe.entrySet()) {
+                if (e.getValue().stream().noneMatch(d -> u.codigo.equals(d.get("codigo")))) continue;
+                String arq = b.chefePorCiclo.get(e.getKey()); if (arq == null) continue;
+                try {
+                    JsonObject o = JsonParser.parseString(new String(Files.readAllBytes(pastaChefes().resolve("usados").resolve(arq)), StandardCharsets.UTF_8)).getAsJsonObject();
+                    Map<String, Object> x = new LinkedHashMap<>(); x.put("nome", str(o, "nome")); x.put("deck", str(o, "deck")); l.add(x);
+                } catch (Exception ignored) { }
+            }
+            return Collections.singletonMap("decks", l);
+        }));
         srv.createContext("/fabrica", ex -> tratar(ex, c -> { usuario(c); if (c.has("rodar")) talvezRodarFabrica(true);
             Map<String, Object> r = new LinkedHashMap<>(); r.put("rodando", fabricaRodando); r.put("fila", arquivosChefes().size()); r.put("ultima", b.fabricaUltima); r.put("pendente", b.fabricaPendente); return r; }));
         srv.createContext("/saude", ex -> responder(ex, 200, "{\"ok\":true}"));
