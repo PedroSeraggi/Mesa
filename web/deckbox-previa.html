@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia: deckboxes</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=EB+Garamond&display=swap" rel="stylesheet">
+<style>
+:root{--ff:'Cinzel',serif;--ouro:#E4C874}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#2a1d12 0%,#120c08 70%);font-family:'EB Garamond',serif;color:#eee;padding:30px 24px 60px}
+h2{font-family:var(--ff);color:var(--ouro);margin:0 0 30px;letter-spacing:.06em}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:46px 28px}
+
+/* ---------- deckbox ---------- */
+.box{position:relative;height:330px;cursor:pointer;perspective:900px;--c1:#7a5a2a;--c2:#3a2a14;--brilho:#e4c87466}
+/* a carta: fica dentro da caixa e sobe no hover */
+.box .carta{position:absolute;left:50%;top:22px;width:170px;aspect-ratio:63/88;border-radius:9px;background:#000 center/cover;
+  transform:translateX(-50%);transition:transform .45s cubic-bezier(.2,.9,.3,1.2),box-shadow .45s;box-shadow:0 -4px 12px #0008;z-index:1}
+.box:hover .carta{transform:translateX(-50%) translateY(-62px) rotate(-1.5deg);box-shadow:0 -10px 30px var(--brilho),0 12px 24px #000c}
+/* cartas de trás (o "monte" dentro da caixa) */
+.box .monte{position:absolute;left:50%;top:30px;width:164px;height:120px;transform:translateX(-50%);border-radius:8px;z-index:0;
+  background:repeating-linear-gradient(180deg,#e8dcc4 0 2px,#bfae8e 2px 3px);box-shadow:0 -2px 6px #0006}
+.box:hover .monte{transform:translateX(-50%) translateY(-8px);transition:transform .45s}
+/* a caixa (frente) */
+.box .frente{position:absolute;left:0;right:0;bottom:0;height:210px;z-index:2;border-radius:10px 10px 12px 12px;
+  background:
+    radial-gradient(ellipse at 30% 0%,#ffffff14,transparent 60%),
+    repeating-linear-gradient(115deg,#0000 0 3px,#ffffff05 3px 4px),
+    linear-gradient(170deg,var(--c1),var(--c2));
+  box-shadow:inset 0 0 0 2px #0006,inset 0 0 0 4px #c9a24a55,inset 0 2px 0 4px #ffe8a822,0 18px 30px #000b,0 4px 0 #0007;
+  transition:box-shadow .45s,transform .45s}
+.box:hover .frente{box-shadow:inset 0 0 0 2px #0006,inset 0 0 0 4px #e4c874aa,inset 0 2px 0 4px #ffe8a833,0 0 30px var(--brilho),0 18px 30px #000b,0 4px 0 #0007}
+/* boca da caixa (sombra por cima da carta) */
+.box .frente::before{content:'';position:absolute;left:10px;right:10px;top:-1px;height:18px;border-radius:0 0 50% 50%/0 0 100% 100%;background:linear-gradient(#000c,#0000)}
+/* cantoneiras douradas */
+.box .frente i{position:absolute;width:20px;height:20px;border:2px solid #d9b45a;opacity:.85}
+.box .frente i:nth-child(1){left:8px;top:22px;border-right:0;border-bottom:0;border-radius:6px 0 0 0}
+.box .frente i:nth-child(2){right:8px;top:22px;border-left:0;border-bottom:0;border-radius:0 6px 0 0}
+.box .frente i:nth-child(3){left:8px;bottom:8px;border-right:0;border-top:0;border-radius:0 0 0 6px}
+.box .frente i:nth-child(4){right:8px;bottom:8px;border-left:0;border-top:0;border-radius:0 0 6px 0}
+/* gemas de cor */
+.box .gemas{position:absolute;top:30px;left:0;right:0;display:flex;justify-content:center;gap:6px}
+.box .gemas img{width:22px;height:22px;filter:drop-shadow(0 2px 3px #000)}
+/* plaquinha com o nome */
+.box .placa{position:absolute;left:18px;right:18px;top:66px;padding:10px 8px;border-radius:6px;text-align:center;
+  background:linear-gradient(#2a1d10,#170f08);box-shadow:inset 0 0 0 1px #c9a24a88,0 2px 6px #0009}
+.box .placa b{display:block;font-family:var(--ff);font-size:14px;line-height:1.2;color:#f6e7c4;text-shadow:0 1px 3px #000}
+.box .placa small{display:block;margin-top:4px;font-size:12px;color:#bfa88f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.box .rodape{position:absolute;left:0;right:0;bottom:18px;text-align:center;font-family:var(--ff);font-size:11px;letter-spacing:.2em;color:#d9c49a99}
+.box .rodape.aviso{color:#ff9a7a}
+/* cores da caixa pela identidade do comandante */
+.box.W{--c1:#b8a882;--c2:#5a4e38;--brilho:#fff6d088}
+.box.U{--c1:#2f5a86;--c2:#122a44;--brilho:#6fb8ff88}
+.box.B{--c1:#3a3036;--c2:#151014;--brilho:#b08ad088}
+.box.R{--c1:#8a3422;--c2:#3a120c;--brilho:#ff7a4a88}
+.box.G{--c1:#2f6a3a;--c2:#11301a;--brilho:#7ad07a88}
+.box.M{--c1:#8a6a2a;--c2:#3a2a10;--brilho:#ffd04a88}
+.box.C{--c1:#5a5650;--c2:#26231f;--brilho:#d0d0d088}
+.secTit{font-family:var(--ff);color:var(--ouro);margin:50px 0 26px;font-size:14px;letter-spacing:.1em;text-transform:uppercase}
+</style></head><body>
+<h2>Meus decks</h2>
+<div class="grade" id="grade"></div>
+<script>
+const img = n => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n).replace(/'/g,'%27')}&format=image&version=normal`;
+const DECKS = [
+  {nome:'Boros Equipamentos (Cloud)', cmd:"Cloud, Planet's Champion", cores:'RW'},
+  {nome:'Dragões (The Ur-Dragon)', cmd:'The Ur-Dragon', cores:'WUBRG'},
+  {nome:'Eldrazi (Ulalek) — Titãs', cmd:'Ulalek, Fused Atrocity', cores:'C'},
+  {nome:'Fractius', cmd:'The First Sliver', cores:'WUBRG'},
+  {nome:'Golgari Aristocratas (Meren) — Turbinada B3', cmd:'Meren of Clan Nel Toth', cores:'BG'},
+  {nome:'Mono White — Anjos (Giada) — Turbinado', cmd:'Giada, Font of Hope', cores:'W'},
+  {nome:'Sapos (Clement)', cmd:'Clement, the Worrywort', cores:'GU'},
+  {nome:'Vampiros (Edgar Markov)', cmd:'Edgar Markov', cores:'RWB'},
+  {nome:'Ephara (sem 100)', cmd:'Ephara, God of the Polis', cores:'WU', cartas:98}
+];
+const classe = c => c === 'C' ? 'C' : c.length > 1 ? 'M' : c;
+// caixa de várias cores: mistura as cores do comandante (ex.: Boros = vermelho e branco)
+const TONS = {W:['#b8a882','#5a4e38'], U:['#2f5a86','#122a44'], B:['#3a3036','#151014'], R:['#8a3422','#3a120c'], G:['#2f6a3a','#11301a']};
+const fundoMulti = c => { const cs = [...c].filter(k=>TONS[k]); if (cs.length < 2 || cs.length > 3) return '';
+  const claro = cs.map((k,i)=>`${TONS[k][0]} ${Math.round(i/(cs.length-1)*100)}%`).join(','), escuro = cs.map((k,i)=>`${TONS[k][1]} ${Math.round(i/(cs.length-1)*100)}%`).join(',');
+  return `background:radial-gradient(ellipse at 30% 0%,#ffffff14,transparent 60%),linear-gradient(180deg,#0000 30%,#000a),linear-gradient(115deg,${claro});`; };
+document.getElementById('grade').innerHTML = DECKS.map(d=>`
+  <div class="box ${classe(d.cores)}">
+    <div class="monte"></div>
+    <div class="carta" style="background-image:url('${img(d.cmd)}')"></div>
+    <div class="frente" style="${fundoMulti(d.cores)}"><i></i><i></i><i></i><i></i>
+      <div class="gemas">${[...d.cores].map(k=>`<img src="https://svgs.scryfall.io/card-symbols/${k}.svg" alt="${k}">`).join('')}</div>
+      <div class="placa"><b>${d.nome}</b><small>${d.cmd}</small></div>
+      <div class="rodape ${d.cartas && d.cartas !== 100 ? 'aviso' : ''}">${d.cartas || 100} CARTAS${d.cartas && d.cartas !== 100 ? ' · COMMANDER PEDE 100' : ''}</div>
+    </div>
+  </div>`).join('');
+</script>
+</body></html>
