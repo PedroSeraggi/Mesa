@@ -457,8 +457,67 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 #ddEntra.dd-sai .dd-palco{transition:transform .8s cubic-bezier(.6,0,.4,1),opacity .8s;transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) scale(.28);opacity:.0}
 #ddEntra.dd-sai .dd-texto{animation:none;opacity:0;transition:opacity .3s}
 
+/* ---------- sala de espera nova (cartões flutuando) ---------- */
+.lbFila{display:flex;gap:14px;justify-content:center;flex-wrap:nowrap;margin:6px 0 54px;width:100%}
+.lbLug{position:relative;flex:0 1 200px;min-width:0;aspect-ratio:200/262;border-radius:12px;background:#1a120c center 25%/cover;border:2px solid #e0a04099;box-shadow:0 0 18px #e0a04033,0 8px 24px #000a;animation:lbBoia 4s ease-in-out infinite}
+.lbLug:nth-child(2){animation-delay:-1s}.lbLug:nth-child(3){animation-delay:-2s}.lbLug:nth-child(4){animation-delay:-3s}.lbLug:nth-child(5){animation-delay:-1.5s}.lbLug:nth-child(6){animation-delay:-2.5s}
+@keyframes lbBoia{50%{transform:translateY(-5px)}}
+.lbLug.bot{border-color:#a07ad099;box-shadow:0 0 18px #a07ad033,0 8px 24px #000a}
+.lbLug.eu{border-color:var(--ouro);box-shadow:0 0 0 1px var(--ouro),0 0 26px #e4c87455,0 8px 24px #000a}
+.lbLug::after{content:'';position:absolute;inset:0;border-radius:10px;background:linear-gradient(0deg,#000d 0%,#0006 38%,transparent 65%)}
+.lbLug .num{position:absolute;top:8px;left:10px;z-index:1;font-family:var(--ff-titulo);font-size:10.5px;letter-spacing:.2em;color:#fff;text-shadow:0 1px 4px #000;opacity:.8}
+.lbLug .mana{position:absolute;top:7px;right:8px;z-index:1;display:flex;gap:2px}.lbLug .mana img{width:15px;height:15px;filter:drop-shadow(0 1px 2px #000)}
+.lbLug .cmd{position:absolute;left:10px;right:10px;bottom:38px;z-index:1;font-family:var(--ff-titulo);font-size:14px;color:#fff;text-shadow:0 2px 6px #000;text-align:center;line-height:1.15}
+.lbLug .av{position:absolute;left:50%;bottom:-24px;transform:translateX(-50%);z-index:2;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-family:var(--ff-titulo);font-weight:800;font-size:18px;color:#fff;border:3px solid #e0a040;background:#5a3a14 center/cover}
+.lbLug.bot .av{background-color:#3a2a4a;border-color:#a07ad0}
+.lbLug .quem{position:absolute;left:-10px;right:-10px;bottom:-50px;text-align:center;font-size:14px;color:#e8d8c0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lbLug .quem small{display:block;font-size:11.5px;color:#a8957d;overflow:hidden;text-overflow:ellipsis}
+.lbLug.vazio{background:repeating-linear-gradient(45deg,#1a120c,#1a120c 10px,#20160e 10px,#20160e 20px);border-style:dashed;border-color:#e0a04055;box-shadow:none;display:grid;place-items:center;color:#bfa88f;font-size:14px;text-align:center;animation:none}
+.lbLug.vazio.bot{border-color:#a07ad055}
+.lbLug.vazio::after{display:none}
+.lbLug.vazio span{animation:lbPisca 1.6s ease-in-out infinite}
+@keyframes lbPisca{50%{opacity:.4}}
+.lb2v2 .lbLug{flex-basis:260px;aspect-ratio:260/150;background-position:center 30%}
+.lb2v2 .lbLug .cmd{bottom:30px}
+.lbRot{font-family:var(--ff-titulo);font-size:11px;letter-spacing:.3em;text-transform:uppercase;text-align:center;color:#e0a040}
+.lbRot.bots{color:#a07ad0}
+.lbVs{display:flex;align-items:center;gap:14px;width:100%;margin:-28px 0 8px}
+.lbVs::before,.lbVs::after{content:'';flex:1;height:2px;background:linear-gradient(90deg,transparent,#c9a24a88,transparent)}
+.lbVs b{font-family:var(--ff-titulo);font-weight:800;font-size:30px;color:var(--ouro);text-shadow:0 0 14px #c9a24a88}
+@media (prefers-reduced-motion:reduce){.lbLug{animation:none}}
+
+/* ---------- entrada ao começar a partida ---------- */
+#entSala{position:fixed;inset:0;z-index:9000;pointer-events:none;display:none;perspective:1400px}
+#entSala.on{display:block}
+#entSala .fundo{position:absolute;inset:0;background:radial-gradient(ellipse at center,#1a0e06f2,#050302fa 70%);opacity:0;animation:esAparece .5s forwards}
+#entSala.sai .fundo{animation:esSome .7s .5s forwards}
+@keyframes esAparece{to{opacity:1}}@keyframes esSome{from{opacity:1}to{opacity:0}}
+#entSala .c{position:absolute;width:min(14vw,180px);aspect-ratio:63/88;opacity:0;animation:esEntra 1.1s cubic-bezier(.2,.9,.3,1) forwards;animation-delay:var(--d)}
+@keyframes esEntra{from{opacity:0;transform:translate(var(--x0),var(--y0)) rotate(0)}to{opacity:1;transform:translate(var(--x),var(--y)) rotate(var(--r))}}
+#entSala .f{position:absolute;inset:0;border-radius:4.5%/3.3%;background:#000 center/cover;box-shadow:0 0 0 2px #ffe8b088,0 0 30px 6px #e0a040aa,0 20px 40px #000c;animation:esFlutua 3.2s ease-in-out infinite;animation-delay:var(--fd)}
+#entSala .c.bot .f{box-shadow:0 0 0 2px #d8c0ff88,0 0 30px 6px #a07ad0aa,0 20px 40px #000c}
+@keyframes esFlutua{0%,100%{transform:translateY(0) rotateZ(-.6deg)}50%{transform:translateY(-14px) rotateZ(.6deg)}}
+#entSala .av{position:absolute;left:50%;bottom:-18px;transform:translateX(-50%);width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-family:var(--ff-titulo);font-weight:800;color:#fff;border:3px solid #e0a040;background:#5a3a14 center/cover}
+#entSala .bot .av{background-color:#3a2a4a;border-color:#a07ad0}
+#entSala .nm{position:absolute;left:-30%;right:-30%;bottom:-44px;text-align:center;font-family:var(--ff-titulo);font-size:13px;color:#fff;text-shadow:0 2px 8px #000}
+#entSala .c.cima .nm{bottom:auto;top:-26px}
+#entSala .titulo{position:absolute;left:0;right:0;top:9vh;text-align:center;font-family:var(--ff-titulo);font-weight:800;font-size:clamp(26px,3.4vw,46px);letter-spacing:.12em;color:#ffe08a;text-shadow:0 0 18px #ff9a3a,0 0 40px #ff6a2a77;opacity:0;transform:scale(2.4);animation:esBate .4s 1.5s cubic-bezier(.3,1.6,.5,1) forwards}
+#entSala .vs{position:absolute;left:10vw;right:10vw;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:20px}
+#entSala .vs::before,#entSala .vs::after{content:'';flex:1;height:3px;background:linear-gradient(90deg,transparent,#ffd070,transparent);transform:scaleX(0);animation:esRisco .4s 1.5s forwards}
+#entSala .vs b{font-family:var(--ff-titulo);font-weight:800;font-size:clamp(40px,6vw,80px);color:#ffe08a;text-shadow:0 0 20px #ff9a3a,0 0 50px #ff6a2a88;opacity:0;transform:scale(3);animation:esBate .35s 1.35s cubic-bezier(.3,1.6,.5,1) forwards}
+@keyframes esRisco{to{transform:scaleX(1)}}
+@keyframes esBate{to{opacity:1;transform:scale(1)}}
+#entSala.treme .palco{animation:esTreme .35s}
+@keyframes esTreme{20%{transform:translate(6px,-4px)}40%{transform:translate(-5px,3px)}60%{transform:translate(4px,4px)}80%{transform:translate(-3px,-2px)}}
+#entSala .palco{position:absolute;left:50%;top:50%;width:0;height:0}
+#entSala .txt{position:absolute;left:0;right:0;bottom:5vh;text-align:center;color:#bfa88f;font-size:14px;opacity:0;animation:esAparece .5s 2s forwards}
+#entSala.sai .c{animation:esSai .8s cubic-bezier(.6,0,.4,1) forwards}
+@keyframes esSai{from{opacity:1;transform:translate(var(--x),var(--y)) rotate(var(--r))}to{opacity:0;transform:translate(var(--x),var(--yf)) rotate(var(--r))}}
+#entSala.sai .titulo,#entSala.sai .vs,#entSala.sai .txt{transition:opacity .3s;opacity:0}
+#entSala .faisca{position:absolute;left:50%;width:6px;height:6px;border-radius:50%;background:#ffe08a;box-shadow:0 0 10px #ff9a3a;animation:esFaisca .9s ease-out forwards}
+@keyframes esFaisca{from{opacity:1;transform:translate(0,0)}to{opacity:0;transform:translate(var(--x),var(--y))}}
 /* 2v2: barras de vida do time (cada jogador carrega metade; se uma zera, o time perde) */
-#vidaTime{position:fixed;top:54px;left:50%;transform:translateX(-50%);z-index:40;display:flex;flex-direction:column;gap:6px;pointer-events:none;width:min(460px,60vw)}
+#vidaTime{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:40;display:flex;flex-direction:column;gap:6px;pointer-events:none;width:min(460px,60vw)}
 #vidaTime.oculto{display:none}
 .vtLinha{display:flex;align-items:center;gap:8px;background:#0c0805cc;border:1px solid #c9a24a55;border-radius:10px;padding:4px 10px;box-shadow:0 4px 14px #0009}
 .vtTit{font-family:var(--ff-titulo);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ouro);width:62px;flex:none}
@@ -1790,6 +1849,37 @@ function erroMesa(msg){
 
 // sala de espera: aparece quando você criou ou entrou numa mesa
 let timerSala = null;
+// ---------- sala de espera nova: cartões com a arte do comandante, flutuando ----------
+// dados de cada lugar (o mesmo objeto alimenta a entrada animada quando a partida começa)
+function dadosLugares(m, cartoes, eu){
+  const botsCart = cartoes.filter(c=>c.bot || /^(Bot|IA) \d+ /.test(c.jogador||''));
+  let botLivre = 0;
+  return m.lugares.map((l, i)=>{
+    let c = l.nome ? (cartoes.find(x=>x.jogador===l.nome) || {}) : {};
+    let nomeXm = l.nome;
+    if (!l.nome && l.bot){   // 2v2: o 2º bot só senta ao começar, mas já mostra o deck dele
+      const livres = botsCart.filter(b=>!m.lugares.some(x=>x.nome===b.jogador));
+      c = livres[botLivre++] || {}; nomeXm = c.jogador || null;
+    }
+    const bot = !!l.bot, cmds = c.cmds || [];
+    const nome = bot ? (nomeXm ? nomeXm.split(' · ')[0] : 'Bot') : (c.nome || l.nome);
+    const numBot = bot && nomeXm ? (nomeXm.match(/\d+/)||[''])[0] : '';
+    return {i, vazio: !nomeXm, bot, eu: l.nome && l.nome===eu, nome, deck: c.deck || '', cmd: cmds[0] || null, cmds,
+      avatar: c.avatar || '', cor: c.cor || (bot ? '#3a2a4a' : CORES[i%CORES.length]), ini: bot ? 'B' + numBot : ((nome||'?')[0]||'?').toUpperCase()};
+  });
+}
+function lbLugarHtml(d){
+  if (d.vazio) return `<div class="lbLug vazio ${d.bot?'bot':''}"><span>Lugar ${d.i+1}<br>${d.bot?'Bot':'Esperando jogador...'}</span></div>`;
+  const ci = new Set(d.cmds.flatMap(x=>(tiposCartas[x.nome]||{}).ci||[]));
+  const mana = ['W','U','B','R','G'].filter(k=>ci.has(k));
+  const av = d.avatar ? `style="background-image:url('${d.avatar}')"` : (d.bot ? '' : `style="background-color:${d.cor}"`);
+  return `<div class="lbLug ${d.bot?'bot':''} ${d.eu?'eu':''}" ${d.cmd?`style="background-image:url('${imgCarta(d.cmd,'art')}')"`:''}>
+    <div class="num">LUGAR ${d.i+1}</div>${mana.length?`<div class="mana">${mana.map(k=>`<img src="https://svgs.scryfall.io/card-symbols/${k}.svg" alt="${k}">`).join('')}</div>`:''}
+    <div class="cmd">${d.cmd ? esc(d.cmds.map(x=>x.nome).join(' + ')) : (d.bot ? '' : 'carregando deck...')}</div>
+    <div class="av" ${av}>${d.avatar?'':esc(d.ini)}</div>
+    <div class="quem">${esc(d.nome)}${d.eu?' (você)':''}<small>${esc(d.deck)}</small></div></div>`;
+}
+let salaHtmlAnterior = '', ultimaSala = null;
 function lugarHtml(l, i, cartoes, eu){
   if (!l.nome) return `<div class="lugarG livre esperando"><div class="avatar" style="background:transparent;border:1px dashed var(--borda2)">?</div><b>Lugar livre</b><span class="dicaMenu">esperando...</span></div>`;
   const c = cartoes.find(x=>x.jogador===l.nome) || {};
@@ -1817,12 +1907,22 @@ async function desenharSala(){
   // identidade de cor dos comandantes (Scryfall, guardada em cache)
   const nomesCmd = cartoes.flatMap(c=>(c.cmds||[]).map(x=>x.nome));
   if (nomesCmd.some(n=>!tiposCartas[n] || !tiposCartas[n].ci)) buscarTipos(nomesCmd);
-  $('#jgSala').innerHTML = `<div class="salaEspera"><h2>${esc(m.nome)}</h2>
+  const dupla = (m.nome||'').startsWith('2v2 · ');
+  const dados = dadosLugares(m, cartoes, r.eu);
+  ultimaSala = {dupla, dados};
+  const lugaresHtml = dupla
+    ? `<div class="lb2v2"><div class="lbRot bots">Bots</div><div class="lbFila">${dados.filter(d=>d.bot).map(lbLugarHtml).join('')}</div>
+        <div class="lbVs"><b>VS</b></div><div class="lbRot">Seu time</div><div class="lbFila">${dados.filter(d=>!d.bot).map(lbLugarHtml).join('')}</div></div>`
+    : `<div class="lbFila">${dados.map(lbLugarHtml).join('')}</div>`;
+  const novoHtml = `<div class="salaEspera"><h2>${esc(m.nome)}</h2>
     ${cod ? `<div class="codigoSala"><div><div class="rot">Código da sala</div><div class="cod">${cod}</div></div><button class="pri" id="salaConvite">Copiar convite</button></div>
       <div class="dicaMenu">Amigos na mesma rede do Radmin veem esta sala sozinhos em "Entrar em sala". Se não aparecer, eles colam o código.</div>` : ''}
     <div class="dicaMenu">${r.dono ? (cheia ? 'Todos sentados! Pode começar.' : 'Esperando os amigos entrarem...') : 'Esperando o dono da mesa começar...'}</div>
-    <div class="lugaresGrandes">${m.lugares.map((l,i)=>lugarHtml(l, i, cartoes, r.eu)).join('')}</div>
-    <div style="display:flex;gap:10px">${r.dono?`<button class="pri" id="salaComecar" ${cheia?'':'disabled'}>Começar partida</button>`:''}<button id="salaSair">${r.dono?'Cancelar mesa':'Sair da mesa'}</button></div></div>`;
+    ${lugaresHtml}
+    <div style="display:flex;gap:10px">${r.dono?`<button class="pri" id="salaComecar" ${(cheia || (dupla && dados.filter(d=>!d.bot && !d.vazio).length===2))?'':'disabled'}>Começar partida</button>`:''}<button id="salaSair">${r.dono?'Cancelar mesa':'Sair da mesa'}</button></div></div>`;
+  if (novoHtml === salaHtmlAnterior) return;   // não redesenha à toa (a flutuação recomeçaria)
+  salaHtmlAnterior = novoHtml;
+  $('#jgSala').innerHTML = novoHtml;
   const c = $('#salaComecar'); if (c) c.onclick = async ()=>{ c.disabled = true; const res = await post('/api/mesa/comecar', {}); if (res.erro){ avisoLocal(res.erro); c.disabled = false; } };
   $('#salaSair').onclick = async ()=>{ await post('/api/mesa/sair', {}); };
   const cv = $('#salaConvite'); if (cv) cv.onclick = ()=>{
@@ -1830,8 +1930,49 @@ async function desenharSala(){
     try { navigator.clipboard.writeText(t); avisoLocal('Convite copiado! Cole no Discord/WhatsApp.'); } catch(e){ prompt('Copie o convite:', t); }
   };
 }
+let estavaNaSala = false;
+// entrada ao começar: todo mundo vê (dono e quem entrou). 2v2: bots descem de cima, o time sobe de baixo, VS no meio.
+// Todos contra todos: as cartas sobem em leque. Fica pelo menos 5 s e some quando a mesa carrega.
+function telaEntradaSala(sala){
+  const ds = sala.dados.filter(d=>!d.vazio && d.cmd);
+  if (ds.length < 2) return;
+  let el = $('#entSala');
+  if (!el){ el = document.createElement('div'); el.id = 'entSala'; document.body.appendChild(el); }
+  el.className = ''; void el.offsetWidth;
+  const larg = Math.min(innerWidth*.14, 180), alt = larg*88/63;
+  const carta = (d, x, y, r, x0, y0, yf, k, cima)=>`<div class="c ${d.bot?'bot':''} ${cima?'cima':''}" style="left:${-larg/2}px;top:${-alt/2}px;--x:${x}px;--y:${y}px;--r:${r}deg;--x0:${x0}px;--y0:${y0}px;--yf:${yf}px;--d:${k*.14}s;--fd:${1.2+k*.3}s">
+      <div class="f" style="background-image:url('${imgCarta(d.cmd)}')"><div class="av" ${d.avatar?`style="background-image:url('${d.avatar}')"`:''}>${d.avatar?'':esc(d.ini)}</div><div class="nm">${esc(d.nome)}</div></div></div>`;
+  let cartas = '';
+  if (sala.dupla){
+    const bots = ds.filter(d=>d.bot), time = ds.filter(d=>!d.bot), passo = larg*1.35;
+    bots.forEach((d,k)=>{ const x = (k-(bots.length-1)/2)*passo, y = -alt*.62; cartas += carta(d, x, y, 0, x, -innerHeight, -innerHeight, k, true); });
+    time.forEach((d,k)=>{ const x = (k-(time.length-1)/2)*passo, y = alt*.62; cartas += carta(d, x, y, 0, x, innerHeight, innerHeight, k+2, false); });
+  } else {
+    const n = ds.length, passo = Math.min(larg*1.25, innerWidth*.9/n);
+    ds.forEach((d,k)=>{ const q = k-(n-1)/2; cartas += carta(d, q*passo, Math.abs(q)*innerHeight*.03, q*4, q*passo, innerHeight, innerHeight, k, false); });
+  }
+  el.innerHTML = `<div class="fundo"></div>${sala.dupla ? '<div class="vs"><b>VS</b></div>' : '<div class="titulo">Que comece a partida</div>'}<div class="palco">${cartas}</div><div class="txt">Embaralhando...</div>`;
+  el.classList.add('on');
+  const inicio = Date.now(); let fechado = false;
+  setTimeout(()=>{
+    if (fechado) return;
+    if (cfgApp.somFx !== false){ const au = new Audio('sons/espadas/choque1.ogg'); au.volume = Math.min(1, (cfgApp.volFx ?? 50) / 1000 * 2.5); au.play().catch(()=>{}); }
+    el.classList.add('treme');
+    const topo = sala.dupla ? innerHeight/2 : innerHeight*.13;
+    for (let i=0;i<24;i++){ const f = document.createElement('div'); f.className = 'faisca'; const g = Math.random()*Math.PI*2, r = 80+Math.random()*240;
+      f.style.top = topo+'px'; f.style.setProperty('--x', Math.cos(g)*r+'px'); f.style.setProperty('--y', Math.sin(g)*r*.5+'px'); el.appendChild(f); setTimeout(()=>f.remove(), 1000); }
+  }, 1450);
+  const fechar = ()=>{ if (fechado) return; fechado = true; clearInterval(t); el.classList.add('sai'); setTimeout(()=>{ el.className = ''; el.innerHTML = ''; }, 1300); };
+  const t = setInterval(()=>{
+    const passou = Date.now() - inicio;
+    if ((passou >= 5000 && E && E.fase === 'jogo' && E.jogo) || passou > 90000 || (E && (E.fase === 'lobby' || E.fase === 'sala') && passou > 1500)) fechar();
+  }, 250);
+}
 function controlarSala(){
   const naSala = E && E.fase === 'sala';
+  if (estavaNaSala && !naSala && ultimaSala && E && (E.fase === 'iniciando' || E.fase === 'jogo')) telaEntradaSala(ultimaSala);
+  if (!naSala) salaHtmlAnterior = '';
+  estavaNaSala = naSala;
   $('#jgSala').classList.toggle('oculto', !naSala);
   $('#jgPrincipal').classList.toggle('oculto', naSala);
   if (naSala){
