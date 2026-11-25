@@ -1,0 +1,93 @@
+=====================================================
+  MESA - COMO JOGAR ONLINE COM OS AMIGOS
+=====================================================
+
+O jogo roda num servidor do grupo que fica ligado 24 horas.
+Ninguém precisa ser "anfitrião": se a sua internet cair,
+você reabre a Mesa e volta para a partida.
+
+-----------------------------------------------------
+ PRIMEIRA VEZ (faz uma vez só)
+-----------------------------------------------------
+
+1. INSTALE A MESA
+   - Baixe o "Instalar-Mesa-1.1.exe" em:
+     https://github.com/PedroSeraggi/Mesa/releases/latest
+   - Abra e avance até o fim.
+   - Se o Windows disser "O Windows protegeu o computador",
+     clique em "Mais informações" e depois "Executar assim mesmo".
+   - Já tem a Mesa? Ela avisa sozinha no menu: clique em
+     "Atualizar agora".
+
+2. INSTALE O TAILSCALE (é o que liga você ao servidor do grupo)
+   - Baixe em https://tailscale.com/download (é gratuito).
+   - Instale e entre com uma conta Google ou Microsoft.
+   - Ele fica no canto do relógio do Windows e liga sozinho
+     junto com o PC.
+
+3. ACEITE O CONVITE DO PEDRO
+   - O Pedro te manda um link de convite do Tailscale.
+   - Abra o link, entre com a MESMA conta do passo 2 e aceite.
+   - Pronto: você passa a enxergar só o servidor do grupo,
+     nada mais da casa dele.
+
+4. MONTE SEU PERFIL E SEUS DECKS NA MESA
+   - Perfil: nome, foto, banner e frase.
+   - Decks: "Colar lista" ou monte no editor.
+
+-----------------------------------------------------
+ TODA VEZ QUE FOR JOGAR
+-----------------------------------------------------
+
+1. Confira se o Tailscale está ligado (ícone no canto do relógio).
+2. Abra a Mesa.
+3. Clique em JOGAR e escolha, em "Conexão":
+      (o) Servidor do grupo (Zera)
+   (só precisa escolher na primeira vez, ela lembra)
+
+CRIAR UMA SALA
+   - Escolha o deck, dê um nome à sala, quantos lugares e
+     se quer bots completando.
+   - Clique em "Criar sala".
+   - Abra o botão AMIGOS (canto de baixo do menu) e clique em
+     "Convidar" no amigo. Ele recebe o convite na tela.
+   - Quando todos entrarem, clique em "Começar".
+
+ENTRAR NA SALA DE UM AMIGO
+   - Pelo convite: quando aparecer "Fulano te chamou para a sala",
+     escolha o deck e clique em "Entrar".
+   - Ou abra AMIGOS: amigo numa sala com lugar livre mostra o
+     botão "Entrar".
+   - Ou em JOGAR, escolha a sala na lista.
+
+-----------------------------------------------------
+ LISTA DE AMIGOS
+-----------------------------------------------------
+
+   - Botão AMIGOS, no canto de baixo do menu.
+   - Lá em cima está você e o seu CÓDIGO (6 letras).
+     Passe o código para os amigos te adicionarem.
+   - Para adicionar: ícone de pessoa com "+", digite o código
+     ou o nome e clique em "Adicionar". A outra pessoa aceita.
+   - Ícone de olho: abre o perfil do amigo (decks, estatísticas,
+     últimas partidas).
+   - Bolinha verde = online, e mostra o que ele está fazendo
+     ("no menu", "na sala tal", "em partida, turno 7").
+
+-----------------------------------------------------
+ SE ALGO DER ERRADO
+-----------------------------------------------------
+
+   "Sem conexão com o servidor do grupo"
+      -> o Tailscale está desligado. Ligue e espere uns segundos.
+
+   A internet caiu no meio da partida
+      -> a Mesa tenta voltar sozinha por 3 minutos.
+      -> se fechou, abra de novo: aparece "Voltar para a partida".
+
+   Passou o turno sem querer
+      -> menu "Passar" > "Voltar ao início deste turno".
+         Os outros jogadores precisam aceitar.
+
+   Nada resolveu?
+      -> manda um print para o Pedro.
