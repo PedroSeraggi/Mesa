@@ -22,7 +22,7 @@ A primeira abertura demora uns 30 segundos (o servidor do XMage está ligando).
 
 - **Perfil:** nome, foto e banner.
 - **Oráculo** (assistente de regras): em *Configurações → Oráculo*, cole a chave que o organizador do grupo mandou e clique em *Salvar chave*.
-- **Decks:** já vêm alguns; dá para colar listas, montar do zero ou pedir para o Oráculo montar.
+- **Decks:** dá para colar listas, montar do zero ou pedir para o Oráculo montar.
 
 ## Jogar online com os amigos
 

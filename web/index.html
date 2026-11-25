@@ -1615,6 +1615,11 @@ async function desenharDecks(){
 // tipo de cada carta (Scryfall), guardado no navegador para não consultar de novo
 let tiposCartas = {};
 try { tiposCartas = JSON.parse(localGet('tiposCartas') || '{}'); } catch(e){}
+// os decks guardam os nomes sem acento (como o XMage: "Barad-dur"), mas a Scryfall responde com o nome
+// oficial ("Barad-dûr"): guarda nas duas grafias para a carta não cair em "Outras" e sem custo de mana
+const semAcento = s => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+function guardarTipo(nome, info){ tiposCartas[nome] = info; tiposCartas[semAcento(nome)] = info; }
+for (const n of Object.keys(tiposCartas)){ const s = semAcento(n); if (!tiposCartas[s]) tiposCartas[s] = tiposCartas[n]; }   // caches antigos
 async function buscarTipos(nomes){
   const faltam = [...new Set(nomes)].filter(n=>!tiposCartas[n] || !tiposCartas[n].ci || tiposCartas[n].mc === undefined);
   for (let i = 0; i < faltam.length; i += 75){
@@ -1625,7 +1630,7 @@ async function buscarTipos(nomes){
       for (const c of (j.data||[])){
         const t = c.type_line || (c.card_faces||[])[0]?.type_line || '';
         const info = {t, mv: c.cmc||0, ci: c.color_identity||[], mc: c.mana_cost ?? (c.card_faces||[])[0]?.mana_cost ?? ''};
-        tiposCartas[c.name] = info; tiposCartas[c.name.split(' // ')[0]] = info;
+        guardarTipo(c.name, info); guardarTipo(c.name.split(' // ')[0], info);
       }
     } catch(e){}
   }
@@ -1873,7 +1878,7 @@ function desenharHistoricoEd(){
 }
 function adicionarCarta(c, comoCmd){
   const nome = c.name.split(' // ')[0];
-  tiposCartas[nome] = {t: c.type_line || (c.card_faces||[])[0]?.type_line || '', mv: c.cmc||0, ci: c.color_identity||[], mc: c.mana_cost ?? (c.card_faces||[])[0]?.mana_cost ?? ''};
+  guardarTipo(nome, {t: c.type_line || (c.card_faces||[])[0]?.type_line || '', mv: c.cmc||0, ci: c.color_identity||[], mc: c.mana_cost ?? (c.card_faces||[])[0]?.mana_cost ?? ''});
   const ja = ed.cartas.find(x=>x.nome===nome);
   if (ja){ if (comoCmd) { ja.comandante = true; ja.qtd = 1; } else if (BASICOS.test(nome)) ja.qtd++; else avisoLocal(`${nome} já está no deck.`); }
   else ed.cartas.push({qtd:1, nome, set:(c.set||'').toUpperCase(), num:c.collector_number||'', comandante:!!comoCmd});

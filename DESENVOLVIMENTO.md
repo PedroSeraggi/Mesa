@@ -13,7 +13,6 @@ navegador (web/index.html)  <-- HTTP/SSE :8792 -->  Ponte (src/Ponte.java)  <-- 
   - `index.html` — menu, decks, perfil, configurações e a partida.
   - `efeitos.js` (animações de magia), `sons.js` (sons), `mundo.js` (cursores/desenho/ping compartilhados).
   - `cursores/`, `fundos/`, `musica/`, `sons/` — arquivos estáticos.
-- **`decks/`** — decks de exemplo que vão no instalador.
 - **`instalador/`** — roteiro do Inno Setup (`mesa-instalador.iss`), o `Abrir Mesa.vbs` e o passo a passo para jogadores.
 - **`mesa_app.pyw`** — atalho de desenvolvimento (Python) que liga a ponte e abre a tela.
 
@@ -43,7 +42,7 @@ A chave do Oráculo (Gemini) **não** fica no repositório: crie um arquivo `.en
 
 1. Monte a pasta do pacote (`Mesa-1.x\Mesa\`) com:
    - `XMage\` (sem `mage-client\sample-decks`, sem logs; copie com a Mesa **fechada**, senão o banco do XMage está travado);
-   - `mesa-xmage\` com `classes\`, `web\` (sem `index-antes-*`), `decks\`, ícones e um `versao.txt` contendo `1.1`;
+   - `mesa-xmage\` com `classes\`, `web\` (sem `index-antes-*`), ícones (sem `decks\`: a Mesa não leva decks prontos) e um `versao.txt` contendo `1.1`;
    - `Abrir Mesa.vbs` e `Criar atalho na area de trabalho.vbs`.
 2. Em `instalador\mesa-instalador.iss`, troque `#define Versao "1.1"` e gere com o **Inno Setup 6** (`ISCC.exe mesa-instalador.iss`).
 3. Publique: `gh release create v1.1 Instalar-Mesa-1.1.exe --title "Mesa 1.1" --notes "o que mudou"`.
