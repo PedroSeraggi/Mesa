@@ -3360,7 +3360,7 @@ function galeriaChefesHtml(ts, meu){
   const itens = ts.map(t=>{
     const cmd = t.comandante || {};
     const dica = t.venceu
-      ? `${t.nome} · vencido em ${data(t.quando)} · rodada ${Math.ceil((t.turnos||0)/2)} com ${t.vida} de vida · ${t.posicao}º de ${t.total}${t.hoje?' (ranking de hoje, ainda em aberto)':''}`
+      ? `${t.nome} · vencido em ${data(t.quando)} · turno ${t.turnos} com ${t.vida} de vida · ${t.posicao}º de ${t.total}${t.hoje?' (ranking de hoje, ainda em aberto)':''}`
       : `${t.nome} · ${t.hoje ? 'chefe de hoje, ainda não vencido' : 'não vencido'}`;
     return `<div class="medalha ${t.venceu ? t.medalha : 'nao'} ${t.hoje?'hoje':''}" title="${esc(dica)}">
       <div class="medArte" style="background-image:url('${imgCarta(cmd,'art')}')"></div>${t.hoje?'<span class="medHoje">hoje</span>':''}</div>`;
@@ -3639,7 +3639,7 @@ function desenharChefe(){
     ${C.estrategia ? `<details class="chEstr"><summary>Como esse deck joga</summary><div>${esc(C.estrategia)}</div></details>` : ''}
     ${C.euVenci ? '<div class="chVenci">Você já derrotou o chefe deste ciclo! Bônus de +250 XP recebido.</div>' : '<div class="chBonus">Primeira vitória: <b>+250 XP</b></div>'}
     <div class="chLinha"><button class="pri" id="chEnfrentar">${C.euVenci ? 'Enfrentar de novo' : 'Enfrentar'}</button></div>
-    ${(C.ranking||[]).length ? `<div class="chRank"><div class="chRankTit">Ranking de hoje</div>${C.ranking.slice(0,3).map((a,i)=>`<div class="chRankLin ${a.eu?'eu':''}"><b>${i+1}º</b><span class="chDerAv">${avAmigo(a)}</span><span class="nm">${esc(a.nome)}</span><span class="rd">rodada ${Math.ceil((a.turnos||0)/2)} · ${a.vida} de vida</span></div>`).join('')}
+    ${(C.ranking||[]).length ? `<div class="chRank"><div class="chRankTit">Ranking de hoje</div>${C.ranking.slice(0,3).map((a,i)=>`<div class="chRankLin ${a.eu?'eu':''}"><b>${i+1}º</b><span class="chDerAv">${avAmigo(a)}</span><span class="nm">${esc(a.nome)}</span><span class="rd">turno ${a.turnos} · ${a.vida} de vida</span></div>`).join('')}
       ${C.ranking.length > 3 ? `<div class="chRankMais">e mais ${C.ranking.length-3} que venceram</div>` : ''}<div class="chRankDica">Às 20h o 1º lugar ganha +100 XP</div></div>`
       : '<div class="chDer"><span>Ninguém derrotou ainda. O 1º lugar às 20h ganha +100 XP.</span></div>'}
   </div>`;
@@ -3756,7 +3756,7 @@ function avisarLiderChefe(){
   if (localGet('liderVisto') === chave) return;
   localSet('liderVisto', chave);
   if (Date.now() - l.quando > 6*3600000) return;   // aviso velho: não mostra
-  avisoLocal(`${l.nome} assumiu o 1º lugar do Chefe do dia: rodada ${Math.ceil((l.turnos||0)/2)} com ${l.vida} de vida!`);
+  avisoLocal(`${l.nome} assumiu o 1º lugar do Chefe do dia: turno ${l.turnos} com ${l.vida} de vida!`);
   if (chefeInfo) carregarChefe(true);
 }
 
