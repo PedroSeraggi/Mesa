@@ -411,6 +411,52 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .ddLinha button.pri{background:linear-gradient(#3f86b0,#2a5f84)!important;border-color:#6fb8e0!important;color:#fff!important;transition:filter .15s,box-shadow .15s}
 .ddLinha button.pri:hover:not(:disabled){filter:brightness(1.15);box-shadow:0 0 12px #4fa8e099}
 .ddEstr{font-size:12px;color:#c9dbe6}.ddEstr summary{cursor:pointer;color:#8fc8e8}.ddEstr div{margin-top:4px;max-height:100px;overflow:auto;line-height:1.35;background:#00000055;border-radius:7px;padding:4px 8px}
+/* entrada do Deck do dia: carta revelada */
+#ddEntra{position:fixed;inset:0;z-index:9000;pointer-events:none;perspective:1400px;display:none}
+#ddEntra.on{display:block}
+#ddEntra .dd-fundo{position:absolute;inset:0;background:radial-gradient(ellipse at center,#0b1a26ee 0%,#03070bf8 70%);opacity:0;animation:ddEscurece .6s forwards}
+#ddEntra.dd-sai .dd-fundo{animation:ddClareia .7s .45s forwards}
+@keyframes ddEscurece{to{opacity:1}}
+@keyframes ddClareia{from{opacity:1}to{opacity:0}}
+
+/* a carta: desce flutuando virada, gira e revela */
+#ddEntra .dd-palco{position:absolute;left:50%;top:46%;width:min(26vw,300px);aspect-ratio:63/88;transform:translate(-50%,-50%)}
+#ddEntra .dd-palco{opacity:0;animation:ddAparece .5s .3s forwards}
+@keyframes ddAparece{to{opacity:1}}
+#ddEntra .dd-carta{position:absolute;inset:0;transform-style:preserve-3d;transform:translateY(-70vh) rotateY(0) rotateZ(-8deg);
+  animation:ddDesce 1.1s cubic-bezier(.2,.9,.3,1) .3s forwards, ddVira .9s cubic-bezier(.5,0,.2,1) 1.6s forwards}
+#ddEntra .dd-flutua{position:absolute;inset:0;transform-style:preserve-3d;animation:ddFlutua 3.4s ease-in-out 2.5s infinite}
+@keyframes ddDesce{to{transform:translateY(0) rotateY(0) rotateZ(0)}}
+@keyframes ddVira{from{transform:translateY(0) rotateY(0)}to{transform:translateY(0) rotateY(180deg) scale(1.06)}}
+@keyframes ddFlutua{0%,100%{transform:translateY(0) rotateX(3deg)}50%{transform:translateY(-12px) rotateX(-3deg)}}
+#ddEntra .dd-face{position:absolute;inset:0;-webkit-backface-visibility:hidden;border-radius:4.5%/3.3%;backface-visibility:hidden;background:#000 center/cover;box-shadow:0 0 0 2px #9fd8ff55,0 20px 50px #000c}
+#ddEntra .dd-verso{background-image:url('https://backs.scryfall.io/large/0/a/0aeebaf5-8c7d-4636-9e82-8c27447861f7.jpg');animation:ddAura 2s ease-in-out .3s infinite}
+#ddEntra .dd-frente{transform:rotateY(180deg);animation:ddAura 2.4s ease-in-out 2.5s infinite}
+@keyframes ddAura{50%{box-shadow:0 0 0 2px #cdeeff,0 0 34px 8px #4fb0f0cc,0 0 90px 26px #2a7ac066}}
+/* reflexo depois de revelada */
+#ddEntra .dd-frente::after{content:'';position:absolute;inset:0;border-radius:inherit;overflow:hidden;background:linear-gradient(115deg,transparent 40%,#ffffff66 50%,transparent 60%) no-repeat;background-size:300% 100%;background-position:120% 0;animation:ddReflexo 1.2s 2.5s ease-out forwards}
+@keyframes ddReflexo{to{background-position:-20% 0}}
+
+/* clarão no momento da virada */
+#ddEntra .dd-clarao{position:absolute;left:50%;top:46%;width:60vmin;height:60vmin;transform:translate(-50%,-50%) scale(.2);border-radius:50%;background:radial-gradient(circle,#d8f2ffcc 0%,#6fc0f055 35%,transparent 70%);opacity:0;animation:ddClarao 1s ease-out 2.05s forwards}
+@keyframes ddClarao{30%{opacity:1}to{opacity:0;transform:translate(-50%,-50%) scale(1.6)}}
+/* faíscas azuis */
+#ddEntra .dd-faisca{position:absolute;left:50%;top:46%;width:5px;height:5px;border-radius:50%;background:#bfe8ff;box-shadow:0 0 8px #6fc0f0;opacity:0;animation:ddFaisca 1.4s ease-out forwards}
+@keyframes ddFaisca{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(var(--x),var(--y))}}
+
+#ddEntra .dd-texto{position:absolute;left:0;right:0;top:calc(46% + min(19vw,220px));text-align:center;opacity:0;animation:ddTexto .6s ease-out 2.4s forwards}
+#ddEntra .dd-texto small{display:block;font-family:var(--ff-titulo);font-size:13px;letter-spacing:.35em;text-transform:uppercase;color:#8fc8e8}
+#ddEntra .dd-texto b{display:block;font-family:var(--ff-titulo);font-weight:800;font-size:clamp(18px,2vw,28px);color:#eef6fb;text-shadow:0 2px 12px #000,0 0 20px #2a7ac0;margin-top:4px}
+#ddEntra .dd-texto span{display:inline-block;margin-top:10px;font-size:13px;color:#9fb8c8}
+#ddEntra .dd-texto span i{display:inline-block;width:5px;height:5px;margin-left:3px;border-radius:50%;background:#9fb8c8;animation:ddPonto 1.2s infinite}
+#ddEntra .dd-texto span i:nth-child(2){animation-delay:.2s}#ddEntra .dd-texto span i:nth-child(3){animation-delay:.4s}
+@keyframes ddPonto{50%{opacity:.2}}
+@keyframes ddTexto{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* saída: a carta desce e encolhe até a zona de comando */
+#ddEntra.dd-sai .dd-palco{transition:transform .8s cubic-bezier(.6,0,.4,1),opacity .8s;transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) scale(.28);opacity:.0}
+#ddEntra.dd-sai .dd-texto{animation:none;opacity:0;transition:opacity .3s}
+
 .ddLista{columns:2;column-gap:18px;max-height:60vh;overflow:auto;font-size:13px;line-height:1.5}
 .chDentro{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;padding:44px 16px 14px;width:100%;box-sizing:border-box}
 .chRotulo{position:absolute;top:12px;left:16px;right:16px}
@@ -3438,6 +3484,46 @@ async function carregarDeckDia(forcar){
   try { deckDiaInfo = await (await fetch('/api/deckDia' + (forcar ? '?forcar=1' : ''))).json(); } catch(e){ deckDiaInfo = null; }
   desenharDeckDia();
 }
+function somVirarCarta(vol=.35){
+  const a = new (window.AudioContext||window.webkitAudioContext)(), t = a.currentTime;
+  const n = a.createBuffer(1, a.sampleRate*.5, a.sampleRate), d = n.getChannelData(0);
+  for (let i=0;i<d.length;i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/d.length, 2);
+  const s = a.createBufferSource(); s.buffer = n;
+  const f = a.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.2; f.frequency.setValueAtTime(600, t); f.frequency.exponentialRampToValueAtTime(3200, t+.35);
+  const g = a.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t+.08); g.gain.exponentialRampToValueAtTime(.001, t+.5);
+  s.connect(f).connect(g).connect(a.destination); s.start(t);
+  [1318, 1760, 2637].forEach((hz,k)=>{ const o = a.createOscillator(), og = a.createGain(); o.type = 'sine'; o.frequency.value = hz;
+    og.gain.setValueAtTime(0, t+.25+k*.06); og.gain.linearRampToValueAtTime(vol*.25, t+.28+k*.06); og.gain.exponentialRampToValueAtTime(.001, t+1.4+k*.06);
+    o.connect(og).connect(a.destination); o.start(t+.25+k*.06); o.stop(t+1.6); });
+}
+// Deck do dia: a carta desce virada, gira e revela o comandante; quando a partida carrega, desce para a zona de comando
+function telaDeckDia(cmd){
+  let dd = $('#ddEntra');
+  if (!dd){ dd = document.createElement('div'); dd.id = 'ddEntra'; document.body.appendChild(dd); }
+  dd.className = ''; void dd.offsetWidth;
+  dd.innerHTML = `<div class="dd-fundo"></div><div class="dd-clarao"></div>
+    <div class="dd-palco"><div class="dd-carta"><div class="dd-flutua"><div class="dd-face dd-verso"></div><div class="dd-face dd-frente" style="background-image:url('${imgCarta(cmd)}')"></div></div></div></div>
+    <div class="dd-texto"><small>Seu deck de hoje</small><b>${esc(cmd.nome||'')}</b><span>Preparando a mesa<i></i><i></i><i></i></span></div>`;
+  dd.classList.add('on');
+  const inicio = Date.now(); let encerrado = false;
+  const tSom = setTimeout(()=>{ if (cfgApp.somFx !== false) try { somVirarCarta(Math.min(.6, (cfgApp.volFx ?? 50) / 1000 * 5)); } catch(e){} }, 1650);
+  const tFaisca = setTimeout(()=>{ for (let i=0;i<22;i++){ const f = document.createElement('div'); f.className = 'dd-faisca';
+      const ang = Math.random()*Math.PI*2, r = 120 + Math.random()*220;
+      f.style.setProperty('--x', Math.cos(ang)*r+'px'); f.style.setProperty('--y', Math.sin(ang)*r+'px'); f.style.animationDelay = (Math.random()*.15)+'s';
+      dd.appendChild(f); } }, 2050);
+  const sair = (rapido)=>{ if (encerrado) return; encerrado = true; clearInterval(tChecar);
+    if (rapido){ clearTimeout(tSom); clearTimeout(tFaisca); dd.className = ''; dd.innerHTML = ''; return; }
+    const p = dd.querySelector('.dd-palco');
+    if (p){ p.style.setProperty('--dx', '-38vw'); p.style.setProperty('--dy', '40vh'); }   // canto da sua zona de comando
+    dd.classList.add('dd-sai');
+    setTimeout(()=>{ dd.className = ''; dd.innerHTML = ''; }, 1300); };
+  const tChecar = setInterval(()=>{
+    const passou = Date.now() - inicio, pronta = E && E.fase === 'jogo' && E.jogo;
+    if ((passou >= 4200 && pronta) || passou > 90000) sair(false);
+    else if (E && E.fase === 'lobby' && E.erro && passou > 2000) sair(true);
+  }, 250);
+  return ()=>sair(true);   // erro ao começar: fecha na hora
+}
 function desenharDeckDia(){
   const box = $('#cartaoDeckDia'); const D = deckDiaInfo;
   if (!D || D.vazio || D.erro){ box.classList.add('oculto'); return; }   // sem deck (ou sem Zera): o chefe já mostra o erro
@@ -3447,20 +3533,19 @@ function desenharDeckDia(){
   box.innerHTML = `<div class="ddDentro">
     <div class="ddRotulo">Deck do dia</div>
     <div class="ddNome">${esc(cmd.nome || D.nome)}</div>
-    <div class="ddSub">${D.euVenci ? 'Você já venceu com este deck. Ele está nos seus decks!' : 'Vença um bot com ele: <b>+150 XP</b> e o deck é seu'}</div>
     ${D.estrategia ? `<details class="ddEstr"><summary>Como esse deck joga</summary><div>${esc(D.estrategia)}</div></details>` : ''}
-    <div class="ddLinha"><button class="pri" id="ddJogar">${D.euVenci ? 'Jogar de novo' : 'Jogar com ele'}</button><button id="ddLista">Ver lista</button></div>
+    <div class="ddLinha"><button class="pri" id="ddJogar" title="${D.euVenci ? 'Você já venceu com este deck' : 'Vença um bot com ele: +150 XP e o deck é seu'}">${D.euVenci ? 'Jogar de novo' : 'Jogar com ele'}</button></div>
   </div>`;
-  $('#ddLista').onclick = ()=>{
+  if ($('#ddLista')) $('#ddLista').onclick = ()=>{
     const cx = abrirModal(`<div class="escDeckCab"><h3 class="subt" style="margin:0">${esc(cmd.nome || D.nome)}</h3><button class="peq" id="ddFechar">✕</button></div>
       <div class="ddLista">${(D.lista||[]).map(l=>`<div>${esc(l)}</div>`).join('')}</div>`);
     cx.querySelector('#ddFechar').onclick = ()=>fecharModal(true);
   };
   $('#ddJogar').onclick = async ()=>{
     $('#ddJogar').disabled = true; $('#ddJogar').textContent = 'Preparando...';
-    avisoLocal('Montando a partida com o Deck do dia contra um bot normal...');
+    const fim = telaDeckDia(cmd);
     const r = await post('/api/deckDia', {});
-    if (r.erro){ avisoLocal(r.erro); desenharDeckDia(); }
+    if (r.erro){ fim(); avisoLocal(r.erro); desenharDeckDia(); }
   };
 }
 
