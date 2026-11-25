@@ -351,6 +351,9 @@ public class Ponte implements MageClient {
                     if (n.endsWith(".dck") || n.endsWith(".txt")) r.add(n);
                 }
             }
+            // decks ganhos derrotando o Chefe do dia ficam em decks\chefes
+            Path ch = DECKS.resolve("chefes");
+            if (Files.isDirectory(ch)) try (DirectoryStream<Path> ds = Files.newDirectoryStream(ch, "*.dck")) { for (Path p : ds) r.add("chefes/" + p.getFileName()); }
         }
         Collections.sort(r, String.CASE_INSENSITIVE_ORDER);
         return r;
@@ -376,7 +379,7 @@ public class Ponte implements MageClient {
     }
 
     static String nomeDoArquivo(String arquivo) {
-        return arquivo.replaceAll("\\.(dck|txt)$", "").replaceAll("\\s+", " ").trim();
+        return arquivo.replaceFirst("^chefes/", "").replaceAll("\\.(dck|txt)$", "").replaceAll("\\s+", " ").trim();
     }
 
     List<Map<String, Object>> listarDecksInfo() throws IOException {
@@ -385,6 +388,7 @@ public class Ponte implements MageClient {
             Map<String, Object> d = new LinkedHashMap<>();
             d.put("arquivo", a);
             d.put("nome", nomeDoArquivo(a));
+            if (a.startsWith("chefes/")) d.put("chefe", true);
             try {
                 List<Object[]> cs = lerCartas(DECKS.resolve(a));
                 int total = 0;
@@ -948,6 +952,16 @@ public class Ponte implements MageClient {
                 JsonObject c = new JsonObject();
                 c.addProperty("id", idMesa()); c.add("partida", p);
                 Map<String, Object> r = GSON.fromJson(postAmigos("partida", c), Map.class);
+                // primeira vitória contra o chefe: o deck dele vira seu (decks\chefes)
+                Object dg = r.get("deckGanho");
+                if (dg instanceof Map) {
+                    Map<?, ?> m = (Map<?, ?>) dg;
+                    Path pasta = DECKS.resolve("chefes"); Files.createDirectories(pasta);
+                    Path arq = pasta.resolve(arquivoSeguro(String.valueOf(m.get("nome"))) + ".dck");
+                    if (!Files.exists(arq)) Files.write(arq, String.valueOf(m.get("deck")).getBytes(StandardCharsets.UTF_8));
+                    r.put("deckGanhoNome", String.valueOf(m.get("nome")));
+                    r.remove("deckGanho");
+                }
                 synchronized (trava) { if (resultado != null) resultado.put("xp", r); }
                 mudou();
             } catch (Exception e) {

@@ -430,6 +430,14 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .medalha.nao{background:#3a2a1c}.medalha.nao .medArte{filter:grayscale(1) brightness(.45);opacity:.6}
 .medalha:hover{transform:translateY(-2px)}
 .medHoje{position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);font-family:var(--ff-titulo);font-size:9px;letter-spacing:.1em;text-transform:uppercase;background:#b8452a;color:#fff;border-radius:999px;padding:1px 6px}
+.secChefes{grid-column:1 / -1;margin-top:10px;border-top:1px solid var(--borda);padding-top:8px}
+.secChefesTit{display:flex;align-items:center;gap:8px;background:none!important;border:none!important;color:var(--ouro);font-family:var(--ff-titulo);font-size:14px;letter-spacing:.06em;cursor:pointer;padding:4px 0!important}
+.secChefesTit small{font-family:'EB Garamond',serif;font-size:12.5px;color:var(--txt2);letter-spacing:0}
+.secChefesTit .seta{display:inline-block;transition:transform .15s;color:var(--txt2)}.secChefesTit .seta.aberta{transform:rotate(90deg)}
+.secChefesLista{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:8px}
+.secChefesLista.oculto{display:none}
+.deckGanho{background:linear-gradient(90deg,#b8452a55,#00000000);border-left:3px solid #ff9a5a;padding:6px 10px;border-radius:6px;font-size:13px}
+.contaGal b{color:#ffe08a}
 .rmsg{max-width:88%;padding:8px 11px;border-radius:10px;line-height:1.4;font-size:14px;white-space:normal;word-wrap:break-word;user-select:text;-webkit-user-select:text}
 .rmsg.eu{align-self:flex-end;background:#3a2a14;border:1px solid #6b5426}
 .rmsg.ia{align-self:flex-start;background:var(--bg2);border:1px solid var(--borda2)}
@@ -1458,7 +1466,7 @@ $('#mnSair').onclick = async ()=>{
 const nomeDeckCurto = d => (d.nome||'').replace(/\s+/g,' ');
 async function iniciarLobby(){
   decks = await (await fetch('/api/decks')).json();
-  const opt = decks.map(d=>`<option value="${esc(d.arquivo)}">${esc(nomeDeckCurto(d))}${d.cartas && d.cartas!==100?` (${d.cartas} cartas)`:''}</option>`).join('');
+  const opt = opcoesDeck(d=>`<option value="${esc(d.arquivo)}">${esc(nomeDeckCurto(d))}${d.cartas && d.cartas!==100?` (${d.cartas} cartas)`:''}</option>`);
   $('#lbMeu').innerHTML = opt;
   const salvo = localGet('meuDeck'); if (salvo && decks.some(d=>d.arquivo===salvo)) $('#lbMeu').value = salvo;
   desenharOps();
@@ -1468,7 +1476,7 @@ function desenharOps(){
   const salvos = JSON.parse(localGet('opsDecks')||'[]');
   const arqs = decks.map(d=>d.arquivo);
   let h='';
-  for(let i=0;i<n;i++) h += `<select class="lbOp">${decks.map(d=>`<option value="${esc(d.arquivo)}">${esc(nomeDeckCurto(d))}</option>`).join('')}</select>`;
+  for(let i=0;i<n;i++) h += `<select class="lbOp">${opcoesDeck(d=>`<option value="${esc(d.arquivo)}">${esc(nomeDeckCurto(d))}</option>`)}</select>`;
   $('#lbOps').innerHTML = h;
   document.querySelectorAll('.lbOp').forEach((s,i)=>{
     s.value = salvos[i] && arqs.includes(salvos[i]) ? salvos[i] : arqs[(i+1+arqs.indexOf($('#lbMeu').value))%arqs.length];
@@ -1525,7 +1533,7 @@ async function atualizarSalasRede(){
 let timerMesas = null;
 async function iniciarJogar(){
   decks = await (await fetch('/api/decks')).json();
-  const opt = decks.map(d=>`<option value="${esc(d.arquivo)}">${esc(nomeDeckCurto(d))}${d.cartas && d.cartas!==100?` (${d.cartas} cartas)`:''}</option>`).join('');
+  const opt = opcoesDeck(d=>`<option value="${esc(d.arquivo)}">${esc(nomeDeckCurto(d))}${d.cartas && d.cartas!==100?` (${d.cartas} cartas)`:''}</option>`);
   $('#jgDeck').innerHTML = opt; $('#jgDeckCriar').innerHTML = opt;
   const salvo = localGet('meuDeck'); if (salvo && decks.some(d=>d.arquivo===salvo)){ $('#jgDeck').value = salvo; $('#jgDeckCriar').value = salvo; }
   const cfgS = await (await fetch('/api/config')).json();
@@ -1549,7 +1557,7 @@ function desenharBotsJogar(){
   $('#jgBots').innerHTML = Array.from({length: lug}, (_, i)=>`<option value="${i}">${i===0?'Nenhum (só humanos)':i+' bot'+(i>1?'s':'')}</option>`).join('');
   $('#jgBots').value = Math.min(atual, lug-1);
   const n = +$('#jgBots').value, arqs = decks.map(d=>d.arquivo);
-  $('#jgBotsDecks').innerHTML = Array.from({length:n}, (_, i)=>`<select class="jgBotDeck">${decks.map(d=>`<option value="${esc(d.arquivo)}">Bot ${i+1}: ${esc(nomeDeckCurto(d))}</option>`).join('')}</select>`).join('');
+  $('#jgBotsDecks').innerHTML = Array.from({length:n}, (_, i)=>`<select class="jgBotDeck">${opcoesDeck(d=>`<option value="${esc(d.arquivo)}">Bot ${i+1}: ${esc(nomeDeckCurto(d))}</option>`)}</select>`).join('');
   document.querySelectorAll('.jgBotDeck').forEach((s,i)=>{ s.value = arqs[(i+1)%arqs.length]; });
 }
 $('#jgLugares').onchange = desenharBotsJogar;
@@ -1679,21 +1687,33 @@ function controlarSala(){
 
 // ---- Meus decks ----
 function imgCarta(c, v){ return `/img?s=${encodeURIComponent(c.set||'')}&n=${encodeURIComponent(c.num||'')}&nm=${encodeURIComponent(c.nome||'').replace(/'/g,'%27')}${v?'&v='+v:''}${c.verso?'&b=1':''}${c.emblema?'&e=1':''}${cartasPt&&!c.emblema?'&l=pt':''}`; }
+// opções de deck em grupos: os seus primeiro, os ganhos do Chefe do dia embaixo
+function opcoesDeck(render){
+  const meus = (decks||[]).filter(d=>!d.chefe), chefes = (decks||[]).filter(d=>d.chefe);
+  if (!chefes.length) return meus.map(render).join('');
+  return `<optgroup label="Meus decks">${meus.map(render).join('')}</optgroup><optgroup label="Decks de chefe">${chefes.map(render).join('')}</optgroup>`;
+}
 async function desenharDecks(){
   fetch('/api/config').then(r=>r.json()).then(c=>{ $('#btnImportar').classList.toggle('oculto', !c.temGrimorio); }).catch(()=>{});
   const box = $('#listaDecks');
   box.innerHTML = '<div class="dicaMenu">Carregando...</div>';
   decks = await (await fetch('/api/decks')).json();
   if (!decks.length){ box.innerHTML = '<div class="dicaMenu">Nenhum deck ainda. Use "Importar do Grimório" ou "Colar lista".</div>'; return; }
-  box.innerHTML = decks.map(d=>{
+  const cartaoDeck = d=>{
     const cmd = (d.comandantes||[])[0];
     const arte = cmd ? `style="background-image:url('${imgCarta(cmd,'art')}')"` : '';
     return `<div class="deckCard" data-arq="${esc(d.arquivo)}"><div class="arteDeck" ${arte}></div><div class="infoDeck">
       <b>${esc(nomeDeckCurto(d))}</b>
       <small>${cmd ? esc((d.comandantes||[]).map(c=>c.nome).join(' + ')) : '<span class="aviso100">sem comandante</span>'}</small>
       <small class="${d.cartas!==100?'aviso100':''}">${d.cartas||0} cartas${d.cartas!==100?' (Commander pede 100)':''}</small></div></div>`;
-  }).join('');
+  };
+  const meus = decks.filter(d=>!d.chefe), chefes = decks.filter(d=>d.chefe);
+  const aberto = localGet('decksChefeAbertos') === '1';
+  box.innerHTML = (meus.length ? meus.map(cartaoDeck).join('') : '<div class="dicaMenu">Nenhum deck seu ainda.</div>')
+    + (chefes.length ? `<div class="secChefes"><button class="secChefesTit" id="secChefesTit"><span class="seta ${aberto?'aberta':''}">▸</span> Decks de chefe <small>${chefes.length} ganho(s) derrotando o Chefe do dia</small></button>
+        <div class="secChefesLista ${aberto?'':'oculto'}">${chefes.map(cartaoDeck).join('')}</div></div>` : '');
   box.querySelectorAll('.deckCard').forEach(el=>el.onclick=()=>verDeck(el.dataset.arq));
+  if ($('#secChefesTit')) $('#secChefesTit').onclick = ()=>{ localSet('decksChefeAbertos', aberto ? '0' : '1'); desenharDecks(); };
 }
 // tipo de cada carta (Scryfall), guardado no navegador para não consultar de novo
 let tiposCartas = {};
@@ -3002,6 +3022,7 @@ function confrontoHtml(r, p){
 function galeriaChefesHtml(ts, meu){
   if (!(ts||[]).length) return '';
   const venc = ts.filter(t=>t.venceu).length;
+  const bonus = ts.filter(t=>t.venceu).reduce((n,t)=>n + (t.medalha==='ouro' ? 2 : 1), 0);
   const data = ms => { try { return new Date(ms).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}); } catch(e){ return ''; } };
   const itens = ts.map(t=>{
     const cmd = t.comandante || {};
@@ -3011,7 +3032,7 @@ function galeriaChefesHtml(ts, meu){
     return `<div class="medalha ${t.venceu ? t.medalha : 'nao'} ${t.hoje?'hoje':''}" title="${esc(dica)}">
       <div class="medArte" style="background-image:url('${imgCarta(cmd,'art')}')"></div>${t.hoje?'<span class="medHoje">hoje</span>':''}</div>`;
   }).join('');
-  return `<h3 class="subt">Galeria de chefes <span class="contaGal">${venc} de ${ts.length} vencido(s)</span></h3><div class="galeriaChefes">${itens}</div>`;
+  return `<h3 class="subt">Galeria de chefes <span class="contaGal">${venc} de ${ts.length} vencido(s)${bonus?` · bônus permanente: <b>+${bonus}% de XP</b>`:''}</span></h3><div class="galeriaChefes">${itens}</div>`;
 }
 function recordesHtml(rc){
   if (!rc || !rc.partidas) return '';
@@ -3059,7 +3080,7 @@ function desenharConvites(){
   if (box.dataset.ids === ids) return;
   box.dataset.ids = ids;
   box.innerHTML = lista.map(c=>`<div class="conviteBox" data-id="${c.id}">${avAmigo(c.de)}<div><b>${esc(c.de.nome)}</b> te chamou para a sala <b>${esc(c.sala.nome||'')}</b> (${c.sala.ocupados||'?'}/${c.sala.lugares||'?'})</div>
-    <select class="cvDeck">${(decks||[]).map(d=>`<option value="${esc(d.arquivo)}">${esc(nomeDeckCurto(d))}</option>`).join('')}</select>
+    <select class="cvDeck">${opcoesDeck(d=>`<option value="${esc(d.arquivo)}">${esc(nomeDeckCurto(d))}</option>`)}</select>
     <button class="pri cvEntrar">Entrar</button><button class="cvNao">Agora não</button></div>`).join('');
   box.querySelectorAll('.conviteBox').forEach(el=>{
     const c = lista.find(x=>x.id===el.dataset.id);
@@ -3279,7 +3300,7 @@ function desenharChefe(){
     <div class="chNome">${esc(cmd.nome || C.nome)}</div>
     <div class="chSub">${esc(C.nome)} · 1 contra 1</div>
     ${C.euVenci ? '<div class="chVenci">Você já derrotou o chefe deste ciclo! Bônus de +250 XP recebido.</div>' : '<div class="chBonus">Primeira vitória: <b>+250 XP</b></div>'}
-    <div class="chLinha"><select id="chDeck">${(decks||[]).map(d=>`<option value="${esc(d.arquivo)}" ${d.arquivo===salvo?'selected':''}>${esc(nomeDeckCurto(d))}</option>`).join('')}</select>
+    <div class="chLinha"><select id="chDeck">${opcoesDeck(d=>`<option value="${esc(d.arquivo)}" ${d.arquivo===salvo?'selected':''}>${esc(nomeDeckCurto(d))}</option>`)}</select>
       <button class="pri" id="chEnfrentar">${C.euVenci ? 'Enfrentar de novo' : 'Enfrentar'}</button></div>
     ${(C.ranking||[]).length ? `<div class="chRank"><div class="chRankTit">Ranking de hoje</div>${C.ranking.slice(0,3).map((a,i)=>`<div class="chRankLin ${a.eu?'eu':''}"><b>${i+1}º</b><span class="chDerAv">${avAmigo(a)}</span><span class="nm">${esc(a.nome)}</span><span class="rd">rodada ${Math.ceil((a.turnos||0)/2)} · ${a.vida} de vida</span></div>`).join('')}
       ${C.ranking.length > 3 ? `<div class="chRankMais">e mais ${C.ranking.length-3} que venceram</div>` : ''}<div class="chRankDica">Às 20h o 1º lugar ganha +100 XP</div></div>`
@@ -3349,6 +3370,7 @@ function desenharXpFim(r){
     ${(x.ganhos||[]).length ? `<table class="xpTab">${x.ganhos.map(g=>`<tr><td>${esc(g.motivo)}${g.bot && x.multiplicador < 1 ? ` <small class="xpPct">${Math.round(x.multiplicador*100)}%</small>` : ''}</td><td class="q">${g.qtd!=null?`${g.qtd}x`:''}</td><td class="v">+${g.xp} XP</td><td class="m">${g.max?'MAX':''}</td></tr>`).join('')}
       <tr class="tot"><td>Total</td><td></td><td class="v">+${x.total} XP</td><td></td></tr></table>
       ${x.xpCheioChefe ? `<div class="xpNota">Primeira vitória contra este chefe: XP cheio (100%).</div>` : ''}
+      ${x.deckGanhoNome ? `<div class="deckGanho">Você ganhou o deck do chefe: <b>${esc(x.deckGanhoNome)}</b>. Ele está em Decks, na seção "Decks de chefe".</div>` : ''}
       ${x.multiplicador && x.multiplicador < 1 ? `<div class="xpNota">Partida com bots: os itens com % valem ${Math.round(x.multiplicador*100)}% (fácil 30%, normal 40%, difícil 50%, Chefe do dia 70%).</div>` : ''}`
       : '<div class="xpNota">Partida curta demais (menos de 3 turnos): sem XP.</div>'}
   </div>`;

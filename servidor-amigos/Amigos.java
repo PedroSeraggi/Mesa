@@ -205,6 +205,7 @@ public class Amigos {
         boolean venceu = p.get("venceu").getAsBoolean();
         double mult = p.has("multiplicador") ? p.get("multiplicador").getAsDouble() : 1.0;
         String cicloChefe = str(p, "chefe");
+        final JsonObject[] deckGanho = {null};
         boolean primeiraContraChefe = venceuPartida(p) && !cicloChefe.isEmpty() && cicloChefe.equals(cicloAtual())
                 && b.derrotaramChefe.getOrDefault(cicloChefe, Collections.emptyList()).stream().noneMatch(d -> u.codigo.equals(d.get("codigo")));
         if (primeiraContraChefe) mult = 1.0;   // a primeira vitória contra o chefe vale 100%
@@ -223,6 +224,13 @@ public class Amigos {
             if (elim > 0) ganho.add("Jogadores eliminados", elim, (int) Math.round(20 * elim * mult), false, desconto);
             if (criaturas > 0) ganho.add("Criaturas abatidas", criaturasReais, (int) Math.round(3 * criaturas * mult), criaturasReais >= 15, desconto);
             if (compras > 0) ganho.add("Cartas compradas", comprasReais, (int) Math.round(compras * mult), comprasReais >= 30, desconto);
+            // bônus permanente da galeria: +1% por medalha (ouro +2%), sobre o XP da partida (não sobre os bônus fixos)
+            int bonusPct = 0, medalhas = 0;
+            for (Map<String, Object> t : trofeus(u)) if (Boolean.TRUE.equals(t.get("venceu"))) { medalhas++; bonusPct += "ouro".equals(t.get("medalha")) ? 2 : 1; }
+            if (bonusPct > 0) {
+                int baseXp = ganhos.stream().mapToInt(g -> (Integer) g.get("xp")).sum();
+                ganho.add("Galeria de chefes (" + medalhas + " medalha" + (medalhas > 1 ? "s" : "") + "): +" + bonusPct + "%", null, (int) Math.round(baseXp * bonusPct / 100.0), false, false);
+            }
             if (venceu && !hoje().equals(u.diaVitoria)) { u.diaVitoria = hoje(); ganho.add("Primeira vitória do dia", null, 100, false, false); }
             String cicloPartida = str(p, "chefe");
             if (venceu && !cicloPartida.isEmpty() && cicloPartida.equals(cicloAtual())) {
@@ -234,6 +242,10 @@ public class Amigos {
                     Map<String, Object> d = new LinkedHashMap<>(); d.put("codigo", u.codigo); d.put("quando", System.currentTimeMillis());
                     d.put("turnos", turnos); d.put("vida", vida); der.add(d);
                     ganho.add("Derrotou o Chefe do dia", null, 250, false, false);
+                    try {   // prêmio: o deck do chefe
+                        JsonObject ch = chefeDoCiclo();
+                        if (ch != null) { JsonObject dg = new JsonObject(); dg.add("nome", ch.get("nome")); dg.add("deck", ch.get("deck")); dg.add("comandante", ch.get("comandante")); deckGanho[0] = dg; }
+                    } catch (Exception ignored) { }
                     soma(u.recordes, "chefesDerrotados", 1);
                 } else if (melhor(turnos, vida, minha)) {   // vitória melhor que a anterior: atualiza a marca no ranking
                     minha.put("turnos", turnos); minha.put("vida", vida); minha.put("quando", System.currentTimeMillis());
@@ -285,6 +297,7 @@ public class Amigos {
         r.put("ganhos", ganhos);
         r.put("multiplicador", mult);
         if (primeiraContraChefe) r.put("xpCheioChefe", true);
+        if (deckGanho[0] != null) r.put("deckGanho", deckGanho[0]);
         r.put("total", ganhos.stream().mapToInt(g -> (Integer) g.get("xp")).sum());
         Map<String, Object> ni = nivelInfo(u);
         r.put("nivel", ni); r.put("subiu", (Integer) ni.get("nivel") > antes);
