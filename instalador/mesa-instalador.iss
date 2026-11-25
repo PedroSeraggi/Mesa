@@ -1,7 +1,7 @@
 ; Instalador da Mesa 1.0 (Inno Setup 6)
 ; Gera: Instalar Mesa 1.0.exe
 
-#define Versao "1.0"
+#define Versao "1.2"
 
 [Setup]
 AppId={{6E1C7A52-3B8E-4C7D-9F1A-4D2B7C6E0A10}
@@ -30,7 +30,7 @@ ShowLanguageDialog=no
 Name: "pt"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 
 [Messages]
-pt.WelcomeLabel2=Isto vai instalar a Mesa {#Versao} no seu computador: Commander com as regras do XMage, para jogar com os amigos.%n%nJá vem tudo junto (XMage e Java). Não precisa instalar mais nada, só o Radmin VPN para jogar online.
+pt.WelcomeLabel2=Isto vai instalar a Mesa {#Versao} no seu computador: Commander com as regras do XMage, para jogar com os amigos.%n%nJá vem tudo junto (XMage e Java). Não precisa instalar mais nada, só o Tailscale para jogar online no servidor do grupo.
 
 [Tasks]
 Name: "atalho"; Description: "Criar atalho na área de trabalho"; GroupDescription: "Atalhos:"
