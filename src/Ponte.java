@@ -722,6 +722,9 @@ public class Ponte implements MageClient {
         Map<String, Integer> criaturasDerrotadas = new HashMap<>();
         // recordes da partida (para as conquistas): dano num turno, criaturas em campo, vida
         Map<String, Integer> danoNoTurno = new HashMap<>(), maxDanoTurno = new HashMap<>(), maxCriaturas = new HashMap<>(), maxVida = new HashMap<>();
+        // para os efeitos da tela: golpes recentes, a carta do último golpe em cada um e a última mágica conjurada
+        final List<Map<String, Object>> golpes = Collections.synchronizedList(new ArrayList<>()); int seqGolpe = 0;
+        Map<String, String> ultimaCartaEm = new HashMap<>(); volatile Map<String, Object> ultimaMagia = null; int seqMagia = 0;
         Map<String, String> criaturaDono = new HashMap<>(), criaturaAtacando = new HashMap<>();
         String atacante = null; int turno = 0;
 
@@ -761,6 +764,11 @@ public class Ponte implements MageClient {
                 if (quem == null || quem.equals(vitima)) return;
                 soma2(dano, quem, vitima, n);
                 int nt = danoNoTurno.merge(quem, n, Integer::sum); maxDanoTurno.merge(quem, nt, Math::max);
+                ultimaCartaEm.put(vitima, carta);
+                if (n >= 10) {
+                    Map<String, Object> gp = new LinkedHashMap<>(); gp.put("seq", ++seqGolpe); gp.put("quem", quem); gp.put("vitima", vitima); gp.put("n", n); gp.put("carta", carta);
+                    golpes.add(gp); while (golpes.size() > 10) golpes.remove(0);
+                }
                 if (m.group(3) != null && comandantes.contains(carta)) soma2(danoCmd, quem, vitima, n);
                 ultimoAgressor.put(vitima, quem);
                 soma(danoPorCarta, quem + "|" + carta, n);
@@ -768,6 +776,7 @@ public class Ponte implements MageClient {
                 if (g == null || (Integer) g[0] < n) maiorGolpe.put(quem, new Object[]{n, carta, vitima, turno});
             } else if ((m = LANCA.matcher(t)).find()) {
                 soma(magias, m.group(1), 1); donoCarta.put(m.group(3), m.group(1));
+                { Map<String, Object> um = new LinkedHashMap<>(); um.put("seq", ++seqMagia); um.put("quem", m.group(1)); um.put("carta", m.group(2)); ultimaMagia = um; }
                 if (cmdsDe.getOrDefault(m.group(1), Collections.emptySet()).contains(m.group(2))) taxa.merge(m.group(1) + "|" + m.group(2), 1, Integer::sum);
             } else if ((m = POE.matcher(t)).find()) {
                 donoCarta.put(m.group(3), m.group(1));
@@ -822,6 +831,7 @@ public class Ponte implements MageClient {
                     e.put("nome", nome); e.put("turno", t);
                     e.put("por", vida <= 0 ? ultimoAgressor.get(nome) : null);
                     e.put("como", vida <= 0 ? "vida" : "saiu");
+                    if (vida <= 0 && ultimaCartaEm.get(nome) != null) e.put("carta", ultimaCartaEm.get(nome));
                     eliminacoes.add(e);
                 }
             }
@@ -3130,6 +3140,12 @@ public class Ponte implements MageClient {
             }
         }
         m.put("combate", combate);
+        Estatisticas stFx = stats;   // efeitos da tela (golpe grande, eliminação, varredura)
+        if (stFx != null) {
+            synchronized (stFx.golpes) { m.put("golpes", new ArrayList<>(stFx.golpes)); }
+            m.put("eliminacoes", new ArrayList<>(stFx.eliminacoes));
+            if (stFx.ultimaMagia != null) m.put("ultimaMagia", stFx.ultimaMagia);
+        }
         List<Map<String, Object>> jogadores = new ArrayList<>();
         for (PlayerView p : g.getPlayers()) {
             Map<String, Object> j = new LinkedHashMap<>();

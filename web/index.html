@@ -621,6 +621,58 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 #entCmd .ecTxt small{display:block;font-family:var(--ff-titulo);font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:color-mix(in srgb,var(--cor) 60%,#fff)}
 #entCmd .ecTxt b{display:block;font-family:var(--ff-titulo);font-weight:800;font-size:clamp(20px,2.4vw,34px);color:#fff;text-shadow:0 2px 12px #000,0 0 24px var(--cor);margin-top:4px}
 @media (prefers-reduced-motion:reduce){#mesa.tremeCmd{animation:none}#mesa .carta.pulaCmd{animation:none}}
+/* ---------- momentos épicos: eliminação, golpe grande, varredura, vitória ---------- */
+#mesa.tremeEp{animation:tremeEp var(--td,.45s) cubic-bezier(.36,.07,.19,.97)}
+@keyframes tremeEp{10%{transform:translate(calc(var(--tf,6px)*-1),calc(var(--tf,6px)*.6))}20%{transform:translate(var(--tf,6px),calc(var(--tf,6px)*-.8))}35%{transform:translate(calc(var(--tf,6px)*-.8),calc(var(--tf,6px)*-.5))}50%{transform:translate(calc(var(--tf,6px)*.6),calc(var(--tf,6px)*.8))}65%{transform:translate(calc(var(--tf,6px)*-.4),calc(var(--tf,6px)*.3))}80%{transform:translate(calc(var(--tf,6px)*.3),calc(var(--tf,6px)*-.3))}}
+#epFx{position:fixed;inset:0;z-index:8400;pointer-events:none}
+.epRachas{position:fixed;z-index:8401;pointer-events:none}
+.epRachas path{fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;filter:drop-shadow(0 0 4px #ff6a3a);stroke-dasharray:var(--l);stroke-dashoffset:var(--l);animation:epRacha .35s ease-out forwards;animation-delay:var(--d)}
+@keyframes epRacha{to{stroke-dashoffset:0}}
+.epVeuElim{position:fixed;z-index:8401;background:#0b0705;opacity:0;animation:epVeuElim 1.6s ease-out .6s forwards;border-radius:6px}
+@keyframes epVeuElim{20%{opacity:.75}100%{opacity:0}}
+.epCaco{position:fixed;z-index:8402;background:linear-gradient(180deg,#2a1f16,#1a130d);border:1px solid #0006;animation:epCaco 1s cubic-bezier(.5,0,.9,.6) forwards;animation-delay:var(--d)}
+@keyframes epCaco{from{opacity:.95}to{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:0}}
+.epFaixa{position:fixed;left:50%;top:44%;transform:translate(-50%,-50%) scale(.6);opacity:0;z-index:8403;display:flex;align-items:center;gap:16px;background:linear-gradient(90deg,#0000,#120a06f2 15%,#120a06f2 85%,#0000);padding:14px 60px;animation:epFaixaIn .45s cubic-bezier(.3,1.5,.5,1) forwards}
+.epFaixa.sai{animation:epFaixaOut .5s forwards}
+@keyframes epFaixaIn{to{opacity:1;transform:translate(-50%,-50%) scale(1)}}@keyframes epFaixaOut{to{opacity:0;transform:translate(-50%,-50%) scale(1.05)}}
+.epFaixa .golpe{width:84px;aspect-ratio:63/88;border-radius:5px;background:#000 center/cover;box-shadow:0 0 0 2px #ff7a5a,0 0 24px #ff4a2a88}
+.epFaixa small{display:block;font-family:var(--ff-titulo);font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:#ff9a7a}
+.epFaixa b{display:block;font-family:var(--ff-titulo);font-weight:800;font-size:28px;color:#fff;text-shadow:0 2px 12px #000}
+.epFaixa span{display:block;font-size:15px;color:#e8d2b8}
+.epNum{position:fixed;z-index:8403;font-family:var(--ff-titulo);font-weight:800;color:#ffe08a;text-shadow:0 0 18px #ff6a2a,0 4px 0 #7a2a0a,0 8px 20px #000;transform:translate(-50%,-50%) scale(.4);opacity:0;white-space:nowrap}
+.epNum.vai{transition:left .5s cubic-bezier(.5,0,.9,.4),top .5s cubic-bezier(.5,0,.9,.4),transform .5s,opacity .15s;opacity:1;transform:translate(-50%,-50%) scale(1)}
+.epNum.bate{animation:epBate .7s ease-out forwards}
+@keyframes epBate{0%{transform:translate(-50%,-50%) scale(1.35)}20%{transform:translate(-50%,-50%) scale(1.15)}100%{transform:translate(-50%,-75%) scale(1.1);opacity:0}}
+.epFlash{position:fixed;z-index:8401;background:radial-gradient(circle,#ff4a2a66,transparent 70%);animation:epFlash .6s ease-out forwards}
+@keyframes epFlash{from{opacity:1}to{opacity:0}}
+.epOnda{position:fixed;top:0;bottom:0;width:180px;left:-200px;z-index:8402;background:linear-gradient(90deg,transparent,#fff3c0aa 45%,#ffffff 50%,#fff3c0aa 55%,transparent);filter:blur(2px);mix-blend-mode:screen;animation:epVarre .9s cubic-bezier(.4,0,.6,1) forwards}
+@keyframes epVarre{to{left:calc(100% + 40px)}}
+.epRachaMesa{position:fixed;inset:0;z-index:8401}
+.epRachaMesa path{fill:none;stroke:#ffe8b0;stroke-width:3;filter:drop-shadow(0 0 6px #ff9a3a);stroke-dasharray:var(--l);stroke-dashoffset:var(--l);animation:epRacha .5s ease-out forwards;animation-delay:var(--d)}
+.epRachaMesa.some{transition:opacity .6s;opacity:0}
+.epTitulo{position:fixed;left:0;right:0;top:40%;text-align:center;z-index:8403;opacity:0;animation:epTit 1.6s ease-out .4s forwards}
+@keyframes epTit{15%{opacity:1}80%{opacity:1}100%{opacity:0}}
+.epTitulo small{display:block;font-family:var(--ff-titulo);font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:#ffcf8a}
+.epTitulo b{display:block;font-family:var(--ff-titulo);font-weight:800;font-size:36px;color:#fff;text-shadow:0 2px 14px #000,0 0 30px #ff9a3a}
+.epVitFundo{position:fixed;inset:0;z-index:9100;background:radial-gradient(ellipse at 50% 45%,#3a2608cc 0%,#0a0603f2 65%);opacity:0;animation:epIn .6s forwards}
+@keyframes epIn{to{opacity:1}}
+.epVitRaios{position:fixed;left:50%;top:44%;width:120vmin;height:120vmin;z-index:9101;border-radius:50%;background:repeating-conic-gradient(from 0deg,#ffd77a22 0deg 6deg,transparent 6deg 18deg);
+  mask:radial-gradient(circle,#000 20%,transparent 65%);-webkit-mask:radial-gradient(circle,#000 20%,transparent 65%);transform:translate(-50%,-50%) scale(.3);opacity:0;animation:epRaios 6s linear .4s forwards}
+@keyframes epRaios{8%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(10deg)}100%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(60deg)}}
+.epVitCartas{position:fixed;left:50%;top:44%;z-index:9102;display:flex;gap:24px;transform:translate(-50%,40vh);opacity:0;animation:epVitSobe 1s cubic-bezier(.2,.9,.3,1.1) .3s forwards}
+@keyframes epVitSobe{to{opacity:1;transform:translate(-50%,-50%)}}
+.epVitCartas div{width:min(17vw,220px);aspect-ratio:63/88;border-radius:4.5%/3.3%;background:#000 center/cover;box-shadow:0 0 0 3px #ffe8a8,0 0 60px 18px #ffc84a99,0 30px 60px #000d;animation:epVitFlut 3s ease-in-out 1.3s infinite}
+@keyframes epVitFlut{50%{transform:translateY(-10px)}}
+.epVitCoroa{position:fixed;left:50%;top:calc(44% - min(12vw,155px) - 40px);width:min(9vw,110px);z-index:9103;transform:translate(-50%,-80px);opacity:0;filter:drop-shadow(0 0 14px #ffd04a) drop-shadow(0 0 30px #ff9a2a);animation:epCoroa .7s cubic-bezier(.3,1.5,.5,1) 1.15s forwards}
+@keyframes epCoroa{to{opacity:1;transform:translate(-50%,0)}}
+.epVitCoroa path{fill:#ffe08a;stroke:#fff6d0;stroke-width:1}
+.epBrasa{position:fixed;z-index:9101;width:5px;height:5px;border-radius:50%;background:#ffcf5a;box-shadow:0 0 8px #ff9a2a,0 0 2px #fff;opacity:0;animation:epBrasa var(--t) ease-out var(--d) forwards}
+@keyframes epBrasa{10%{opacity:1}100%{opacity:0;transform:translate(var(--x),-70vh)}}
+.epVitTxt{position:fixed;left:0;right:0;top:calc(44% + min(12vw,155px) + 22px);text-align:center;z-index:9103;opacity:0;animation:epVitTxt .6s ease-out 1.3s forwards}
+@keyframes epVitTxt{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.epVitTxt b{display:block;font-family:var(--ff-titulo);font-weight:800;font-size:clamp(34px,5vw,64px);letter-spacing:.14em;color:#ffe08a;text-shadow:0 0 20px #ff9a2a,0 4px 14px #000}
+.epVitTxt span{display:block;font-family:var(--ff-titulo);font-size:16px;letter-spacing:.2em;text-transform:uppercase;color:#f3dfb0;margin-top:2px}
+#epFx .epSai{transition:opacity .8s;opacity:0!important}
 /* 2v2: barras de vida do time (cada jogador carrega metade; se uma zera, o time perde) */
 #vidaTime{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:40;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;width:min(460px,60vw)}
 #vidaTime .vtLinha{width:100%;box-sizing:border-box}
@@ -1463,7 +1515,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
       <label class="radioLinha"><input type="checkbox" id="cfgSemEfeitosMenu"> Remover efeitos especiais do menu</label>
       <label class="radioLinha"><input type="checkbox" id="cfgReduzir"> Reduzir todas as animações (para PCs mais lentos)</label>
       <label class="radioLinha"><input type="checkbox" id="cfgConfirmarPassar"> Perguntar "tem certeza?" ao passar a minha fase principal</label>
-      <label class="radioLinha"><input type="checkbox" id="cfgEntradaCmd"> Animação quando um comandante entra em campo</label>
+      <label class="radioLinha"><input type="checkbox" id="cfgEntradaCmd"> Animações épicas (comandante entrando, eliminação, golpe grande, varredura e vitória)</label>
     </div>
     <div class="blocoJogar">
       <div class="tituloBloco">Som</div>
@@ -4180,6 +4232,7 @@ function desenhar(){
     $('#fimTxt').textContent = (r.texto||'').split('\n').map(tr).join('\n');
     if (r.assistindo) $('#fimTit').textContent = 'Fim da partida';
     desenharResumo(r.resumo);
+    try { verificarVitoriaEpica(r); } catch(e){ console.error(e); }
     desenharXpFim(r);
     $('#fimRevanche').classList.toggle('oculto', !r.revanche);
   } else $('#fim').classList.add('oculto');
@@ -4190,6 +4243,7 @@ function desenhar(){
   desenharFaixaEspectador();
   desenharVidaTime();
   try { verificarEntradaCmd(); } catch(e){ console.error(e); }
+  try { verificarEpicos(); } catch(e){ console.error(e); }
   controlarMaoParceiro();
 }
 
@@ -4566,6 +4620,128 @@ function ligarMesa3d(){
 })();
 
 
+
+// ---------------- momentos épicos (eliminação, golpe grande, varredura, vitória) ----------------
+const epLigado = ()=> cfgApp.entradaCmd !== false;
+const epVol = ()=> cfgApp.somFx === false ? 0 : Math.min(1.5, (cfgApp.volFx ?? 50) / 50);
+function epFxBox(){ let b = $('#epFx'); if (!b){ b = document.createElement('div'); b.id = 'epFx'; document.body.appendChild(b); } return b; }
+function epTremer(forca, dur){ const m = $('#mesa'); m.style.setProperty('--tf', forca+'px'); m.style.setProperty('--td', dur+'s'); m.classList.remove('tremeEp'); void m.offsetWidth; m.classList.add('tremeEp'); setTimeout(()=>m.classList.remove('tremeEp'), dur*1000 + 50); }
+function epTab(nome){ const p = ((E.jogo||{}).jogadores||[]).find(j=>j.nome===nome); const cab = p && document.querySelector(`#mesa .cab[data-jog="${p.id}"]`); const t = cab && cab.closest('.tab'); const r = t && t.getBoundingClientRect(); return r && r.width ? r : null; }
+function epRuido(a, seg){ const n = a.sampleRate*seg, b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0); for (let i=0;i<n;i++) d[i] = Math.random()*2-1; const s = a.createBufferSource(); s.buffer = b; return s; }
+function epEstalo(vol, freq, dur){ try { const a = ecAudio(), t = a.currentTime, r = epRuido(a, dur), f = a.createBiquadFilter(); f.type='bandpass'; f.frequency.value = freq; f.Q.value = .7;
+  const g = a.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t+dur); r.connect(f).connect(g).connect(a.destination); r.start(t); r.stop(t+dur); } catch(e){} }
+function epVento(vol, dur){ try { const a = ecAudio(), t = a.currentTime, r = epRuido(a, dur), f = a.createBiquadFilter(); f.type='lowpass'; f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(3000, t+dur*.5); f.frequency.exponentialRampToValueAtTime(300, t+dur);
+  const g = a.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t+dur*.4); g.gain.exponentialRampToValueAtTime(.001, t+dur); r.connect(f).connect(g).connect(a.destination); r.start(t); r.stop(t+dur); } catch(e){} }
+function epFanfarra(vol){ try {
+  const a = ecAudio(), t = a.currentTime, saida = a.createGain(); saida.gain.value = vol; saida.connect(a.destination);
+  const n = a.sampleRate * 2.6, eb = a.createBuffer(2, n, a.sampleRate);
+  for (let c=0;c<2;c++){ const d = eb.getChannelData(c); for (let i=0;i<n;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/n, 3); }
+  const cv = a.createConvolver(); cv.buffer = eb; const mol = a.createGain(); mol.gain.value = .45; saida.connect(cv); cv.connect(mol).connect(a.destination);
+  [[196,0],[247,.12],[294,.24],[392,.36],[494,.5],[587,.5]].forEach(([hz, dt])=>{
+    const o = a.createOscillator(), f = a.createBiquadFilter(), g = a.createGain(); o.type = 'sawtooth'; o.frequency.value = hz;
+    f.type = 'lowpass'; f.frequency.setValueAtTime(400, t+dt); f.frequency.linearRampToValueAtTime(2600, t+dt+.4);
+    g.gain.setValueAtTime(0, t+dt); g.gain.linearRampToValueAtTime(.09, t+dt+.12); g.gain.setValueAtTime(.09, t+1.6); g.gain.exponentialRampToValueAtTime(.001, t+2.6);
+    o.connect(f).connect(g).connect(saida); o.start(t+dt); o.stop(t+2.7); });
+} catch(e){} }
+
+// 1. eliminação: o campo racha, escurece e desmorona; faixa com quem eliminou e a carta do golpe
+function epEliminacao(el){
+  const r = epTab(el.nome), box = epFxBox(), v = epVol();
+  if (r){
+    const w = r.width, h = r.height, ox = w*.45, oy = h*.5; let paths = '';
+    for (let i=0;i<7;i++){ let x = ox, y = oy, d = `M${x},${y}`, ang = i/7*Math.PI*2 + Math.random()*.4; for (let k=0;k<5;k++){ x += Math.cos(ang)*w*.11; y += Math.sin(ang)*h*.13; ang += (Math.random()-.5)*.9; d += ` L${x.toFixed(0)},${y.toFixed(0)}`; } paths += `<path d="${d}" style="--l:${w};--d:${i*.04}s"/>`; }
+    box.insertAdjacentHTML('beforeend', `<svg class="epRachas" style="left:${r.left}px;top:${r.top}px;width:${w}px;height:${h}px" viewBox="0 0 ${w} ${h}">${paths}</svg><div class="epVeuElim" style="left:${r.left}px;top:${r.top}px;width:${w}px;height:${h}px"></div>`);
+    setTimeout(()=>{ let cacos = ''; const n = 6, m = 4;
+      for (let i=0;i<n;i++) for (let j=0;j<m;j++) cacos += `<div class="epCaco" style="left:${r.left + i*w/n}px;top:${r.top + j*h/m}px;width:${w/n+1}px;height:${h/m+1}px;--x:${(Math.random()-.5)*80}px;--y:${h*.8 + Math.random()*120}px;--r:${(Math.random()-.5)*80}deg;--d:${(j*.06 + Math.random()*.1).toFixed(2)}s"></div>`;
+      box.insertAdjacentHTML('beforeend', cacos); }, 650);
+  }
+  if (v) epEstalo(.6*Math.min(1,v), 2200, .5);
+  epTremer(5, .4);
+  setTimeout(()=>{
+    if (v) tocarBum(.8*Math.min(1,v), .85);
+    const cart = (E.cartoes||[]).find(x=>x.jogador===el.nome) || {}, nome = cart.nome || el.nome;
+    const porTxt = el.como === 'saiu' ? 'saiu da partida' : el.por ? `por ${esc(el.por)}${el.carta ? `, com ${esc(el.carta)}` : ''}` : '';
+    box.insertAdjacentHTML('beforeend', `<div class="epFaixa">${el.carta ? `<div class="golpe" style="background-image:url('${imgCarta({nome: el.carta})}')"></div>` : ''}<div><small>Eliminado</small><b>${esc(nome)}</b><span>${porTxt}</span></div></div>`);
+    setTimeout(()=>box.querySelectorAll('.epFaixa').forEach(x=>x.classList.add('sai')), 2400);
+    setTimeout(()=>box.querySelectorAll('.epRachas,.epVeuElim,.epCaco,.epFaixa').forEach(x=>x.remove()), 3100);
+  }, 700);
+}
+// 2. golpe grande: o número voa de quem bateu até quem levou
+function epGolpe(g){
+  const r0 = epTab(g.quem), r1 = epTab(g.vitima); if (!r1) return;
+  const box = epFxBox(), v = epVol(), x1 = r1.left + r1.width/2, y1 = r1.top + r1.height/2;
+  const x0 = r0 ? r0.left + r0.width/2 : innerWidth/2, y0 = r0 ? r0.top + r0.height/2 : innerHeight*.3;
+  const el = document.createElement('div'); el.className = 'epNum'; el.textContent = '−' + g.n;
+  el.style.fontSize = Math.min(140, 40 + g.n*3) + 'px'; el.style.left = x0+'px'; el.style.top = y0+'px'; box.appendChild(el);
+  if (v) epVento(.3*Math.min(1,v), .6);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ el.classList.add('vai'); el.style.left = x1+'px'; el.style.top = y1+'px'; }));
+  setTimeout(()=>{
+    el.classList.remove('vai'); el.classList.add('bate');
+    epTremer(Math.min(16, 3 + g.n*.4), .5);
+    if (v) tocarBum(Math.min(1, (.4 + g.n/40) * Math.min(1, v)), g.n >= 20 ? .85 : 1);
+    box.insertAdjacentHTML('beforeend', `<div class="epFlash" style="left:${r1.left}px;top:${r1.top}px;width:${r1.width}px;height:${r1.height}px"></div>`);
+    setTimeout(()=>{ el.remove(); box.querySelectorAll('.epFlash').forEach(x=>x.remove()); }, 800);
+  }, 520);
+}
+// 3. varredura: rachaduras atravessam a mesa, a onda passa e as cartas se desfazem
+function epVarredura(m){
+  const box = epFxBox(), v = epVol(), W = innerWidth, H = innerHeight; let paths = '';
+  for (let i=0;i<4;i++){ let x = 0, y = H*(.2 + i*.2) + (Math.random()-.5)*60, d = `M0,${y.toFixed(0)}`; while (x < W){ x += 60 + Math.random()*80; y += (Math.random()-.5)*70; d += ` L${x.toFixed(0)},${y.toFixed(0)}`; } paths += `<path d="${d}" style="--l:${W*1.3};--d:${(.15+i*.05).toFixed(2)}s"/>`; }
+  const quem = m ? (((E.cartoes||[]).find(x=>x.jogador===m.quem)||{}).nome || m.quem) : '';
+  box.insertAdjacentHTML('beforeend', `<svg class="epRachaMesa" viewBox="0 0 ${W} ${H}">${paths}</svg><div class="epOnda"></div>${m ? `<div class="epTitulo"><small>${esc(quem)} conjurou</small><b>${esc(m.carta)}</b></div>` : ''}`);
+  if (v){ epVento(.45*Math.min(1,v), 1.1); setTimeout(()=>tocarBum(Math.min(1, v), .8), 350); }
+  epTremer(9, .7);
+  setTimeout(()=>box.querySelectorAll('.epRachaMesa,.epOnda').forEach(x=>x.classList.add('some')), 1500);
+  setTimeout(()=>box.querySelectorAll('.epRachaMesa,.epOnda,.epTitulo').forEach(x=>x.remove()), 2400);
+}
+// 4. vitória: o(s) comandante(s) do vencedor sobem com coroa de luz e brasas (antes do resumo)
+function epVitoria(r){
+  const box = epFxBox(), v = epVol();
+  const eu = ((E.jogo||{}).jogadores||[]).find(j=>j.eu);
+  const meusNomes = eu ? [eu.nome] : [];
+  if (r.time && E.jogo && eu){ const mt = timeDe(eu.nome); (E.jogo.jogadores||[]).forEach(j=>{ if (!j.eu && timeDe(j.nome)===mt) meusNomes.push(j.nome); }); }
+  const cmds = [];
+  for (const n of meusNomes){ const c = (E.cartoes||[]).find(x=>x.jogador===n); const cm = c && (c.cmds||[])[0]; if (cm) cmds.push(cm); }
+  if (!cmds.length) return;
+  const nomeEu = ((E.cartoes||[]).find(x=>x.jogador===meusNomes[0])||{}).nome || 'Você';
+  let h = `<div class="epVitFundo"></div><div class="epVitRaios"></div><div class="epVitCartas">${cmds.map(c=>`<div style="background-image:url('${imgCarta(c)}')"></div>`).join('')}</div>
+    <svg class="epVitCoroa" viewBox="0 0 100 60"><path d="M6 52 L12 14 L32 34 L50 4 L68 34 L88 14 L94 52 Z"/><path d="M6 56 H94 V60 H6Z"/><circle cx="50" cy="6" r="4" fill="#fff"/><circle cx="12" cy="14" r="3.5" fill="#fff"/><circle cx="88" cy="14" r="3.5" fill="#fff"/></svg>
+    <div class="epVitTxt"><b>${r.time ? 'VITÓRIA DO TIME' : 'VITÓRIA'}</b><span>${r.time ? 'O seu time venceu' : `${esc(nomeEu)} venceu com ${esc(cmds[0].nome)}`}</span></div>`;
+  for (let i=0;i<60;i++) h += `<div class="epBrasa" style="left:${(10+Math.random()*80).toFixed(1)}vw;top:${(70+Math.random()*30).toFixed(1)}vh;--x:${((Math.random()-.5)*20).toFixed(1)}vw;--t:${(2.5+Math.random()*2.5).toFixed(2)}s;--d:${(.6+Math.random()*2.5).toFixed(2)}s"></div>`;
+  box.insertAdjacentHTML('beforeend', `<div class="epVit">${h}</div>`);
+  if (v){ epFanfarra(.6*Math.min(1,v)); setTimeout(()=>tocarBum(.9*Math.min(1,v), .9), 1150); }
+  setTimeout(()=>box.querySelectorAll('.epVit *').forEach(x=>x.classList.add('epSai')), 4600);
+  setTimeout(()=>box.querySelectorAll('.epVit').forEach(x=>x.remove()), 5500);
+}
+
+// detecta os momentos a cada atualização (só anima o que acontecer depois de abrir a partida)
+let epEstado = null;
+function verificarEpicos(){
+  if (!E || !E.jogo){ return; }
+  const j = E.jogo, chave = (j.jogadores||[]).map(p=>p.nome).sort().join('|');
+  const perm = new Map(); (j.jogadores||[]).forEach(p=>(p.campo||[]).forEach(c=>perm.set(c.id, p.nome)));
+  const golpeSeq = Math.max(0, ...(j.golpes||[]).map(g=>g.seq));
+  const elims = new Set((j.eliminacoes||[]).map(e=>e.nome));
+  if (!epEstado || epEstado.chave !== chave){ epEstado = {chave, perm, golpeSeq, elims, vitoria: false}; return; }
+  const ligado = epLigado() && E.fase === 'jogo' && !E.assistindo ? true : (epLigado() && E.assistindo);
+  if (ligado){
+    // eliminações novas
+    for (const e of (j.eliminacoes||[])) if (!epEstado.elims.has(e.nome)) { epEliminacao(e); break; }
+    // golpes grandes novos (o maior deles)
+    const novos = (j.golpes||[]).filter(g=>g.seq > epEstado.golpeSeq);
+    if (novos.length) epGolpe(novos.reduce((a,b)=>b.n > a.n ? b : a));
+    // varredura: 4+ permanentes saíram de uma vez, de 2+ jogadores (sem contar quem acabou de ser eliminado)
+    const sairam = [...epEstado.perm.entries()].filter(([id, dono])=>!perm.has(id) && !elims.has(dono));
+    const donos = new Set(sairam.map(([id, dono])=>dono));
+    if (sairam.length >= 4 && donos.size >= 2) epVarredura(j.ultimaMagia);
+  }
+  epEstado.perm = perm; epEstado.golpeSeq = golpeSeq; epEstado.elims = elims;
+}
+function verificarVitoriaEpica(r){
+  if (!epLigado() || !r || r.venceu !== true || r.assistindo || !epEstado || epEstado.vitoria) return;
+  epEstado.vitoria = true;
+  epVitoria(r);
+}
 // ---------------- entrada do comandante ----------------
 // quando o comandante de alguém entra no campo: desce, flutua com o nome e despenca no tabuleiro do dono
 // (1ª vez de cada comandante 2,5 s; nas outras 1,5 s). Não trava o jogo: a partida segue por trás.
