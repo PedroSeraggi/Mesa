@@ -1055,6 +1055,8 @@ public class Ponte implements MageClient {
     static final String[] ENDERECOS_ZERA = {"100.109.159.116", "192.168.15.13"};
     volatile String zeraEscolhido = null; volatile long zeraQuando = 0;
     String enderecoZera() {
+        String dev = System.getProperty("mesa.zera");   // testes: aponta para outro servidor XMage
+        if (dev != null && !dev.isEmpty()) return dev;
         if (zeraEscolhido != null && System.currentTimeMillis() - zeraQuando < 60_000) return zeraEscolhido;
         String achou = null;
         for (String ip : ENDERECOS_ZERA) {
@@ -2062,6 +2064,16 @@ public class Ponte implements MageClient {
                     entrarMesa(UUID.fromString(b.get("mesa").getAsString()), b.get("deck").getAsString());
                     break;
                 case "comecar":
+                    if (tableId != null && botPendente2v2 != null) {   // 2v2: o 2º bot entra por último, para a ordem dos turnos alternar
+                        long humanosSentados = session.getTable(roomId, tableId).map(t -> t.getSeats().stream()
+                                .filter(sv -> sv.getPlayerName() != null && !sv.getPlayerName().isEmpty() && sv.getPlayerType() == PlayerType.HUMAN).count()).orElse(0L);
+                        if (humanosSentados < 2) throw new IllegalStateException("Esperando o seu parceiro entrar na mesa.");
+                        String bp = botPendente2v2;
+                        long antesBot = System.currentTimeMillis();
+                        if (!session.joinTable(roomId, tableId, "Bot 2 · " + nomeDeck(bp), PlayerType.COMPUTER_MAD, nivelBot2v2, carregarDeck(bp), ""))
+                            throw new IllegalStateException("Deck do bot recusado: " + nomeDeck(bp) + motivoRecusa(antesBot));
+                        botPendente2v2 = null;
+                    }
                     if (tableId == null || !session.startMatch(roomId, tableId)) throw new IllegalStateException("Não deu para começar: todos os lugares precisam estar ocupados.");
                     synchronized (trava) { fase = "iniciando"; }
                     status("Embaralhando...");
@@ -2118,18 +2130,25 @@ public class Ponte implements MageClient {
     // opções extras da sala (Criar sala → Mais opções); valem também para a revanche
     volatile JsonObject opcoesSala = new JsonObject();
     static int opc(JsonObject o, String k, int padrao) { try { return o.has(k) && !o.get(k).isJsonNull() ? o.get(k).getAsInt() : padrao; } catch (Exception e) { return padrao; } }
-    MatchOptions opcoesCommander(String nomeMesa, int humanos, int bots) {
+    MatchOptions opcoesCommander(String nomeMesa, int humanos, int bots) { return opcoesCommander(nomeMesa, humanos, bots, false); }
+    MatchOptions opcoesCommander(String nomeMesa, int humanos, int bots, boolean dupla) {
         GameTypeView tipo = null;
-        for (GameTypeView g : session.getGameTypes()) if (g.getName().equals("Commander Free For All")) tipo = g;
+        String nomeTipo = dupla ? "Commander 2v2 Mesa" : "Commander Free For All";   // o 2v2 é um tipo próprio (plugin da Mesa no servidor): alterna jogador e bot
+        for (GameTypeView g : session.getGameTypes()) if (g.getName().equals(nomeTipo)) tipo = g;
+        if (tipo == null && dupla) throw new IllegalStateException("O servidor do grupo ainda não tem o modo 2 contra 2 instalado.");
         if (tipo == null) throw new IllegalStateException("Tipo de jogo Commander não encontrado no servidor");
         String deckType = Arrays.asList(session.getDeckTypes()).contains("Variant Magic - Commander") ? "Variant Magic - Commander" : "Variant Magic - Freeform Commander";
         MatchOptions op = new MatchOptions(nomeMesa, tipo.getName(), true);
-        for (int i = 0; i < humanos; i++) op.getPlayerTypes().add(PlayerType.HUMAN);
-        for (int i = 0; i < bots; i++) op.getPlayerTypes().add(PlayerType.COMPUTER_MAD);
+        if (dupla) {   // 2v2: jogador, bot, jogador, bot. Com alcance 1 cada um só alcança os vizinhos (os bots)
+            for (int i = 0; i < 2; i++) { op.getPlayerTypes().add(PlayerType.HUMAN); op.getPlayerTypes().add(PlayerType.COMPUTER_MAD); }
+        } else {
+            for (int i = 0; i < humanos; i++) op.getPlayerTypes().add(PlayerType.HUMAN);
+            for (int i = 0; i < bots; i++) op.getPlayerTypes().add(PlayerType.COMPUTER_MAD);
+        }
         op.setDeckType(deckType);
         op.setLimited(false);
         op.setAttackOption(MultiplayerAttackOption.MULTIPLE);
-        op.setRange(RangeOfInfluence.ALL);
+        op.setRange(dupla ? RangeOfInfluence.ONE : RangeOfInfluence.ALL);
         op.setWinsNeeded(1);
         JsonObject o = opcoesSala == null ? new JsonObject() : opcoesSala;
         op.setFreeMulligans(Math.max(0, Math.min(2, opc(o, "mulligans", 0))));
@@ -2161,18 +2180,24 @@ public class Ponte implements MageClient {
         sairDoJogoAtual();
         sairDaSala();
         conectar();
+        boolean dupla = opcoesSala != null && opcoesSala.has("modo") && "2v2".equals(opcoesSala.get("modo").getAsString());
+        if (dupla && decksBots.size() != 2) throw new IllegalStateException("O 2 contra 2 (beta) precisa de 2 bots.");
+        if (dupla) lugares = 4;
         int bots = decksBots.size();
         int humanos = Math.max(2, Math.min(6, lugares)) - bots;
         if (humanos < 1) throw new IllegalStateException("Precisa sobrar pelo menos o seu lugar.");
         DeckCardLists meu = carregarDeck(meuDeck);
         String nome = nomeMesa.trim().isEmpty() ? "Mesa de " + perfil().get("nome").getAsString() : nomeMesa.trim();
-        TableView t = session.createTable(roomId, opcoesCommander(nome, humanos, bots));
+        if (dupla) nome = PREFIXO_2V2 + nome;
+        modo2v2 = dupla; vitoriaTime = false;
+        TableView t = session.createTable(roomId, opcoesCommander(nome, humanos, bots, dupla));
         if (t == null) throw new IllegalStateException("O servidor recusou criar a mesa");
         tableId = t.getTableId();
         donoDaMesa = true;
         long antesJoin = System.currentTimeMillis();
         if (!session.joinTable(roomId, tableId, meuNome, PlayerType.HUMAN, 1, meu, "")) throw new IllegalStateException("Seu deck foi recusado." + motivoRecusa(antesJoin));
-        for (int i = 0; i < bots; i++) {
+        botPendente2v2 = dupla ? decksBots.get(1) : null; nivelBot2v2 = skill;
+        for (int i = 0; i < (dupla ? 1 : bots); i++) {
             long antesBot = System.currentTimeMillis();
             if (!session.joinTable(roomId, tableId, "Bot " + (i + 1) + " · " + nomeDeck(decksBots.get(i)), PlayerType.COMPUTER_MAD, skill, carregarDeck(decksBots.get(i)), "")) {
                 throw new IllegalStateException("Deck do bot recusado: " + nomeDeck(decksBots.get(i)) + motivoRecusa(antesBot));
@@ -2196,6 +2221,8 @@ public class Ponte implements MageClient {
         DeckCardLists meu = carregarDeck(meuDeck);
         tableId = mesa;
         donoDaMesa = false;
+        try { modo2v2 = session.getTable(roomId, mesa).map(t -> t.getTableName() != null && t.getTableName().startsWith(PREFIXO_2V2)).orElse(false); } catch (Exception e) { modo2v2 = false; }
+        vitoriaTime = false;
         long antesJoin = System.currentTimeMillis();
         if (!session.joinTable(roomId, mesa, meuNome, PlayerType.HUMAN, 1, meu, "")) {
             tableId = null;
@@ -2270,6 +2297,7 @@ public class Ponte implements MageClient {
         oponentesAtuais = new ArrayList<>(oponentes);
         if (!(oponentes.size() == 1 && oponentes.get(0).startsWith("@chefe/"))) { chefeCiclo = null; chefeNome = null; }
         deckDiaCiclo = null;   // jogarDeckDia marca de novo depois de criar
+        modo2v2 = false; vitoriaTime = false;
         ultimaCriacao = new LinkedHashMap<>();
         ultimaCriacao.put("tipo", "bots"); ultimaCriacao.put("deck", meuDeck); ultimaCriacao.put("oponentes", new ArrayList<>(oponentes)); ultimaCriacao.put("nivel", skill);
         synchronized (trava) { fase = "iniciando"; }
@@ -2820,7 +2848,40 @@ public class Ponte implements MageClient {
         }
         Estatisticas st = stats;
         if (st != null) try { st.foto(jogo); } catch (Exception ignored) { }
+        if (modo2v2 && !assistindo && !vitoriaTime) verificarVitoriaTime(g);
         mudou();
+    }
+
+    // ---------------- 2 contra 2 (beta): jogadores x bots ----------------
+    static final String PREFIXO_2V2 = "2v2 · ";
+    volatile boolean modo2v2 = false, vitoriaTime = false;
+    volatile String botPendente2v2 = null; volatile int nivelBot2v2 = 7;
+    /** O XMage só termina com 1 sobrevivente: quando os 2 bots caem, a Mesa declara a vitória do time e sai da partida. */
+    void verificarVitoriaTime(GameView g) {
+        int bots = 0, botsVivos = 0, humanosVivos = 0;
+        for (PlayerView p : g.getPlayers()) {
+            boolean vivo = !p.hasLeft() && p.getLife() > 0;
+            if (ehBot(p.getName())) { bots++; if (vivo) botsVivos++; } else if (vivo) humanosVivos++;
+        }
+        if (bots < 2 || botsVivos > 0 || humanosVivos == 0) return;
+        vitoriaTime = true;
+        UUID gid = gameId;
+        int turnos = 0;
+        try { turnos = ((Number) jogo.get("turno")).intValue(); } catch (Exception ignored) { }
+        apagarPartida();
+        synchronized (trava) {
+            fase = "fim";
+            prompt = null;
+            resultado = new LinkedHashMap<>();
+            resultado.put("venceu", true);
+            resultado.put("time", true);
+            resultado.put("texto", "Vitória do time! Os dois bots caíram.");
+            if (stats != null) try { resultado.put("resumo", stats.resumo(jogo, "Vitória do time!")); } catch (Exception ignored) { }
+            resultado.put("revanche", ultimaCriacao != null);
+        }
+        registrarPartida(true, turnos);
+        if (gid != null) abandonados.add(gid);   // o resto da partida (parada, só com os dois jogadores) é ignorado
+        new Thread(() -> { try { Thread.sleep(1500); if (session != null && gid != null) session.quitMatch(gid); } catch (Exception ignored) { } }).start();
     }
 
     // =====================================================================
