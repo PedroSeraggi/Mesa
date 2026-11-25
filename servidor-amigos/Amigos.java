@@ -141,6 +141,7 @@ public class Amigos {
             if (h.has("eliminou")) for (JsonElement e : h.getAsJsonArray("eliminou")) quem.merge(e.getAsString(), 1, Integer::sum);
         }
         r.put("rival", topo(porQuem)); r.put("vitima", topo(quem));
+        r.put("trofeus", trofeus(o));
         return r;
     }
     static Map<String, Object> topo(Map<String, Integer> m) {
@@ -396,6 +397,42 @@ public class Amigos {
         }
         r.put("ranking", rk);
         return r;
+    }
+
+    // ---------------- Galeria de chefes (troféus) ----------------
+    static final Map<String, JsonObject> infoChefeArq = new HashMap<>();   // arquivo -> {nome, comandante}
+    static JsonObject infoChefe(String arq) {
+        return infoChefeArq.computeIfAbsent(arq, a -> {
+            try {
+                JsonObject o = JsonParser.parseString(new String(Files.readAllBytes(pastaChefes().resolve("usados").resolve(a)), StandardCharsets.UTF_8)).getAsJsonObject();
+                JsonObject r = new JsonObject(); r.add("nome", o.get("nome")); r.add("comandante", o.get("comandante")); return r;
+            } catch (Exception e) { return null; }
+        });
+    }
+    /** Um item por chefe que já apareceu (mais recente primeiro): venceu? marca, posição e medalha. */
+    static List<Map<String, Object>> trofeus(Usuario u) {
+        List<String> ciclos = new ArrayList<>(b.chefePorCiclo.keySet());
+        ciclos.sort(Comparator.reverseOrder());
+        String atual = cicloAtual();
+        List<Map<String, Object>> l = new ArrayList<>();
+        for (String ciclo : ciclos) {
+            JsonObject info = infoChefe(b.chefePorCiclo.get(ciclo));
+            if (info == null) continue;
+            Map<String, Object> t = new LinkedHashMap<>();
+            t.put("ciclo", ciclo); t.put("nome", str(info, "nome")); t.put("comandante", info.get("comandante"));
+            t.put("hoje", ciclo.equals(atual));
+            List<Map<String, Object>> rk = ranking(b.derrotaramChefe.getOrDefault(ciclo, Collections.emptyList()));
+            t.put("total", rk.size());
+            for (int i = 0; i < rk.size(); i++) {
+                Map<String, Object> d = rk.get(i);
+                if (!u.codigo.equals(d.get("codigo"))) continue;
+                t.put("venceu", true); t.put("turnos", d.get("turnos")); t.put("vida", d.get("vida")); t.put("quando", d.get("quando")); t.put("posicao", i + 1);
+                boolean fechado = ciclo.compareTo(atual) < 0;
+                t.put("medalha", fechado && Boolean.TRUE.equals(d.get("primeiro")) ? "ouro" : fechado && i < 3 ? "prata" : "bronze");
+            }
+            l.add(t);
+        }
+        return l;
     }
 
     static boolean venceuPartida(JsonObject p) { return p.has("venceu") && p.get("venceu").getAsBoolean(); }

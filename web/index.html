@@ -420,6 +420,16 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .embQtd{position:absolute;top:5px;right:5px;z-index:1;font-style:normal;font-family:var(--ff-titulo);font-size:12px;font-weight:700;color:#1a1008;background:linear-gradient(#ffe08a,#c9a24a);border-radius:999px;padding:1px 8px;box-shadow:0 1px 4px #000a}
 .emblemaTile span{font-family:var(--ff-titulo);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ouro)}
 .emblemaTile b{font-size:12px;color:#f3e6c8;line-height:1.15}
+.contaGal{font-family:'EB Garamond',serif;font-size:13px;letter-spacing:0;text-transform:none;color:var(--txt2);margin-left:8px}
+.galeriaChefes{display:flex;flex-wrap:wrap;gap:14px;padding:4px 2px 8px}
+.medalha{position:relative;width:64px;height:64px;border-radius:50%;padding:4px;box-sizing:border-box;flex:none;cursor:default}
+.medalha .medArte{width:100%;height:100%;border-radius:50%;background:#2a1b0e center 30%/cover no-repeat;box-shadow:inset 0 0 0 2px #0008}
+.medalha.ouro{background:conic-gradient(from 210deg,#fff3b0,#e8c870,#a8781c,#ffe08a,#c9a24a,#fff3b0);box-shadow:0 0 16px #ffd34a88}
+.medalha.prata{background:conic-gradient(from 210deg,#ffffff,#c8d0d8,#7d8896,#e8eef4,#a8b2bc,#ffffff);box-shadow:0 0 10px #c8d0d855}
+.medalha.bronze{background:conic-gradient(from 210deg,#f0c090,#c08850,#7a4a20,#e0a870,#a06838,#f0c090);box-shadow:0 0 8px #c0885044}
+.medalha.nao{background:#3a2a1c}.medalha.nao .medArte{filter:grayscale(1) brightness(.45);opacity:.6}
+.medalha:hover{transform:translateY(-2px)}
+.medHoje{position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);font-family:var(--ff-titulo);font-size:9px;letter-spacing:.1em;text-transform:uppercase;background:#b8452a;color:#fff;border-radius:999px;padding:1px 6px}
 .rmsg{max-width:88%;padding:8px 11px;border-radius:10px;line-height:1.4;font-size:14px;white-space:normal;word-wrap:break-word;user-select:text;-webkit-user-select:text}
 .rmsg.eu{align-self:flex-end;background:#3a2a14;border:1px solid #6b5426}
 .rmsg.ia{align-self:flex-start;background:var(--bg2);border:1px solid var(--borda2)}
@@ -1171,6 +1181,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
     <h3 class="subt">Estatísticas</h3>
     <div id="pfStats" class="stats3"></div>
     <div id="pfPorDeck" class="pfDecks"></div>
+    <div id="pfChefes"></div>
     <h3 class="subt">Últimas partidas</h3>
     <div id="pfUltimas" class="ultimas"></div>
     <button class="peq" id="pfZerar" style="align-self:flex-start">Zerar estatísticas</button>
@@ -2965,6 +2976,7 @@ async function verPerfilAmigo(codigo){
     <h3 class="subt">Estatísticas</h3>
     <div class="stats3"><div><b>${total}</b><span>partidas</span></div><div><b>${vit}</b><span>vitórias</span></div><div><b>${total-vit}</b><span>derrotas</span></div><div><b>${total?Math.round(vit*100/total):0}%</b><span>aproveitamento</span></div></div>
     ${recordesHtml(r.recordes)}
+    ${galeriaChefesHtml(r.trofeus, false)}
     ${(p.todosDecks||[]).length ? `<h3 class="subt">Decks (${p.todosDecks.length})</h3><div class="pfDecks">${p.todosDecks.map((d,i)=>`<div class="pfDeckMini apDeck" style="${arte(d)?`background-image:url('${arte(d)}')`:''}"><div><b>${esc(d.nome)}</b><span>${esc(cmdNomes(d)||'sem comandante')} · ${d.jogos} partida(s)${d.jogos?` · ${d.vitorias} vitória(s)`:''}</span>
         <span class="apDeckBts"><button class="peq" data-verdeck="${i}">Ver lista</button><button class="peq" data-copiardeck="${i}">Copiar para meus decks</button></span></div></div>`).join('')}</div>`
       : decksP.length > 1 ? `<div class="pfDecks">${decksP.slice(1).map(d=>`<div class="pfDeckMini" style="${arte(d)?`background-image:url('${arte(d)}')`:''}"><div><b>${esc(d.nome)}</b><span>${d.jogos} partida(s) · ${d.vitorias} vitória(s)</span></div></div>`).join('')}</div>` : ''}
@@ -2985,6 +2997,21 @@ function confrontoHtml(r, p){
   if (r.vitima) rv.push(`<div><small>Vítima favorita</small><b>${esc(r.vitima.nome)}</b><span>${r.vitima.vezes} vez(es)</span></div>`);
   if (!h.length && !rv.length) return '';
   return `<h3 class="subt">Confronto direto</h3>${h.join('') || '<div class="dicaMenu" style="background:none;border:none;padding:0">Vocês ainda não jogaram juntos (as partidas contam a partir desta versão).</div>'}${rv.length?`<div class="rsDest">${rv.join('')}</div>`:''}`;
+}
+// Galeria de chefes: medalha redonda com a arte do comandante; ouro = 1º lugar, prata = top 3, bronze = venceu
+function galeriaChefesHtml(ts, meu){
+  if (!(ts||[]).length) return '';
+  const venc = ts.filter(t=>t.venceu).length;
+  const data = ms => { try { return new Date(ms).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}); } catch(e){ return ''; } };
+  const itens = ts.map(t=>{
+    const cmd = t.comandante || {};
+    const dica = t.venceu
+      ? `${t.nome} · vencido em ${data(t.quando)} · rodada ${Math.ceil((t.turnos||0)/2)} com ${t.vida} de vida · ${t.posicao}º de ${t.total}${t.hoje?' (ranking de hoje, ainda em aberto)':''}`
+      : `${t.nome} · ${t.hoje ? 'chefe de hoje, ainda não vencido' : 'não vencido'}`;
+    return `<div class="medalha ${t.venceu ? t.medalha : 'nao'} ${t.hoje?'hoje':''}" title="${esc(dica)}">
+      <div class="medArte" style="background-image:url('${imgCarta(cmd,'art')}')"></div>${t.hoje?'<span class="medHoje">hoje</span>':''}</div>`;
+  }).join('');
+  return `<h3 class="subt">Galeria de chefes <span class="contaGal">${venc} de ${ts.length} vencido(s)</span></h3><div class="galeriaChefes">${itens}</div>`;
 }
 function recordesHtml(rc){
   if (!rc || !rc.partidas) return '';
@@ -3120,7 +3147,8 @@ function reduzirImagem(arq, w, h, q=.85){
 let pfDecksCache = null;
 async function desenharPerfil(){
   const p = await carregarPerfil();
-  fetch('/api/amigos').then(r=>r.json()).then(a=>{ const n = a && a.foto && a.foto.nivel; $('#pfNivel').innerHTML = n ? `<div class="pfNivelLinha">${barraNivel(n)}</div>` : ''; }).catch(()=>{});
+  fetch('/api/amigos').then(r=>r.json()).then(async a=>{ const n = a && a.foto && a.foto.nivel; $('#pfNivel').innerHTML = n ? `<div class="pfNivelLinha">${barraNivel(n)}</div>` : '';
+    if (a && a.foto && a.foto.codigo){ const eu = await post('/api/amigos', {acao:'perfil', codigo:a.foto.codigo}); $('#pfChefes').innerHTML = galeriaChefesHtml(eu.trofeus, true); } }).catch(()=>{});
   corEscolhida = p.cor;
   $('#pfNome').value = p.nome || ''; $('#pfFrase').value = p.frase || '';
   const atualizaAvatar = ()=>{
