@@ -3184,6 +3184,14 @@ function aplicarArtes(){
     if (p.topo) p.topo = arteToken(p, p.topo);
     if (p.eu && Array.isArray(j.mao)) j.mao = j.mao.map(c=>arteToken(p, c));
   }
+  // pilha: a ponte não diz de quem é cada item, então usa o jogador que escolheu arte para essa carta
+  // (se mais de um escolheu, o da vez; mágicas e habilidades na pilha quase sempre são de quem está jogando)
+  if (Array.isArray(j.pilha)) j.pilha = j.pilha.map(c=>{
+    const nm = String(c.nome||'').split(' // ')[0];
+    const tem = (j.jogadores||[]).filter(p=>{ const cart = E.cartoes.find(x=>x.jogador===p.nome);
+      return cart && (c.ficha ? cart.tokens && cart.tokens[c.nome] : cart.artes && cart.artes[nm]); });
+    return tem.length ? arteToken(tem.find(p=>p.ativo) || tem[0], c) : c;
+  });
 }
 // e carta cuja edição escolhida o XMage não tem (ele troca por outra): mostra a escolhida
 function arteToken(p, c){
