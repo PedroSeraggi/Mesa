@@ -1233,7 +1233,6 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
         <div class="blocoJogar" id="jgBlocoCriar">
           <div class="tituloBloco">Monte a sala</div>
           <label>Modo de jogo<select id="jgModoJogo"><option value="todos" selected>Todos contra todos</option><option value="2v2">2 contra 2 (beta): vocês contra 2 bots</option></select></label>
-          <div id="jgDica2v2" class="dicaMenu oculto">Lugares alternados: cada jogador só alcança os bots ao lado (vocês não se ajudam nem se atrapalham). Quando os 2 bots caem, o time vence.</div>
           <label>Seu deck<select id="jgDeckCriar"></select></label>
           <label>Nome da sala<input id="jgNome" placeholder="Ex.: Sexta do Commander"></label>
           <label>Lugares<select id="jgLugares"><option value="2">2 jogadores</option><option value="3">3 jogadores</option><option value="4" selected>4 jogadores</option><option value="5">5 jogadores</option><option value="6">6 jogadores</option></select></label>
@@ -1687,7 +1686,6 @@ function desenharBotsJogar(){
   const dupla = $('#jgModoJogo').value === '2v2';
   if (dupla){ $('#jgLugares').value = '4'; if (!$('#jgBots').options.length || +$('#jgBots').value !== 2){ $('#jgBots').innerHTML = '<option value="2">2 bots</option>'; } }
   $('#jgLugares').disabled = dupla; $('#jgBots').disabled = dupla;
-  $('#jgDica2v2').classList.toggle('oculto', !dupla);
   if (dupla){ $('#jgBots').innerHTML = '<option value="2">2 bots</option>'; $('#jgBots').value = '2';
     $('#jgBotsDecks').innerHTML = [0,1].map(i=>`<select class="jgBotDeck">${opcoesDeck(d=>`<option value="${esc(d.arquivo)}">Bot ${i+1}: ${esc(nomeDeckCurto(d))}</option>`)}</select>`).join('');
     const arqs = decks.map(d=>d.arquivo); document.querySelectorAll('.jgBotDeck').forEach((s,i)=>{ s.value = arqs[(i+1)%arqs.length]; });
