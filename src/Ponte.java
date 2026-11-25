@@ -2787,6 +2787,7 @@ public class Ponte implements MageClient {
                     c.put("nome", co.getName());
                     c.put("set", co.getExpansionSetCode());
                     c.put("regras", co.getRules());
+                    c.put("emblema", true);   // emblema, Anel, masmorra...: vai embaixo do comandante, com arte
                     cmd.add(c);
                 }
             }
@@ -2900,6 +2901,7 @@ public class Ponte implements MageClient {
         m.put("set", c.getExpansionSetCode());
         m.put("num", c.getCardNumber());
         m.put("ficha", c.isToken());
+        if (c.isTransformed()) m.put("verso", true);   // carta transformada: a imagem é a do verso
         m.put("viradaPraBaixo", c.isFaceDown());
         m.put("tipo", c.getTypeText());
         m.put("custo", c.getManaCostStr());
@@ -2974,26 +2976,47 @@ public class Ponte implements MageClient {
     final Object travaScry = new Object();
     long ultimaScry = 0;
 
+    /** Arte de emblema: a oficial do Scryfall (ex.: "Sephiroth Emblem", "The Ring"); senão, a arte da carta que o criou. */
+    byte[] imagemEmblema(String nome, String ver) {
+        String base = nome.replaceFirst("(?i)^emblem\\s*[-:]?\\s*", "").replaceFirst("(?i)\\s+emblem$", "").trim();
+        if (base.isEmpty()) return null;
+        try {
+            byte[] js = baixar("https://api.scryfall.com/cards/search?include_extras=true&unique=art&q=" + enc("t:emblem \"" + base + "\""));
+            if (js == null && base.contains(",")) js = baixar("https://api.scryfall.com/cards/search?include_extras=true&unique=art&q=" + enc("t:emblem \"" + base.split(",")[0] + "\""));
+            if (js != null) {
+                for (com.google.gson.JsonElement e : JsonParser.parseString(new String(js, StandardCharsets.UTF_8)).getAsJsonObject().getAsJsonArray("data")) {
+                    JsonObject c = e.getAsJsonObject();
+                    JsonObject iu = c.has("image_uris") ? c.getAsJsonObject("image_uris") : null;
+                    if (iu != null && iu.has(ver)) { byte[] b = baixar(iu.get(ver).getAsString()); if (b != null) return b; }
+                }
+            }
+        } catch (Exception ignored) { }
+        try { return baixar("https://api.scryfall.com/cards/named?fuzzy=" + enc(base) + "&format=image&version=" + ver); } catch (Exception e) { return null; }   // arte da carta que criou
+    }
+
     void imagem(HttpExchange ex) throws IOException {
         Map<String, String> q = query(ex.getRequestURI().getRawQuery());
         String set = q.getOrDefault("s", ""), num = q.getOrDefault("n", ""), nome = q.getOrDefault("nm", "");
         boolean ficha = "1".equals(q.get("f"));
+        boolean verso = "1".equals(q.get("b")), emblema = "1".equals(q.get("e"));
+        String faceVerso = verso ? "&face=back" : "";
         if (ficha) nome = nome.replaceAll("(?i)\\s+token$", "").trim();   // "Vampire Token" -> "Vampire"
         String ver = "art".equals(q.get("v")) ? "art_crop" : "normal";   // art_crop = só a arte (cartas minimizadas)
         boolean pt = "pt".equals(q.get("l")) && !ficha;   // imagem em português, quando existir
-        String chave = (pt ? "pt_" : "") + (ver.equals("art_crop") ? "art_" : "") + (ficha ? "tok_" + nome : set + "_" + num + "_" + nome).replaceAll("[^A-Za-z0-9_.-]", "_");
+        String chave = (emblema ? "emb_" : "") + (verso ? "back_" : "") + (pt ? "pt_" : "") + (ver.equals("art_crop") ? "art_" : "") + (ficha ? "tok_" + nome : set + "_" + num + "_" + nome).replaceAll("[^A-Za-z0-9_.-]", "_");
         if (chave.length() > 120) chave = chave.substring(0, 120);
         Path f = CACHE.resolve(chave + ".jpg");
         Path falha = CACHE.resolve(chave + ".falhou");
         if (!Files.exists(f) && !Files.exists(falha)) {
             byte[] b = null;
             try {
-                if (pt && !set.isEmpty() && !num.isEmpty()) {   // mesma edição, impressão em português
-                    b = baixar("https://api.scryfall.com/cards/" + enc(set.toLowerCase()) + "/" + enc(num) + "/pt?format=image&version=" + ver);
+                if (emblema) b = imagemEmblema(nome, ver);
+                if (b == null && pt && !set.isEmpty() && !num.isEmpty()) {   // mesma edição, impressão em português
+                    b = baixar("https://api.scryfall.com/cards/" + enc(set.toLowerCase()) + "/" + enc(num) + "/pt?format=image&version=" + ver + faceVerso);
                 }
                 // a edição escolhida não existe em português: usa essa mesma edição em inglês (a arte escolhida vale mais que o idioma)
                 if (b == null && pt && !set.isEmpty() && !num.isEmpty()) {
-                    b = baixar("https://api.scryfall.com/cards/" + enc(set.toLowerCase()) + "/" + enc(num) + "?format=image&version=" + ver);
+                    b = baixar("https://api.scryfall.com/cards/" + enc(set.toLowerCase()) + "/" + enc(num) + "?format=image&version=" + ver + faceVerso);
                 }
                 if (b == null && pt && !nome.isEmpty() && (set.isEmpty() || num.isEmpty())) {   // sem edição definida: qualquer impressão em português
                     byte[] js = baixar("https://api.scryfall.com/cards/search?unique=prints&include_multilingual=true&q=" + enc("!\"" + nome + "\" lang:pt"));
@@ -3011,7 +3034,7 @@ public class Ponte implements MageClient {
                     }
                 }
                 if (b == null && !ficha && !set.isEmpty() && !num.isEmpty()) {
-                    b = baixar("https://api.scryfall.com/cards/" + enc(set.toLowerCase()) + "/" + enc(num) + "?format=image&version=" + ver);
+                    b = baixar("https://api.scryfall.com/cards/" + enc(set.toLowerCase()) + "/" + enc(num) + "?format=image&version=" + ver + faceVerso);
                 }
                 if (b == null && !ficha && !nome.isEmpty()) {
                     b = baixar("https://api.scryfall.com/cards/named?exact=" + enc(nome) + "&format=image&version=" + ver);

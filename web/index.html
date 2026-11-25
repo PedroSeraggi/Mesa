@@ -408,6 +408,11 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .chDer{display:flex;align-items:center;gap:4px;font-size:12px;color:#d9c2a8;flex-wrap:wrap}
 .chDerAv .amAv{width:24px;height:24px;font-size:11px}.chDerAv .amAv u.nvSelo{display:none}
 .chErro{font-size:12.5px;color:#e8a28f}
+.emblemaTile{position:relative;width:calc(var(--carta-w,92px)*1.35);aspect-ratio:4/3;border-radius:9px;overflow:hidden;background:#2a1b0e center/cover no-repeat;border:1px solid #c9a24a;box-shadow:0 0 14px #c9a24a44,0 4px 12px #000a;display:flex;flex-direction:column;justify-content:flex-end;padding:6px 8px;box-sizing:border-box;cursor:default}
+.emblemaTile::before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#0c0805ee 0%,#0c080566 45%,transparent 75%)}
+.emblemaTile span,.emblemaTile b{position:relative}
+.emblemaTile span{font-family:var(--ff-titulo);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ouro)}
+.emblemaTile b{font-size:12px;color:#f3e6c8;line-height:1.15}
 .rmsg{max-width:88%;padding:8px 11px;border-radius:10px;line-height:1.4;font-size:14px;white-space:normal;word-wrap:break-word;user-select:text;-webkit-user-select:text}
 .rmsg.eu{align-self:flex-end;background:#3a2a14;border:1px solid #6b5426}
 .rmsg.ia{align-self:flex-start;background:var(--bg2);border:1px solid var(--borda2)}
@@ -1655,7 +1660,7 @@ function controlarSala(){
 }
 
 // ---- Meus decks ----
-function imgCarta(c, v){ return `/img?s=${encodeURIComponent(c.set||'')}&n=${encodeURIComponent(c.num||'')}&nm=${encodeURIComponent(c.nome||'').replace(/'/g,'%27')}${v?'&v='+v:''}${cartasPt?'&l=pt':''}`; }
+function imgCarta(c, v){ return `/img?s=${encodeURIComponent(c.set||'')}&n=${encodeURIComponent(c.num||'')}&nm=${encodeURIComponent(c.nome||'').replace(/'/g,'%27')}${v?'&v='+v:''}${c.verso?'&b=1':''}${c.emblema?'&e=1':''}${cartasPt&&!c.emblema?'&l=pt':''}`; }
 async function desenharDecks(){
   fetch('/api/config').then(r=>r.json()).then(c=>{ $('#btnImportar').classList.toggle('oculto', !c.temGrimorio); }).catch(()=>{});
   const box = $('#listaDecks');
@@ -3823,7 +3828,7 @@ function jogaveisOcultos(){
   }).join('');
 }
 const PROT_PT = {white:'branco', blue:'azul', black:'preto', red:'vermelho', green:'verde', everything:'tudo', creatures:'criaturas', 'each color':'todas as cores', 'all colors':'todas as cores', 'monocolored':'monocoloridos', 'multicolored':'multicoloridos', instants:'mágicas instantâneas', sorceries:'feitiços', artifacts:'artefatos', enchantments:'encantamentos', 'the chosen color':'a cor escolhida', 'the chosen player':'o jogador escolhido'};
-function ehComandante(c){ return !/emblem|emblema|^the ring$|monarch|initiative|dungeon|masmorra/i.test((c.tipo||'') + ' ' + (c.nome||'')); }
+function ehComandante(c){ return !c.emblema && !/emblem|emblema|^the ring$|monarch|initiative|dungeon|masmorra/i.test((c.tipo||'') + ' ' + (c.nome||'')); }
 function nomeChave(k, c){
   const base = CHAVES[k] ? CHAVES[k][1] : k;
   if (k === 'Protection' && (c.protecoes||[]).length){
@@ -3851,7 +3856,7 @@ function tabuleiro(p, estilo){
         <div class="tags">${p.ativo?'<span class="tag vez">Vez</span>':''}${p.prioridade?'<span class="tag prio">Prioridade</span>':''}${p.monarca?'<span class="tag">Monarca</span>':''}${p.iniciativa?'<span class="tag">Iniciativa</span>':''}${nivelAnel(p)?`<span class="tag anelTagJ" title="O Anel tentou este jogador ${nivelAnel(p)} vez(es)">💍 Anel nível ${nivelAnel(p)}</span>`:''}${marc}</div></div>
       <div class="vidaBox"><div class="vida ${p.vida<=10?'baixa':''}">${p.vida}</div>${danoCmdHtml(p)}</div>
       <div class="linha2">
-      <div class="cmd">${(p.comando||[]).filter(c=>!ehComandante(c)).map(c=>cartaHtml(c,{w:'46px'})).join('')}${p.topo?`<div class="topoGrim" title="Topo do grimório (revelado)">${cartaHtml(p.topo,{w:'46px'})}<span>topo</span></div>`:''}${p.eu?jogaveisOcultos():''}</div>
+      <div class="cmd">${(p.comando||[]).filter(c=>!ehComandante(c) && !c.emblema).map(c=>cartaHtml(c,{w:'46px'})).join('')}${p.topo?`<div class="topoGrim" title="Topo do grimório (revelado)">${cartaHtml(p.topo,{w:'46px'})}<span>topo</span></div>`:''}${p.eu?jogaveisOcultos():''}</div>
       <div class="stats">
         <div class="st"><b>${p.mao}</b>mão</div>
         <div class="st"><b>${p.grimorio}</b>grimório</div>
@@ -3882,7 +3887,10 @@ function tabuleiro(p, estilo){
   let corpo = linha(cri,'cri',false,'Criaturas e planeswalkers') + linha([...out,...anex],'out',true,'Artefatos e encantamentos') + linha(ter,'terras',true,'Terrenos');
   if (!campo.length) corpo = `<div class="vazio">Sem permanentes</div>`;
   const cmds = (p.comando||[]).filter(ehComandante);
-  const ladoCmd = cmds.length ? `<div class="ladoCmd"><div class="rotCmdLado">Comandante</div>${cmds.map(c=>cartaHtml(c)).join('')}</div>` : '';
+  const embl = (p.comando||[]).filter(c=>!ehComandante(c) && c.emblema);
+  const ladoCmd = (cmds.length || embl.length) ? `<div class="ladoCmd">${cmds.length?`<div class="rotCmdLado">Comandante</div>${cmds.map(c=>cartaHtml(c)).join('')}`:''}
+    ${embl.map(e=>{ cacheCartas.set(e.id, e); const nm = String(e.nome||'').replace(/^emblem\s*/i,'');
+      return `<div class="emblemaTile" data-cid="${e.id}" style="background-image:url('${imgCarta(e,'art')}')"><span>${/ring/i.test(e.nome||'')?'O Anel':'Emblema'}</span><b>${esc(nm)}</b></div>`; }).join('')}</div>` : '';
   const alvoJ = alvos.has(p.id) ? `<div class="faixaAlvoJog" data-jog="${p.id}">🎯 Clique aqui para escolher <b>${esc(p.nome)}</b> como alvo</div>` : '';
   return `<div class="tab ${p.ativo?'ativo':''} ${p.saiu?'saiu':''} ${alvos.has(p.id)?'tabAlvo':''}" ${p.eu?'data-eu="1"':''} style="${estilo||''}">${cab}${alvoJ}<div class="corpoTab"><div class="campo">${corpo}</div>${ladoCmd}</div></div>`;
 }
@@ -3921,7 +3929,7 @@ function cartaHtml(c, o={}){
   const w = o.w ? `style="--w:${o.w}"` : '';
   let dentro = '';
   if (!(c.viradaPraBaixo && !c.nome)){
-    const src = `/img?s=${encodeURIComponent(c.set||'')}&n=${encodeURIComponent(c.num||'')}&nm=${encodeURIComponent(c.nome||'')}${c.ficha?'&f=1':''}${o.mini?'&v=art':''}${langImg(c)}`;
+    const src = `/img?s=${encodeURIComponent(c.set||'')}&n=${encodeURIComponent(c.num||'')}&nm=${encodeURIComponent(c.nome||'')}${c.ficha?'&f=1':''}${c.verso?'&b=1':''}${o.mini?'&v=art':''}${langImg(c)}`;
     dentro = (o.mini?`<div class="nomeMini">${esc(c.nome)}</div>`:'') + `<img class="arte" loading="lazy" src="${src}" onerror="this.remove()" alt="">` +
       `<div class="txt"><div class="n"><span>${esc(c.nome)}</span><span>${simbolos(c.custo||'')}</span></div><div class="t">${esc(c.tipo||'')}</div><div class="r">${regrasTxt(c)}</div></div>`;
   }
@@ -4364,7 +4372,7 @@ function desenharPilha(){
 function mostrarPreview(id){
   const c = cacheCartas.get(id); if(!c) return;
   hoverId = id;
-  const src = `/img?s=${encodeURIComponent(c.set||'')}&n=${encodeURIComponent(c.num||'')}&nm=${encodeURIComponent(c.nome||'')}${c.ficha?'&f=1':''}${langImg(c)}`;
+  const src = `/img?s=${encodeURIComponent(c.set||'')}&n=${encodeURIComponent(c.num||'')}&nm=${encodeURIComponent(c.nome||'')}${c.ficha?'&f=1':''}${c.verso?'&b=1':''}${langImg(c)}`;
   const pt = c.poder!==undefined && c.criatura ? `<b>${esc(c.poder)}/${esc(c.resist)}</b>${c.dano?` (${c.dano} de dano)`:''}` : '';
   const ch = (c.chaves||[]).filter(k=>CHAVES[k]);
   const chHtml = (ch.length || c.portadorAnel) ? `<div class="chavesPrev">${c.portadorAnel?'<span class="anelChip">💍 Portador do Anel</span>':''}${ch.map(k=>`<span>${CHAVES[k][0]} ${esc(nomeChave(k, c))}</span>`).join('')}</div>` : '';
@@ -4372,7 +4380,7 @@ function mostrarPreview(id){
   const estado = [c.origem?`<b style="color:var(--ouro)">Habilidade na pilha:</b> ${simbolos(semHtml((c.regras||[]).join(' ')))}`:'', pt, c.virada?'Virada':'', c.enjoo&&c.criatura?'Enjoo de invocação':'', c.ficha?'Ficha':'', marc].filter(Boolean).join(' · ');
   const presos = E && E.jogo ? anexosDe(c.id) : [];
   const presoEm = c.presoEm && cacheCartas.get(c.presoEm);
-  const anexHtml = presos.length ? `<div class="presosPrev"><b>${presos.some(a=>/Equipment/i.test(a.tipo||''))?'Equipada com':'Com'}:</b><div>${presos.map(a=>`<div><img src="/img?s=${encodeURIComponent(a.set||'')}&n=${encodeURIComponent(a.num||'')}&nm=${encodeURIComponent(a.nome||'')}${a.ficha?'&f=1':''}${langImg(a)}" onerror="this.style.display='none'"><span>${esc(a.nome)}</span></div>`).join('')}</div></div>` : '';
+  const anexHtml = presos.length ? `<div class="presosPrev"><b>${presos.some(a=>/Equipment/i.test(a.tipo||''))?'Equipada com':'Com'}:</b><div>${presos.map(a=>`<div><img src="/img?s=${encodeURIComponent(a.set||'')}&n=${encodeURIComponent(a.num||'')}&nm=${encodeURIComponent(a.nome||'')}${a.ficha?'&f=1':''}${a.verso?'&b=1':''}${langImg(a)}" onerror="this.style.display='none'"><span>${esc(a.nome)}</span></div>`).join('')}</div></div>` : '';
   const presoHtml = presoEm ? `<div style="color:var(--txt2);font-size:13px">Presa em: <b style="color:var(--txt)">${esc(presoEm.nome)}</b></div>` : '';
   const h = $('#hover');
   h.innerHTML = `<div class="grande ${c.dividida?'deitada':''}"><div class="txt"><b style="font-size:16px">${esc(c.nome)} ${simbolos(c.custo||'')}</b><div style="color:var(--txt2)">${esc(c.tipo||'')}</div><div>${regrasTxt(c)}</div></div><img src="${src}" onerror="this.remove()"></div>`
