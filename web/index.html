@@ -5105,14 +5105,46 @@ function jogaveisOcultos(){
   j.jogadores.forEach(p=>['campo','comando','cemiterio','exilio'].forEach(z=>(p[z]||[]).forEach(c=>(c.regras||[]).forEach(r=>regrasVistas.push(norm(r))))));
   const jaVisivel = id => (nomes[id]||[]).every(n=>{ const t = norm(n);
     return t && !/^(cast|play|conjurar|jogar)\s/.test(t) && regrasVistas.some(r=>r.includes(t.replace(/\.$/,''))); });
-  const extras = (j.jogaveis||[]).filter(id=>!vistos.has(id) && nomes[id] && !jaVisivel(id));
-  return extras.map(id=>{
-    const jogada = String(nomes[id][0]||'');
-    const nome = jogada.replace(/^(Cast|Play|Conjurar|Jogar)\s+/i,'').replace(/\s*\[[0-9a-z]{1,6}\]\s*$/i,'').replace(/\s*\(.*\)\s*$/,'').trim();
-    const c = {id, nome, set:'', num:''};
-    if (!cacheCartas.has(id)) cacheCartas.set(id, {id, nome, set:'', num:'', regras:[], tipo:''});
-    return `<div class="topoGrim jogavelOculto" title="Você pode jogar: ${esc(jogada)} (do topo do grimório ou de outra zona)">${cartaHtml(c,{w:'46px'})}<span>jogar</span></div>`;
-  }).join('');
+  // o XMage corta o nome da jogada em 50 letras ("Cast Sephiroth, Fabled SOLDIER using..."): tira o verbo,
+  // o "using ...", o "[abc]" e as reticências para sobrar só o nome da carta
+  const nomeDaJogada = jogada => String(jogada||'').replace(/^(Cast|Play|Conjurar|Jogar)\s+/i,'').replace(/\.\.\.$/,'')
+    .replace(/\s+using\s.*$/i,'').replace(/\s*\[[0-9a-z]{1,6}\]?\s*$/i,'').replace(/\s*\(.*$/,'').trim();
+  const mesmoNome = (a, b) => { a = norm(a); b = norm(b); return !!a && !!b && (a === b || (a.length >= 12 && b.startsWith(a))); };
+  const faces = c => [c.nome, c.nomeVerso, ...String(c.nome||'').split(' // ')].filter(Boolean);
+  // carta que você está olhando no topo do grimório (Bolas's Citadel...): vem com edição e número, então tem a arte certa
+  let topo = null;
+  (j.zonas||[]).forEach(z=>{ if (z.topoOlhado && (z.cartas||[]).length) topo = z.cartas[0]; });
+  const eu = j.jogadores.find(p=>p.eu);
+  if (topo && eu && eu.topo && eu.topo.id === topo.id) topo = null;   // já aparece como topo revelado
+  // nomes de tudo que já está à vista: o comandante na zona de comando, por exemplo, às vezes vem com outro id
+  const nomesVistos = [];
+  const addN = l => (l||[]).forEach(c=>nomesVistos.push(...faces(c)));
+  addN(j.mao); j.jogadores.forEach(p=>{ addN(p.campo); addN(p.comando); addN(p.cemiterio); addN(p.exilio); if (p.topo) addN([p.topo]); });
+  const porNome = new Map();   // uma entrada por carta: as duas faces de uma carta dupla viram um quadro só
+  (j.jogaveis||[]).forEach(id=>{
+    if (vistos.has(id) || !nomes[id] || jaVisivel(id)) return;
+    const jogada = String(nomes[id][0]||''), nome = nomeDaJogada(jogada);
+    const doTopo = topo && faces(topo).some(f=>mesmoNome(nome, f));
+    if (!doTopo && nomesVistos.some(f=>mesmoNome(nome, f))) return;
+    const chave = doTopo ? 'topo' : norm(nome);
+    if (!porNome.has(chave)) porNome.set(chave, {id, jogada, nome, doTopo});
+  });
+  const quadro = (c, jogada, rotulo) => {
+    if (!cacheCartas.has(c.id)) cacheCartas.set(c.id, Object.assign({regras:[], tipo:''}, c));
+    const dica = jogada ? `Você pode jogar: ${esc(jogada)}` : 'Topo do seu grimório (você pode olhar)';
+    return `<div class="topoGrim jogavelOculto" title="${dica}">${cartaHtml(c,{w:'46px'})}<span>${rotulo}</span></div>`;
+  };
+  let html = '';
+  if (topo){
+    const jog = porNome.get('topo');
+    // o id clicado precisa ser um dos jogáveis (as faces de uma carta dupla têm ids próprios)
+    const proprio = (j.jogaveis||[]).includes(topo.id) && nomes[topo.id];
+    const id = proprio || !jog ? topo.id : jog.id;
+    const jogada = proprio ? String(nomes[topo.id][0]||'') : jog && jog.jogada;
+    html += quadro(Object.assign({}, topo, {id, nome: topo.nome || (jog && jog.nome) || ''}), jogada, jogada ? 'jogar' : 'topo');
+  }
+  porNome.forEach((x, k)=>{ if (k !== 'topo') html += quadro({id:x.id, nome:x.nome, set:'', num:''}, x.jogada, 'jogar'); });
+  return html;
 }
 const PROT_PT = {white:'branco', blue:'azul', black:'preto', red:'vermelho', green:'verde', everything:'tudo', creatures:'criaturas', 'each color':'todas as cores', 'all colors':'todas as cores', 'monocolored':'monocoloridos', 'multicolored':'multicoloridos', instants:'mágicas instantâneas', sorceries:'feitiços', artifacts:'artefatos', enchantments:'encantamentos', 'the chosen color':'a cor escolhida', 'the chosen player':'o jogador escolhido'};
 // emblemas iguais (mesmo nome e mesmo texto) viram um quadro só com ×N
