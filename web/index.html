@@ -259,6 +259,33 @@ html.modoDesenho #mesa,html.modoDesenho #mesa *{cursor:crosshair!important}
 .reconRoda{width:46px;height:46px;margin:0 auto;border:4px solid #c9a24a33;border-top-color:#e8c870;border-radius:50%;animation:reconGira 1s linear infinite}
 @keyframes reconGira{to{transform:rotate(360deg)}}
 #reconBanner{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:8000;display:flex;gap:10px;align-items:center;background:linear-gradient(#3a2612,#24170c);border:1px solid #e8c870;border-radius:10px;padding:10px 16px;box-shadow:0 6px 24px #000a;color:#f2e2c0}
+.btnAmigos{position:fixed;right:18px;bottom:18px;z-index:6900;box-shadow:0 6px 20px #000a;border:1px solid var(--borda2);border-radius:999px;background:var(--painel);color:var(--txt);padding:6px 14px;font-family:var(--ff-titulo);font-size:12px;letter-spacing:.08em;cursor:pointer}
+.btnAmigos:hover{border-color:var(--ouro)}
+#nAmigos{display:inline-block;min-width:18px;margin-left:4px;padding:0 6px;border-radius:999px;background:#2f4a22;color:#cfe8b8;font-family:var(--ff-texto,inherit);font-size:11px}
+#nAmigos:empty{display:none}
+#painelAmigos{position:fixed;top:70px;right:14px;bottom:64px;width:340px;max-width:calc(100vw - 28px);z-index:7000;background:linear-gradient(#24170e,#1a110b);border:1px solid var(--borda2);border-radius:12px;box-shadow:0 12px 40px #000c;display:flex;flex-direction:column;overflow:hidden}
+#painelAmigos.oculto{display:none}
+.amCab{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--borda)}
+.amCab h3{margin:0;font-family:var(--ff-titulo);color:var(--ouro);font-size:15px;letter-spacing:.08em;flex:1}
+.amCorpo{flex:1;overflow:auto;padding:10px 12px;display:flex;flex-direction:column;gap:12px}
+.amSec{font-family:var(--ff-titulo);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt2);margin-bottom:6px}
+.amItem{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:9px;background:#00000026;border:1px solid transparent}
+.amItem:hover{border-color:var(--borda)}
+.amAv{position:relative;width:36px;height:36px;flex:none;border-radius:50%;background:#3a2a18 center/cover;display:flex;align-items:center;justify-content:center;font-weight:700;color:#f2e2c0}
+.amAv i{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;border:2px solid #1d130c;background:#6b5a48}
+.amAv i.on{background:#7FD063;box-shadow:0 0 6px #7FD063}
+.amInfo{flex:1;min-width:0;line-height:1.25}
+.amInfo b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.amInfo span{font-size:12px;color:var(--txt2)}
+.amItem button{padding:4px 10px;font-size:12px}
+.amX{background:none;border:none;color:var(--txt2);cursor:pointer;font-size:14px;padding:2px 4px}
+.amX:hover{color:var(--perigo)}
+.amAdd{display:flex;gap:6px}.amAdd input{flex:1;min-width:0}
+.amCod{font-size:12px;color:var(--txt2)}.amCod b{color:var(--ouro);letter-spacing:.12em;cursor:pointer}
+.amErro{font-size:12.5px;color:#e8a28f}
+#convitesAmigos{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:8500;display:flex;flex-direction:column;gap:10px;align-items:center}
+.conviteBox{display:flex;align-items:center;gap:12px;background:linear-gradient(#3a2612,#24170c);border:1px solid var(--ouro);border-radius:12px;padding:12px 16px;box-shadow:0 10px 36px #000c;max-width:calc(100vw - 32px)}
+.conviteBox select{max-width:190px}
 .rmsg{max-width:88%;padding:8px 11px;border-radius:10px;line-height:1.4;font-size:14px;white-space:normal;word-wrap:break-word;user-select:text;-webkit-user-select:text}
 .rmsg.eu{align-self:flex-end;background:#3a2a14;border:1px solid #6b5426}
 .rmsg.ia{align-self:flex-start;background:var(--bg2);border:1px solid var(--borda2)}
@@ -514,7 +541,7 @@ html.fundoParado #cena .slide.ativo{animation:none}
 @keyframes kenburns{from{transform:scale(1.02) translateX(0)}to{transform:scale(1.12) translateX(-2%)}}
 #cena .veu{position:absolute;inset:0;background:linear-gradient(90deg,#0c0805f2 0%,#0c0805d9 22%,#0c080599 36%,#0c080533 52%,transparent 64%),linear-gradient(0deg,#0c080566 0%,transparent 22%)}
 #lobby:not(.naMenu) #cena .veu{background:#0c0805c8}
-#lobby>*:not(#cena){position:relative;z-index:1}
+#lobby>*:not(#cena):not(#btnAmigos):not(#painelAmigos):not(#convitesAmigos){position:relative;z-index:1}
 #cena .sol{animation:pulsoSol 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 #cena .halo{animation:halo 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 #cena .giro{animation:girar 90s linear infinite}
@@ -868,6 +895,9 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
 <canvas id="brasas"></canvas>
 </div>
   <div class="menuTopo"><button class="peq oculto" id="btnVoltar">← Menu</button><div class="marca">MESA</div><div id="chipPerfil" class="chipPerfil" title="Perfil"></div></div>
+  <button id="btnAmigos" class="btnAmigos" title="Amigos">Amigos <span id="nAmigos"></span></button>
+  <div id="painelAmigos" class="oculto"></div>
+  <div id="convitesAmigos"></div>
 
   <div id="vMenu" class="vista">
     <div class="painelMenu">
@@ -2630,6 +2660,115 @@ function arteToken(p, c){
   const e = c.ficha ? (cart.tokens && cart.tokens[c.nome]) : (cart.artes && cart.artes[nm]);
   return e ? Object.assign({}, c, {set: e.set, num: e.num}) : c;
 }
+
+// ---- Amigos: lista no servidor do grupo (Zera) ----
+let amigos = null, painelAmigosAberto = false, convitesVistos = new Set(JSON.parse(localGet('convitesVistos')||'[]'));
+async function atualizarAmigos(){
+  try { amigos = await (await fetch('/api/amigos')).json(); } catch(e){ return; }
+  const f = amigos.foto;
+  const on = f ? (f.amigos||[]).filter(a=>a.online).length : 0;
+  const ped = f ? (f.pedidos||[]).length : 0;
+  $('#nAmigos').textContent = (on || ped) ? (on + (ped ? ' · ' + ped + ' pedido' + (ped>1?'s':'') : '')) : '';
+  if (painelAmigosAberto) desenharAmigos();
+  desenharConvites();
+}
+function avAmigo(a, online){
+  const ini = esc(((a.nome||'?')[0]||'?').toUpperCase());
+  return `<div class="amAv" ${a.avatar?`style="background-image:url('${a.avatar}')"`:''}>${a.avatar?'':ini}${online===undefined?'':`<i class="${online?'on':''}"></i>`}</div>`;
+}
+function quandoVisto(ms){
+  if (!ms) return 'offline';
+  const m = Math.round((Date.now()-ms)/60000);
+  return m < 60 ? `visto há ${Math.max(1,m)} min` : m < 1440 ? `visto há ${Math.round(m/60)} h` : `visto há ${Math.round(m/1440)} dia(s)`;
+}
+function desenharAmigos(){
+  const box = $('#painelAmigos'); const A = amigos || {};
+  let corpo = '';
+  if (!A.configurado){
+    corpo = `<div class="dicaMenu">A lista de amigos fica no servidor do grupo (Zera). Precisa do Tailscale ligado e da senha do grupo (peça ao Pedro).</div>
+      <div class="amAdd"><input id="amSenha" type="password" placeholder="Senha do grupo"><button class="pri" id="amSalvarSenha">Entrar</button></div>`;
+  } else {
+    const f = A.foto;
+    if (A.erro) corpo += `<div class="amErro">${esc(A.erro)}</div>`;
+    if (f){
+      const conv = A.possoConvidar;
+      corpo += `<div class="amCod">Seu código: <b id="amMeuCod" title="Clique para copiar">${esc(f.codigo)}</b> · passe para os amigos te adicionarem</div>`;
+      if ((f.pedidos||[]).length) corpo += `<div><div class="amSec">Pedidos de amizade</div>${f.pedidos.map(a=>`<div class="amItem">${avAmigo(a)}<div class="amInfo"><b>${esc(a.nome)}</b><span>quer ser seu amigo</span></div><button class="pri" data-am="aceitar" data-c="${a.codigo}">Aceitar</button><button data-am="recusar" data-c="${a.codigo}">Recusar</button></div>`).join('')}</div>`;
+      corpo += `<div><div class="amSec">Amigos</div>${(f.amigos||[]).length ? f.amigos.map(a=>{
+        const sala = a.online && a.sala && a.sala.livres > 0 && a.sala.mesa !== A.minhaMesa ? a.sala : null;
+        return `<div class="amItem">${avAmigo(a, a.online)}<div class="amInfo"><b>${esc(a.nome)}</b><span>${a.online ? esc(a.status||'online') : quandoVisto(a.visto)}</span></div>
+          ${sala ? `<button class="pri" data-entrar="${esc(JSON.stringify(sala))}">Entrar</button>` : ''}
+          ${conv && a.online && !(a.sala && a.sala.mesa === A.minhaMesa) ? `<button data-am="convidar" data-c="${a.codigo}">Convidar</button>` : ''}
+          <button class="amX" title="Remover amigo" data-am="remover" data-c="${a.codigo}" data-n="${esc(a.nome)}">✕</button></div>`; }).join('')
+        : '<div class="dicaMenu">Nenhum amigo ainda. Adicione pelo código ou pelo nome.</div>'}</div>`;
+      corpo += `<div><div class="amSec">Adicionar amigo</div><div class="amAdd"><input id="amNovo" placeholder="Código (ex.: K7M2QX) ou nome"><button class="pri" id="amPedir">Adicionar</button></div></div>`;
+      const outros = (f.online||[]);
+      if (outros.length) corpo += `<div><div class="amSec">Online agora</div>${outros.map(a=>`<div class="amItem">${avAmigo(a, true)}<div class="amInfo"><b>${esc(a.nome)}</b><span>${(f.enviados||[]).includes(a.codigo)?'pedido enviado':'na Mesa agora'}</span></div>${(f.enviados||[]).includes(a.codigo)?'':`<button data-am="pedir" data-c="${a.codigo}">+ Adicionar</button>`}</div>`).join('')}</div>`;
+    } else if (!A.erro) corpo += '<div class="dicaMenu">Conectando...</div>';
+    corpo += `<button class="peq" id="amTrocarSenha" style="align-self:flex-start">Trocar senha do grupo</button>`;
+  }
+  box.innerHTML = `<div class="amCab"><h3>Amigos</h3><button class="peq" id="amFechar">✕</button></div><div class="amCorpo">${corpo}</div>`;
+  $('#amFechar').onclick = ()=>{ painelAmigosAberto = false; box.classList.add('oculto'); };
+  const salvarSenha = async ()=>{ const v = $('#amSenha').value.trim(); if (!v) return; amigos = await post('/api/amigos',{acao:'senha', senha:v}); desenharAmigos(); atualizarAmigos(); };
+  if ($('#amSalvarSenha')){ $('#amSalvarSenha').onclick = salvarSenha; $('#amSenha').onkeydown = e=>{ if (e.key==='Enter') salvarSenha(); }; }
+  if ($('#amTrocarSenha')) $('#amTrocarSenha').onclick = ()=>{ amigos = Object.assign({}, amigos, {configurado:false}); desenharAmigos(); };
+  if ($('#amMeuCod')) $('#amMeuCod').onclick = ()=>{ try{ navigator.clipboard.writeText($('#amMeuCod').textContent); avisoLocal('Código copiado.'); }catch(e){} };
+  const pedir = ()=>{ const v = $('#amNovo').value.trim(); if (v) acaoAmigo('pedir', v); };
+  if ($('#amPedir')){ $('#amPedir').onclick = pedir; $('#amNovo').onkeydown = e=>{ if (e.key==='Enter') pedir(); }; }
+  box.querySelectorAll('[data-am]').forEach(b=>b.onclick=()=>{
+    if (b.dataset.am==='remover' && !confirm(`Remover ${b.dataset.n} dos amigos?`)) return;
+    acaoAmigo(b.dataset.am, b.dataset.c);
+  });
+  box.querySelectorAll('[data-entrar]').forEach(b=>b.onclick=()=>escolherDeckEEntrar(JSON.parse(b.dataset.entrar)));
+}
+async function acaoAmigo(acao, codigo, extra){
+  const r = await post('/api/amigos', Object.assign({acao, codigo}, extra||{}));
+  if (r.erro && !r.foto){ avisoLocal(r.erro); return; }
+  amigos = r;
+  if (acao==='pedir') avisoLocal('Pedido enviado.');
+  if (acao==='convidar') avisoLocal('Convite enviado.');
+  if (acao==='aceitar') avisoLocal('Agora vocês são amigos.');
+  desenharAmigos(); atualizarAmigos();
+}
+// convites recebidos: aviso com escolha de deck e Entrar
+function desenharConvites(){
+  const box = $('#convitesAmigos');
+  const lista = (amigos && amigos.foto && amigos.foto.convites || []).filter(c=>!convitesVistos.has(c.id));
+  if (E && (E.fase==='jogo' || E.fase==='sala')){ box.innerHTML = ''; return; }   // não atrapalha quem está jogando
+  const ids = lista.map(c=>c.id).join(',');
+  if (box.dataset.ids === ids) return;
+  box.dataset.ids = ids;
+  box.innerHTML = lista.map(c=>`<div class="conviteBox" data-id="${c.id}">${avAmigo(c.de)}<div><b>${esc(c.de.nome)}</b> te chamou para a sala <b>${esc(c.sala.nome||'')}</b> (${c.sala.ocupados||'?'}/${c.sala.lugares||'?'})</div>
+    <select class="cvDeck">${(decks||[]).map(d=>`<option value="${esc(d.arquivo)}">${esc(nomeDeckCurto(d))}</option>`).join('')}</select>
+    <button class="pri cvEntrar">Entrar</button><button class="cvNao">Agora não</button></div>`).join('');
+  box.querySelectorAll('.conviteBox').forEach(el=>{
+    const c = lista.find(x=>x.id===el.dataset.id);
+    const sel = el.querySelector('.cvDeck'); const salvo = localGet('meuDeck'); if (salvo) sel.value = salvo;
+    const fim = ()=>{ convitesVistos.add(c.id); localSet('convitesVistos', JSON.stringify([...convitesVistos].slice(-50))); post('/api/amigos',{acao:'descartar', convite:c.id}); el.remove(); box.dataset.ids=''; };
+    el.querySelector('.cvNao').onclick = fim;
+    el.querySelector('.cvEntrar').onclick = async ()=>{ fim(); await entrarSalaAmigo(c.sala, sel.value); };
+  });
+}
+async function escolherDeckEEntrar(sala){
+  if (!decks.length) decks = await (await fetch('/api/decks')).json();
+  const salvo = localGet('meuDeck');
+  const deck = decks.some(d=>d.arquivo===salvo) ? salvo : (decks[0]||{}).arquivo;
+  if (!deck){ avisoLocal('Você precisa de um deck para entrar.'); return; }
+  entrarSalaAmigo(sala, deck);
+}
+async function entrarSalaAmigo(sala, deck){
+  avisoLocal('Entrando na sala...');
+  await post('/api/config', {servidor: sala.servidor});
+  const r = await post('/api/mesa/entrar', {mesa: sala.mesa, deck});
+  if (r.erro){ avisoLocal(r.erro); return; }
+  localSet('meuDeck', deck);
+  painelAmigosAberto = false; $('#painelAmigos').classList.add('oculto');
+  irPara('entrar');
+}
+$('#btnAmigos').onclick = ()=>{ painelAmigosAberto = !painelAmigosAberto; $('#painelAmigos').classList.toggle('oculto', !painelAmigosAberto); if (painelAmigosAberto){ desenharAmigos(); atualizarAmigos(); } };
+fetch('/api/decks').then(r=>r.json()).then(d=>{ if (!decks.length) decks = d; }).catch(()=>{});
+setInterval(()=>{ if (!document.hidden) atualizarAmigos(); }, 5000);
+setTimeout(atualizarAmigos, 800);
 
 // ---- atualizações: a Mesa pergunta ao GitHub se há versão nova ----
 const REPO_MESA = 'PedroSeraggi/Mesa';

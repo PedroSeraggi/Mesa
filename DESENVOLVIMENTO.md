@@ -55,3 +55,12 @@ A Mesa de todo mundo consulta `api.github.com/repos/PedroSeraggi/Mesa/releases/l
 - Textos da tela em **português**.
 - Visual "Grimório": madeira, dourado, fontes Cinzel e EB Garamond.
 - Nada de chave, senha ou dado pessoal no repositório.
+
+## Servidor do grupo (Zera)
+
+O Zera (ZimaOS, sempre ligado, no Tailscale) roda dois containers, em `/DATA/AppData/mesa`:
+
+- **`mesa-xmage`**: o servidor do XMage 1.4.63 (portas 17171/17172), imagem `eclipse-temurin:8-jre`, `--network host`, limite de 5 GB (`-Xmx4g`). Na Mesa: *Jogar com amigos → Servidor do grupo (Zera)*. A ponte tenta o IP do Tailscale e depois o da rede de casa (`ENDERECOS_ZERA` em `Ponte.java`).
+- **`mesa-amigos`**: a lista de amigos (`servidor-amigos/Amigos.java`, porta 17190). A senha do grupo fica só no Zera, em `amigos/senha.env`; os dados em `amigos/dados.json`.
+
+Para atualizar a lista de amigos: compile `Amigos.java` com `--release 8` e o `gson` do XMage no classpath, copie `classes/` para `/DATA/AppData/mesa/amigos/` e rode `docker restart mesa-amigos`.

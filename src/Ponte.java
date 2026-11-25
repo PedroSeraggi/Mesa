@@ -94,6 +94,7 @@ public class Ponte implements MageClient {
         }
         Ponte p = new Ponte();
         p.iniciarWeb();
+        new Thread(p::lacoAmigos, "amigos").start();
         System.out.println("Mesa no ar: http://localhost:" + PORTA_WEB);
     }
 
@@ -116,6 +117,7 @@ public class Ponte implements MageClient {
             json(ex, 200, Collections.singletonMap("versao", v));
         });
         srv.createContext("/api/atualizar", this::rotaAtualizar);
+        srv.createContext("/api/amigos", this::rotaAmigos);
         srv.createContext("/api/prefs", ex -> {   // configurações da tela (cursor, música, volume...) num arquivo: não somem se o navegador limpar os dados
             Path f = MESA.resolve("prefs.json");
             try {
@@ -962,6 +964,127 @@ public class Ponte implements MageClient {
     }
 
     boolean donoDaMesa = false;
+
+    // =====================================================================
+    // Lista de amigos: serviço "mesa-amigos" no servidor do grupo (Zera), porta 17190.
+    // Esta Mesa avisa a cada 10 s quem é e o que está fazendo, e recebe amigos, pedidos e convites.
+    static final int PORTA_AMIGOS = 17190;
+    volatile Object amigosFoto = null;   // última resposta do serviço
+    volatile String amigosErro = null;
+    final Object travaAmigos = new Object();
+
+    String idMesa() {
+        synchronized (this) {
+            JsonObject c = config();
+            if (!c.has("idMesa")) {
+                c.addProperty("idMesa", UUID.randomUUID().toString() + UUID.randomUUID().toString().substring(0, 8));
+                try { Files.write(MESA.resolve("config.json"), GSON.toJson(c).getBytes(StandardCharsets.UTF_8)); } catch (IOException ignored) { }
+            }
+            return c.get("idMesa").getAsString();
+        }
+    }
+    String senhaGrupo() {
+        JsonObject c = config();
+        return c.has("senhaGrupo") ? c.get("senhaGrupo").getAsString() : "";
+    }
+    /** O que mostrar para os amigos: "no menu", "na sala X (2/4)", "em partida, turno 7". */
+    String statusParaAmigos() {
+        String f = fase;
+        try {
+            if ("jogo".equals(f)) { Map<String, Object> j = jogo; return "em partida" + (j != null && j.get("turno") != null ? ", turno " + j.get("turno") : ""); }
+            if ("sala".equals(f)) { Map<String, Object> sl = salaParaAmigos(); return sl == null ? "numa sala" : "na sala " + sl.get("nome") + " (" + sl.get("ocupados") + "/" + sl.get("lugares") + ")"; }
+            if ("conectando".equals(f) || "iniciando".equals(f)) return "entrando numa partida";
+        } catch (Exception ignored) { }
+        return "no menu";
+    }
+    /** Sala em que estou (para os amigos entrarem), só se ela estiver num servidor que eles alcançam. */
+    Map<String, Object> salaParaAmigos() {
+        if (!"sala".equals(fase) || tableId == null || session == null || souAnfitriao()) return null;
+        try {
+            Optional<TableView> t = session.getTable(roomId, tableId);
+            if (!t.isPresent()) return null;
+            Map<String, Object> mj = mesaJson(t.get());
+            List<?> lug = (List<?>) mj.get("lugares");
+            int livres = ((Number) mj.get("livres")).intValue();
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("servidor", servidorBruto()); r.put("mesa", tableId.toString()); r.put("nome", mj.get("nome"));
+            r.put("lugares", lug.size()); r.put("ocupados", lug.size() - livres); r.put("livres", livres);
+            return r;
+        } catch (Exception e) { return null; }
+    }
+    JsonObject postAmigos(String rota, JsonObject corpo) throws IOException {
+        String senha = senhaGrupo();
+        if (senha.isEmpty()) throw new IllegalStateException("Coloque a senha do grupo.");
+        HttpURLConnection c = (HttpURLConnection) new URL("http://" + enderecoZera() + ":" + PORTA_AMIGOS + "/" + rota).openConnection();
+        c.setRequestMethod("POST"); c.setDoOutput(true);
+        c.setConnectTimeout(4000); c.setReadTimeout(8000);
+        c.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        c.setRequestProperty("X-Senha", senha);
+        try (OutputStream o = c.getOutputStream()) { o.write(GSON.toJson(corpo).getBytes(StandardCharsets.UTF_8)); }
+        int cod = c.getResponseCode();
+        InputStream in = cod >= 400 ? c.getErrorStream() : c.getInputStream();
+        String txt = in == null ? "" : new String(readAll(in), StandardCharsets.UTF_8);
+        JsonObject r = txt.isEmpty() ? new JsonObject() : JsonParser.parseString(txt).getAsJsonObject();
+        if (cod >= 400) throw new IllegalStateException(r.has("erro") ? r.get("erro").getAsString() : "Erro " + cod + " na lista de amigos.");
+        return r;
+    }
+    JsonObject corpoAmigos() {
+        JsonObject b = new JsonObject();
+        b.addProperty("id", idMesa());
+        String nome;
+        synchronized (travaPerfil) { nome = perfil().has("nome") ? perfil().get("nome").getAsString() : nomeServidor(); }
+        b.addProperty("nome", nome);
+        String av = avatarMini(); if (av != null) b.addProperty("avatar", av);
+        b.addProperty("status", statusParaAmigos());
+        Map<String, Object> sl = salaParaAmigos(); if (sl != null) b.add("sala", GSON.toJsonTree(sl));
+        return b;
+    }
+    void pingAmigos() {
+        synchronized (travaAmigos) {
+            try { amigosFoto = GSON.fromJson(postAmigos("ping", corpoAmigos()), Map.class); amigosErro = null; }
+            catch (Exception e) { amigosErro = e.getMessage() == null ? "Sem conexão com a lista de amigos." : e.getMessage(); }
+        }
+    }
+    void lacoAmigos() {
+        while (true) {
+            try { if (!senhaGrupo().isEmpty()) pingAmigos(); } catch (Throwable ignored) { }
+            try { Thread.sleep(10_000); } catch (InterruptedException e) { return; }
+        }
+    }
+    void rotaAmigos(HttpExchange ex) throws IOException {
+        try {
+            if ("POST".equals(ex.getRequestMethod())) {
+                JsonObject b = corpo(ex);
+                String acao = b.get("acao").getAsString();
+                if (acao.equals("senha")) {
+                    synchronized (this) {
+                        config().addProperty("senhaGrupo", b.get("senha").getAsString().trim());
+                        Files.write(MESA.resolve("config.json"), GSON.toJson(config()).getBytes(StandardCharsets.UTF_8));
+                    }
+                    pingAmigos();
+                } else {
+                    JsonObject c = corpoAmigos();   // id + o que faço agora
+                    c.addProperty("acao", acao);
+                    for (String k : new String[]{"codigo", "convite"}) if (b.has(k)) c.add(k, b.get(k));
+                    if (acao.equals("convidar")) {
+                        Map<String, Object> sl = salaParaAmigos();
+                        if (sl == null) throw new IllegalStateException("Entre numa sala do servidor do grupo antes de convidar.");
+                        c.add("sala", GSON.toJsonTree(sl));
+                    }
+                    synchronized (travaAmigos) { amigosFoto = GSON.fromJson(postAmigos("acao", c), Map.class); amigosErro = null; }
+                }
+            }
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("configurado", !senhaGrupo().isEmpty());
+            r.put("erro", amigosErro);
+            r.put("foto", amigosFoto);
+            r.put("possoConvidar", salaParaAmigos() != null);
+            r.put("minhaMesa", "sala".equals(fase) && tableId != null ? tableId.toString() : null);
+            json(ex, 200, r);
+        } catch (Exception e) {
+            json(ex, 200, Collections.singletonMap("erro", String.valueOf(e.getMessage())));
+        }
+    }
 
     // =====================================================================
     // Reconectar: a Mesa anota a partida em andamento (partida-atual.json). Se a conexão cair, ou se a Mesa
