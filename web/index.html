@@ -799,6 +799,8 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .carta img.arte{position:absolute;inset:0;z-index:1;width:100%;height:100%;border-radius:inherit;display:block;object-fit:cover}
 .faixaHab{position:absolute;left:0;right:0;bottom:12%;z-index:2;text-align:center;background:#120d09dd;color:var(--ouro);font-family:var(--ff-titulo);font-size:calc(var(--w)*.075);letter-spacing:.12em;text-transform:uppercase;padding:3px 0;border-top:1px solid var(--acento);border-bottom:1px solid var(--acento)}
 .carta .pt,.carta .badges,.carta .bd.qtd,.carta .anexos,.carta .seta,.carta .chaves{z-index:2}
+/* ficha (token): faixa logo abaixo do nome, de ponta a ponta (os marcadores do canto ficam por cima) */
+.seloFicha{position:absolute;left:0;right:0;top:11%;z-index:1;pointer-events:none;text-align:center;background:#120d09dd;color:var(--ouro);border-top:1px solid var(--ouro);border-bottom:1px solid var(--ouro);font-family:var(--ff-titulo);font-size:max(9px,calc(var(--w,92px)*.09));font-weight:700;letter-spacing:.2em;text-transform:uppercase;line-height:1;padding:3px 0 2px;box-shadow:0 2px 6px #0009}
 .chaves{position:absolute;right:-4px;top:16%;display:flex;flex-direction:column;gap:2px}
 .chaves span{font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif;background:#120d09ee;border:1px solid var(--borda2);border-radius:6px;font-size:calc(var(--w)*.13);min-width:1.6em;text-align:center;line-height:1.35;padding:0 2px}
 .chavesPrev{display:flex;flex-wrap:wrap;gap:5px}
@@ -3199,7 +3201,8 @@ function arteToken(p, c){
   const cart = ((E && E.cartoes) || []).find(x=>x.jogador===p.nome);
   if (!cart) return c;
   const nm = String(c.nome||'').split(' // ')[0];
-  const e = c.ficha ? (cart.tokens && cart.tokens[c.nome]) : (cart.artes && cart.artes[nm]);
+  // ficha que é cópia de uma carta do deck (ex.: Necrotic Ooze copiada): usa a arte escolhida para a carta
+  const e = c.ficha ? ((cart.tokens && cart.tokens[c.nome]) || (cart.artes && cart.artes[nm])) : (cart.artes && cart.artes[nm]);
   return e ? Object.assign({}, c, {set: e.set, num: e.num}) : c;
 }
 
@@ -4577,6 +4580,7 @@ function cartaHtml(c, o={}){
   if (c.enjoo && c.criatura && c.virada===false && !(c.chaves||[]).includes('Haste'))
     extra += `<div class="zzz" title="Enjoo de invocação: entrou neste turno, não pode atacar nem usar habilidades com {T}"><b>💤</b><span>Enjoada</span></div>`;
   if (c.origem) extra += `<div class="faixaHab">Habilidade</div>`;
+  else if (c.ficha && !o.mini) extra += `<div class="seloFicha" title="Ficha (token): não é uma carta; some ao sair do campo">Token</div>`;
   if (c.portadorAnel) extra += `<div class="anelTag" title="Portador do Anel">💍</div>`;
   if (c.virada!==undefined && (c.chaves||[]).length)
     extra += `<div class="chaves">${c.chaves.map(k=>CHAVES[k]?`<span title="${esc(nomeChave(k, c))}">${CHAVES[k][0]}</span>`:'').join('')}</div>`;

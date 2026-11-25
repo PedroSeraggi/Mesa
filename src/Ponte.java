@@ -3225,7 +3225,9 @@ public class Ponte implements MageClient {
         String chave = (emblema ? "emb_" : "") + (verso ? "back_" : "") + (pt ? "pt_" : "") + (ver.equals("art_crop") ? "art_" : "") + (ficha ? "tok_" + nome : set + "_" + num + "_" + nome).replaceAll("[^A-Za-z0-9_.-]", "_");
         if (chave.length() > 120) chave = chave.substring(0, 120);
         Path f = CACHE.resolve(chave + ".jpg");
-        Path falha = CACHE.resolve(chave + ".falhou");
+        // fichas usam outro marcador de falha: as cópias (ex.: Necrotic Ooze copiada) antes falhavam e ficavam
+        // marcadas para sempre; com o novo marcador elas tentam de novo, agora com a arte da carta copiada
+        Path falha = CACHE.resolve(chave + (ficha ? ".falhou2" : ".falhou"));
         if (!Files.exists(f) && !Files.exists(falha)) {
             byte[] b = null;
             try {
@@ -3292,6 +3294,22 @@ public class Ponte implements MageClient {
                         }
                         if (iu != null && iu.has(ver)) b = baixar(iu.get(ver).getAsString());
                     }
+                }
+                // ficha que é cópia de uma carta (Uurg, Mirror March, clones de ficha...): não existe ficha com esse
+                // nome no Scryfall, então usa a arte da própria carta copiada (a edição que veio, senão qualquer uma)
+                if (b == null && ficha && !set.isEmpty() && !num.isEmpty() && !nome.isEmpty()) {
+                    // só vale se essa edição/número for mesmo a carta copiada (fichas comuns às vezes vêm com o número de outra carta)
+                    byte[] js = baixar("https://api.scryfall.com/cards/" + enc(set.toLowerCase()) + "/" + enc(num));
+                    if (js != null) {
+                        JsonObject c = JsonParser.parseString(new String(js, StandardCharsets.UTF_8)).getAsJsonObject();
+                        String nc = c.has("name") ? c.get("name").getAsString() : "";
+                        JsonObject iu = c.has("image_uris") ? c.getAsJsonObject("image_uris")
+                                : c.has("card_faces") ? c.getAsJsonArray("card_faces").get(0).getAsJsonObject().getAsJsonObject("image_uris") : null;
+                        if ((nc.equalsIgnoreCase(nome) || nc.toLowerCase().startsWith(nome.toLowerCase() + " //")) && iu != null && iu.has(ver)) b = baixar(iu.get(ver).getAsString());
+                    }
+                }
+                if (b == null && ficha && !nome.isEmpty()) {
+                    b = baixar("https://api.scryfall.com/cards/named?exact=" + enc(nome) + "&format=image&version=" + ver);
                 }
             } catch (Exception e) {
                 b = null;
