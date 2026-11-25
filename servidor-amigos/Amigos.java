@@ -21,6 +21,7 @@ import java.util.concurrent.Executors;
  *   POST /acao  {id, acao: pedir|aceitar|recusar|remover|convidar|descartar, codigo|nome, sala, convite}
  *   POST /perfil {id, codigo} -> perfil público de alguém (foto, banner, frase, estatísticas, decks, nível, recordes, confronto)
  *   POST /partida {id, partida} -> registra o fim de uma partida: XP, nível, missões diárias, recordes
+ *   POST /chefe {id} -> o Chefe do dia (troca às 20h de Brasília): deck, lacaios e quem já o derrotou
  *
  * Variáveis: SENHA (opcional), PORTA (padrão 17190), DADOS (padrão ./dados.json).
  */
@@ -42,6 +43,7 @@ public class Amigos {
         Set<String> amizades = new LinkedHashSet<>();     // "AAAAAA|BBBBBB" (ordem alfabética)
         Set<String> pedidos = new LinkedHashSet<>();      // "DE>PARA"
         List<Convite> convites = new ArrayList<>();
+        Map<String, List<Map<String, Object>>> derrotaramChefe = new HashMap<>();   // ciclo -> [{codigo, quando}]
     }
     static Banco b = new Banco();
     static volatile boolean sujo = false;
@@ -57,6 +59,7 @@ public class Amigos {
         srv.createContext("/acao", ex -> tratar(ex, Amigos::acao));
         srv.createContext("/perfil", ex -> tratar(ex, Amigos::perfil));
         srv.createContext("/partida", ex -> tratar(ex, Amigos::partida));
+        srv.createContext("/chefe", ex -> tratar(ex, Amigos::chefe));
         srv.createContext("/saude", ex -> responder(ex, 200, "{\"ok\":true}"));
         srv.setExecutor(Executors.newFixedThreadPool(8));
         srv.start();
@@ -209,6 +212,15 @@ public class Amigos {
             if (criaturas > 0) ganho.add("Criaturas abatidas", criaturasReais, (int) Math.round(3 * criaturas * mult), criaturasReais >= 15, desconto);
             if (compras > 0) ganho.add("Cartas compradas", comprasReais, (int) Math.round(compras * mult), comprasReais >= 30, desconto);
             if (venceu && !hoje().equals(u.diaVitoria)) { u.diaVitoria = hoje(); ganho.add("Primeira vitória do dia", null, 100, false, false); }
+            String cicloPartida = str(p, "chefe");
+            if (venceu && !cicloPartida.isEmpty() && cicloPartida.equals(cicloAtual())) {
+                List<Map<String, Object>> der = b.derrotaramChefe.computeIfAbsent(cicloPartida, k -> new ArrayList<>());
+                if (der.stream().noneMatch(d -> u.codigo.equals(d.get("codigo")))) {
+                    Map<String, Object> d = new LinkedHashMap<>(); d.put("codigo", u.codigo); d.put("quando", System.currentTimeMillis()); der.add(d);
+                    ganho.add("Derrotou o Chefe do dia", null, 250, false, false);
+                    soma(u.recordes, "chefesDerrotados", 1);
+                }
+            }
             // missões
             missoesDoDia(u);
             Map<String, Integer> soma = new HashMap<>();
@@ -254,6 +266,58 @@ public class Amigos {
         r.put("missoes", missoesJson(u));
         return r;
     }
+    // ---------------- Chefe do dia ----------------
+    // Os chefes ficam em ./chefes/*.json: {nome, comandante:{nome,set,num}, deck:"texto .dck", lacaios:["texto .dck", ...]}
+    static final java.time.ZoneId BR = java.time.ZoneId.of("America/Sao_Paulo");
+    /** O ciclo começa às 20h: das 20h de hoje às 19:59 de amanhã é o mesmo chefe. */
+    static java.time.ZonedDateTime inicioCiclo() {
+        java.time.ZonedDateTime agora = java.time.ZonedDateTime.now(BR), hoje20 = agora.toLocalDate().atTime(20, 0).atZone(BR);
+        return agora.isBefore(hoje20) ? hoje20.minusDays(1) : hoje20;
+    }
+    static String cicloAtual() { return inicioCiclo().toLocalDate().toString(); }
+    static List<java.nio.file.Path> arquivosChefes() {
+        List<java.nio.file.Path> l = new ArrayList<>();
+        java.nio.file.Path d = DADOS.toAbsolutePath().getParent().resolve("chefes");
+        try (DirectoryStream<java.nio.file.Path> ds = Files.newDirectoryStream(d, "*.json")) { for (java.nio.file.Path f : ds) l.add(f); } catch (Exception ignored) { }
+        l.sort(Comparator.comparing(java.nio.file.Path::toString));
+        return l;
+    }
+    static JsonObject chefeDoCiclo() throws IOException {
+        List<java.nio.file.Path> l = arquivosChefes();
+        if (l.isEmpty()) return null;
+        long dia = inicioCiclo().toLocalDate().toEpochDay();
+        // ordem embaralhada fixa, para não repetir o mesmo chefe antes de passar por todos
+        List<java.nio.file.Path> ordem = new ArrayList<>(l);
+        long volta = dia / ordem.size();
+        Collections.shuffle(ordem, new Random(volta * 31 + 7));
+        java.nio.file.Path f = ordem.get((int) (dia % ordem.size()));
+        return JsonParser.parseString(new String(Files.readAllBytes(f), StandardCharsets.UTF_8)).getAsJsonObject();
+    }
+    static Object chefe(JsonObject c) throws IOException {
+        Usuario u = usuario(c);
+        JsonObject ch = chefeDoCiclo();
+        Map<String, Object> r = new LinkedHashMap<>();
+        if (ch == null) { r.put("vazio", true); return r; }
+        String ciclo = cicloAtual();
+        r.put("ciclo", ciclo);
+        r.put("fim", inicioCiclo().plusDays(1).toInstant().toEpochMilli());
+        r.put("nome", str(ch, "nome"));
+        r.put("comandante", ch.get("comandante"));
+        if (ch.has("descricao")) r.put("descricao", str(ch, "descricao"));
+        r.put("deck", str(ch, "deck"));
+        r.put("lacaios", ch.has("lacaios") ? ch.get("lacaios") : new JsonArray());
+        List<Map<String, Object>> der = new ArrayList<>();
+        boolean euVenci = false;
+        for (Map<String, Object> d : b.derrotaramChefe.getOrDefault(ciclo, Collections.emptyList())) {
+            Usuario o = porCodigo(String.valueOf(d.get("codigo")));
+            if (o == null) continue;
+            if (o == u) euVenci = true;
+            Map<String, Object> x = resumo(o); x.put("quando", d.get("quando")); der.add(x);
+        }
+        r.put("derrotaram", der); r.put("euVenci", euVenci);
+        return r;
+    }
+
     static void soma(JsonObject o, String k, int n) { o.addProperty(k, num(o, k) + n); }
     static int num(JsonObject o, String k) { return o.has(k) && !o.get(k).isJsonNull() ? o.get(k).getAsInt() : 0; }
 

@@ -392,6 +392,22 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .xpTab tr.tot td{border-bottom:none;font-family:var(--ff-titulo);font-size:15px;color:var(--ouro);padding-top:8px}
 .xpPct{font-size:10.5px;color:#9cc4e8;border:1px solid #6f9fc466;border-radius:999px;padding:0 5px}
 .xpNota{font-size:12px;color:var(--txt2)}
+.cartaoChefe{position:relative;border-radius:12px;overflow:hidden;border:1px solid #e8a83088;background:#2a1208 center 25%/cover no-repeat;margin:4px 0 10px;box-shadow:0 0 24px #b8573233,0 10px 30px #000a;min-height:270px;display:flex}
+.cartaoChefe::before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#0c0503f2 0%,#0c0503b0 38%,#0c050322 70%,transparent 100%)}
+.cartaoChefe.oculto{display:none}
+.chDentro{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;padding:14px 16px;width:100%}
+.chRotulo{position:absolute;top:12px;left:16px;right:16px}
+.chRotulo{display:flex;justify-content:space-between;align-items:center;font-family:var(--ff-titulo);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#ff9a5a;text-shadow:0 0 10px #ff5a2a88}
+.chTempo{letter-spacing:.04em;text-transform:none;font-size:11.5px;color:#f3d9c0;background:#00000066;border-radius:999px;padding:2px 8px}
+.chNome{font-family:var(--ff-titulo);font-size:24px;line-height:1.1;color:#fff1dc;text-shadow:0 2px 12px #000}
+.chSub{font-size:12.5px;color:#e8d2b8}
+.chBonus{font-size:13px;color:#e8d2b8}.chBonus b{color:#ffe08a}
+.chVenci{font-size:12.5px;color:#9fe08a}
+.chLinha{display:flex;gap:6px;margin-top:4px}.chLinha select{flex:1;min-width:0}
+.chLinha button{background:linear-gradient(#e8703a,#b8452a)!important;border-color:#ff9a5a!important;color:#fff!important}
+.chDer{display:flex;align-items:center;gap:4px;font-size:12px;color:#d9c2a8;flex-wrap:wrap}
+.chDerAv .amAv{width:24px;height:24px;font-size:11px}.chDerAv .amAv u.nvSelo{display:none}
+.chErro{font-size:12.5px;color:#e8a28f}
 .rmsg{max-width:88%;padding:8px 11px;border-radius:10px;line-height:1.4;font-size:14px;white-space:normal;word-wrap:break-word;user-select:text;-webkit-user-select:text}
 .rmsg.eu{align-self:flex-end;background:#3a2a14;border:1px solid #6b5426}
 .rmsg.ia{align-self:flex-start;background:var(--bg2);border:1px solid var(--borda2)}
@@ -1019,6 +1035,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
       </div>
       <div id="grupoJogar" class="grupoMenu oculto">
         <div class="subtituloMenu">Jogar</div>
+        <div id="cartaoChefe" class="cartaoChefe oculto"></div>
         <button class="btnMenu" data-ir="bots">Jogar com bots</button>
         <button class="btnMenu" data-ir="entrar">Entrar numa sala</button>
         <button class="btnMenu" data-ir="criar">Criar sala</button>
@@ -3196,6 +3213,48 @@ async function assistirMesa(sala){
   if (r.erro){ avisoLocal(r.erro); return; }
   painelAmigosAberto = false; $('#painelAmigos').classList.add('oculto');
 }
+
+// ---------------- Chefe do dia
+let chefeInfo = null, chefeTimer = null;
+async function carregarChefe(forcar){
+  try { chefeInfo = await (await fetch('/api/chefe' + (forcar ? '?forcar=1' : ''))).json(); } catch(e){ chefeInfo = null; }
+  desenharChefe();
+}
+function tempoAte(ms){
+  const t = Math.max(0, ms - Date.now()), h = Math.floor(t/3600000), m = Math.floor(t%3600000/60000), sg = Math.floor(t%60000/1000);
+  return h ? `${h}h ${String(m).padStart(2,'0')}min` : `${m}min ${String(sg).padStart(2,'0')}s`;
+}
+function desenharChefe(){
+  const box = $('#cartaoChefe'); const C = chefeInfo;
+  if (!C || C.vazio){ box.classList.add('oculto'); return; }
+  box.classList.remove('oculto');
+  if (C.erro){ box.innerHTML = `<div class="chDentro"><div class="chRotulo">Chefe do dia</div><div class="chErro">${esc(C.erro)}</div></div>`; box.style.backgroundImage = ''; return; }
+  const cmd = C.comandante || {};
+  box.style.backgroundImage = `url('${imgCarta(cmd, 'art')}')`;
+  const der = C.derrotaram || [];
+  const salvo = localGet('meuDeck');
+  box.innerHTML = `<div class="chDentro">
+    <div class="chRotulo">Chefe do dia <span class="chTempo" id="chTempo">troca em ${tempoAte(C.fim)}</span></div>
+    <div class="chNome">${esc(cmd.nome || C.nome)}</div>
+    <div class="chSub">${esc(C.nome)} · 1 contra 1 · IA difícil</div>
+    ${C.euVenci ? '<div class="chVenci">Você já derrotou o chefe deste ciclo! Bônus de +250 XP recebido.</div>' : '<div class="chBonus">Primeira vitória: <b>+250 XP</b></div>'}
+    <div class="chLinha"><select id="chDeck">${(decks||[]).map(d=>`<option value="${esc(d.arquivo)}" ${d.arquivo===salvo?'selected':''}>${esc(nomeDeckCurto(d))}</option>`).join('')}</select>
+      <button class="pri" id="chEnfrentar">${C.euVenci ? 'Enfrentar de novo' : 'Enfrentar'}</button></div>
+    ${der.length ? `<div class="chDer"><span>Derrotaram:</span>${der.map(a=>`<span class="chDerAv" title="${esc(a.nome)}">${avAmigo(a)}</span>`).join('')}</div>` : '<div class="chDer"><span>Ninguém derrotou ainda.</span></div>'}
+  </div>`;
+  $('#chEnfrentar').onclick = async ()=>{
+    const deck = $('#chDeck').value; if (!deck){ avisoLocal('Escolha um deck.'); return; }
+    localSet('meuDeck', deck);
+    $('#chEnfrentar').disabled = true; $('#chEnfrentar').textContent = 'Preparando o chefe...';
+    const r = await post('/api/chefe', {deck});
+    if (r.erro){ avisoLocal(r.erro); desenharChefe(); }
+  };
+  clearInterval(chefeTimer);
+  chefeTimer = setInterval(()=>{ const t = $('#chTempo'); if (!t || !chefeInfo || !chefeInfo.fim){ clearInterval(chefeTimer); return; }
+    if (Date.now() >= chefeInfo.fim){ clearInterval(chefeTimer); carregarChefe(true); return; }
+    t.textContent = `troca em ${tempoAte(chefeInfo.fim)}`; }, 1000);
+}
+$('#mnJogar').addEventListener('click', async ()=>{ if (!decks.length) try { decks = await (await fetch('/api/decks')).json(); } catch(e){} carregarChefe(); });
 
 // ---------------- nível e missões
 let caixaMissoesAberta = false;

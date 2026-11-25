@@ -118,6 +118,21 @@ public class Ponte implements MageClient {
         });
         srv.createContext("/api/atualizar", this::rotaAtualizar);
         srv.createContext("/api/amigos", this::rotaAmigos);
+        srv.createContext("/api/chefe", ex -> {
+            try {
+                if ("POST".equals(ex.getRequestMethod())) {
+                    JsonObject b = corpo(ex);
+                    String deck = b.get("deck").getAsString();
+                    synchronized (trava) { fase = "conectando"; erro = null; }
+                    mudou();
+                    new Thread(() -> { try { enfrentarChefe(deck); }
+                        catch (Throwable t) { t.printStackTrace(); synchronized (trava) { fase = "lobby"; erro = String.valueOf(t.getMessage()); } mudou(); } }).start();
+                    json(ex, 200, Collections.singletonMap("ok", true));
+                } else json(ex, 200, infoChefe("1".equals(query(ex.getRequestURI().getRawQuery()).get("forcar"))));
+            } catch (Exception e) {
+                json(ex, 200, Collections.singletonMap("erro", e instanceof IOException ? "Sem conexão com o servidor do grupo. O Tailscale está ligado?" : String.valueOf(e.getMessage())));
+            }
+        });
         srv.createContext("/api/prefs", ex -> {   // configurações da tela (cursor, música, volume...) num arquivo: não somem se o navegador limpar os dados
             Path f = MESA.resolve("prefs.json");
             try {
@@ -393,6 +408,11 @@ public class Ponte implements MageClient {
     }
 
     Path arquivoDeck(String arquivo) {
+        if (arquivo.startsWith("@chefe/")) {
+            Path pc = CACHE.resolve("chefe").resolve(arquivo.substring(7)).normalize();
+            if (!pc.startsWith(CACHE.resolve("chefe")) || !arquivo.endsWith(".dck")) throw new IllegalArgumentException("deck inválido");
+            return pc;
+        }
         Path p = DECKS.resolve(arquivo).normalize();
         if (!p.startsWith(DECKS) || !(arquivo.endsWith(".dck") || arquivo.endsWith(".txt"))) throw new IllegalArgumentException("deck inválido");
         return p;
@@ -755,6 +775,31 @@ public class Ponte implements MageClient {
         }
     }
     volatile Estatisticas stats = null;
+    // ---------------- Chefe do dia (1 contra 1, deck forte vindo do Zera) ----------------
+    static final int NIVEL_CHEFE = 6;   // nível da IA do chefe (o "difícil" de hoje); dá para subir depois
+    volatile String chefeCiclo = null, chefeNome = null;
+    volatile Object chefeCache = null; volatile long chefeCacheEm = 0;
+    Object infoChefe(boolean forcar) throws IOException {
+        if (!forcar && chefeCache != null && System.currentTimeMillis() - chefeCacheEm < 60_000) return chefeCache;
+        JsonObject c = new JsonObject(); c.addProperty("id", idMesa());
+        JsonObject r = postAmigos("chefe", c);
+        r.remove("deck"); r.remove("lacaios");   // a tela não precisa da lista
+        chefeCache = GSON.fromJson(r, Map.class); chefeCacheEm = System.currentTimeMillis();
+        return chefeCache;
+    }
+    void enfrentarChefe(String meuDeck) throws Exception {
+        JsonObject c = new JsonObject(); c.addProperty("id", idMesa());
+        JsonObject ch = postAmigos("chefe", c);
+        if (ch.has("vazio")) throw new IllegalStateException("Ainda não tem chefe cadastrado no servidor do grupo.");
+        String ciclo = ch.get("ciclo").getAsString();
+        Path dir = CACHE.resolve("chefe"); Files.createDirectories(dir);
+        String arq = "chefe-" + ciclo + ".dck";
+        Files.write(dir.resolve(arq), ch.get("deck").getAsString().getBytes(StandardCharsets.UTF_8));
+        chefeCiclo = ciclo; chefeNome = ch.get("nome").getAsString();
+        criarPartida(meuDeck, Collections.singletonList("@chefe/" + arq), NIVEL_CHEFE);
+        ultimaCriacao = new LinkedHashMap<>();
+        ultimaCriacao.put("tipo", "chefe"); ultimaCriacao.put("deck", meuDeck); ultimaCriacao.put("nivel", NIVEL_CHEFE); ultimaCriacao.put("ciclo", ciclo);
+    }
     volatile boolean assistindo = false;
     /** Assistir a uma partida (sem ver mãos, sem jogar). O servidor responde com WATCHGAME. */
     void assistir(UUID mesa) throws Exception {
@@ -860,7 +905,7 @@ public class Ponte implements MageClient {
         try { for (Map<String, Object> p : (List<Map<String, Object>>) jogo.get("jogadores")) if (!Boolean.TRUE.equals(p.get("eu"))) r.add(String.valueOf(p.get("nome"))); } catch (Exception ignored) { }
         return r;
     }
-    static boolean ehBot(String nome) { return nome != null && nome.matches("^(IA|Bot) \\d+ .*"); }
+    static boolean ehBot(String nome) { return nome != null && (nome.matches("^(IA|Bot) \\d+ .*") || nome.startsWith("Chefe · ")); }
     /** XP: o Zera calcula e guarda (nível, missões, recordes). Contra bots vale 30/40/50% (fácil/normal/difícil). */
     @SuppressWarnings("unchecked")
     void enviarPartidaAoZera(boolean venceu, int turnos) {
@@ -897,6 +942,7 @@ public class Ponte implements MageClient {
                 p.addProperty("danoCmd", ((Number) eu.getOrDefault("danoCmd", 0)).intValue());
                 if (eu.get("maiorGolpe") != null) p.add("maiorGolpe", GSON.toJsonTree(eu.get("maiorGolpe")));
                 p.add("jogadores", GSON.toJsonTree(nomes));
+                if (chefeCiclo != null && ultimaCriacao != null && "chefe".equals(ultimaCriacao.get("tipo"))) p.addProperty("chefe", chefeCiclo);
                 JsonObject c = new JsonObject();
                 c.addProperty("id", idMesa()); c.add("partida", p);
                 Map<String, Object> r = GSON.fromJson(postAmigos("partida", c), Map.class);
@@ -1950,7 +1996,10 @@ public class Ponte implements MageClient {
                     if (u == null) throw new IllegalStateException("A revanche é com quem criou a sala.");
                     sairDoJogoAtual();
                     synchronized (trava) { fase = "lobby"; resultado = null; }
-                    if ("bots".equals(u.get("tipo"))) {
+                    if ("chefe".equals(u.get("tipo"))) {
+                        new Thread(() -> { try { enfrentarChefe((String) u.get("deck")); }
+                            catch (Throwable t) { synchronized (trava) { fase = "lobby"; erro = String.valueOf(t.getMessage()); } mudou(); } }).start();
+                    } else if ("bots".equals(u.get("tipo"))) {
                         @SuppressWarnings("unchecked") List<String> ops = (List<String>) u.get("oponentes");
                         new Thread(() -> { try { criarPartida((String) u.get("deck"), ops, ((Number) u.get("nivel")).intValue()); }
                             catch (Throwable t) { synchronized (trava) { fase = "lobby"; erro = String.valueOf(t.getMessage()); } mudou(); } }).start();
@@ -2119,6 +2168,7 @@ public class Ponte implements MageClient {
         conectar();
         deckAtual = meuDeck;
         oponentesAtuais = new ArrayList<>(oponentes);
+        if (!(oponentes.size() == 1 && oponentes.get(0).startsWith("@chefe/"))) { chefeCiclo = null; chefeNome = null; }
         ultimaCriacao = new LinkedHashMap<>();
         ultimaCriacao.put("tipo", "bots"); ultimaCriacao.put("deck", meuDeck); ultimaCriacao.put("oponentes", new ArrayList<>(oponentes)); ultimaCriacao.put("nivel", skill);
         synchronized (trava) { fase = "iniciando"; }
@@ -2162,7 +2212,8 @@ public class Ponte implements MageClient {
         }
         for (int i = 0; i < decks.size(); i++) {
             String nome = nomeDeck(oponentes.get(i));
-            if (!session.joinTable(roomId, tableId, "IA " + (i + 1) + " · " + nome, PlayerType.COMPUTER_MAD, skill, decks.get(i), "")) {
+            String nomeBot = chefeCiclo != null && i == 0 ? "Chefe · " + chefeNome : "IA " + (i + 1) + " · " + nome;
+            if (!session.joinTable(roomId, tableId, nomeBot, PlayerType.COMPUTER_MAD, skill, decks.get(i), "")) {
                 throw new IllegalStateException("Deck da IA recusado: " + oponentes.get(i));
             }
         }

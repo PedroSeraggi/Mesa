@@ -63,3 +63,9 @@ O Zera (ZimaOS, sempre ligado, no Tailscale) roda dois containers, em `/DATA/App
 - **`mesa-amigos`**: a lista de amigos (`servidor-amigos/Amigos.java`, porta 17190). Sem senha (só quem está no Tailscale alcança). Os dados ficam em `amigos/dados.json`.
 
 Para atualizar a lista de amigos: compile `Amigos.java` com `--release 8` e o `gson` do XMage no classpath, copie `classes/` para `/DATA/AppData/mesa/amigos/` e rode `docker restart mesa-amigos`.
+
+### Chefe do dia
+
+- Os chefes ficam em `servidor-amigos/chefes/*.json` (`nome`, `descricao`, `comandante`, `deck` em formato .dck) e são copiados para `/DATA/AppData/mesa/amigos/chefes/` no Zera. O serviço troca o chefe todo dia às 20h (horário de Brasília) e dá +250 XP na primeira vitória de cada um contra o chefe do ciclo.
+- Para adicionar um chefe: o deck precisa passar no validador de Commander do XMage (100 cartas, todas existentes no XMage 1.4.63). Prefira decks de força bruta: a IA joga mal decks de combo.
+- O nível da IA do chefe é `NIVEL_CHEFE` em `Ponte.java`.
