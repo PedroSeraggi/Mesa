@@ -27,7 +27,11 @@ public class Fabrica {
     static final int MIN_CRIATURAS = 25, MAX_PECAS_COMBO = 6, MAX_FALTANDO = 3;
     static final String[] ESTRATEGICAS = {"group hug", "politics", "control", "spellslinger", "aristocrat", "voltron", "stax", "pillowfort", "reanimat", "graveyard", "self-mill", "blink", "spells matter"};
 
+    /** Modo "deckdia": busca o Deck do dia (bracket 3, variado, com explicação do autor), sem mistura de tipos nem mínimo de criaturas. */
+    static boolean MODO_DECK = false;
+
     public static void main(String[] a) throws Exception {
+        MODO_DECK = a.length > 3 && "deckdia".equals(a[3]);
         Path pasta = Paths.get(a[0]), estadoArq = Paths.get(a[1]);
         int meta = Integer.parseInt(a[2]);
         Files.createDirectories(pasta.resolve("usados"));
@@ -51,7 +55,7 @@ public class Fabrica {
         int novos = 0, paginasSemNada = 0;
         while (naFila < meta && paginasSemNada < 6) {
             int pagina = est.get("pagina").getAsInt();
-            JsonObject lista = obter("https://archidekt.com/api/decks/v3/?formats=3&edhBracket=4&orderBy=-viewCount&pageSize=50&page=" + pagina);
+            JsonObject lista = obter("https://archidekt.com/api/decks/v3/?formats=3&edhBracket=" + (MODO_DECK ? 3 : 4) + "&orderBy=-viewCount&pageSize=50&page=" + pagina);
             if (lista == null) { log("Archidekt não respondeu a lista; para por hoje"); break; }
             JsonArray res = lista.getAsJsonArray("results");
             if (res.size() == 0) { log("acabou a lista do Archidekt"); break; }
@@ -71,7 +75,7 @@ public class Fabrica {
                     JsonObject chefe = montar(id, comandantes, texto);
                     if (chefe == null) { tentados.add(id); continue; }
                     String tipo = chefe.get("tipo").getAsString();
-                    if (!tipo.equals(precisa) && tipos[tipo.equals("brutal") ? 0 : 1] >= (tipo.equals("brutal") ? 5 : 4)) {
+                    if (!MODO_DECK && !tipo.equals(precisa) && tipos[tipo.equals("brutal") ? 0 : 1] >= (tipo.equals("brutal") ? 5 : 4)) {
                         log(id + " guardado para depois (é " + tipo + ", a fila precisa de " + precisa + ")"); continue;   // não marca: volta numa próxima busca
                     }
                     tentados.add(id);
@@ -143,7 +147,7 @@ public class Fabrica {
         }
         if (cmds.isEmpty() || cmds.size() > 2) { log(id + " pulado (comandante: " + cmds + ")"); return null; }
         if (cmds.stream().anyMatch(n -> comandantesUsados.contains(n.toLowerCase()))) { log(id + " pulado (comandante repetido: " + cmds + ")"); return null; }
-        if (criaturas < MIN_CRIATURAS) { log(id + " pulado (" + criaturas + " criaturas)"); return null; }
+        if (!MODO_DECK && criaturas < MIN_CRIATURAS) { log(id + " pulado (" + criaturas + " criaturas)"); return null; }
         if (pecasCombo > MAX_PECAS_COMBO) { log(id + " pulado (" + pecasCombo + " peças de combo)"); return null; }
         // converte para o XMage
         StringBuilder dck = new StringBuilder(); List<String> faltam = new ArrayList<>(); Map<String, Integer> basicos = new HashMap<>();
@@ -194,6 +198,7 @@ public class Fabrica {
         chefe.addProperty("tipo", brutal ? "brutal" : "estrategico");
         String estrategia = textoDescricao(d);
         if (!estrategia.isEmpty()) chefe.addProperty("estrategia", estrategia);
+        else if (MODO_DECK) { log(id + " pulado (sem explicação do autor)"); return null; }
         chefe.addProperty("nome", String.join(" & ", cmds));
         chefe.addProperty("descricao", "Deck \"" + d.get("name").getAsString() + "\" do Archidekt · " + criaturas + " criaturas · custo médio " + String.format(Locale.ROOT, "%.1f", custoMedio));
         chefe.addProperty("origem", "archidekt.com/decks/" + id);

@@ -395,6 +395,23 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .cartaoChefe{position:relative;border-radius:12px;overflow:hidden;border:1px solid #e8a83088;background:#2a1208 center 25%/cover no-repeat;margin:4px 0 10px;box-shadow:0 0 24px #b8573233,0 10px 30px #000a;min-height:270px;display:flex}
 .cartaoChefe::before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#0c0503f2 0%,#0c0503b0 38%,#0c050322 70%,transparent 100%)}
 .cartaoChefe.oculto{display:none}
+/* reflexo de luz passando de vez em quando, como nas cartas */
+.cartaoChefe::after{content:'';position:absolute;inset:-40%;z-index:2;pointer-events:none;background:linear-gradient(115deg,transparent 42%,#fff2d022 47%,#fff6e055 50%,#fff2d022 53%,transparent 58%);transform:translateX(-75%);animation:chReflexo 7s 1.5s ease-in-out infinite}
+@keyframes chReflexo{0%{transform:translateX(-75%)}22%,100%{transform:translateX(75%)}}
+@media (prefers-reduced-motion:reduce){.cartaoChefe::after{animation:none;display:none}}
+.cartaoDeckDia{position:relative;border-radius:10px;overflow:hidden;border:1px solid #6fa8c888;background:#0e1a22 center 30%/cover no-repeat;margin:0 0 10px;box-shadow:0 6px 20px #000a;min-height:118px;display:flex}
+.cartaoDeckDia::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#060c10f0 0%,#060c10c0 55%,#060c1055 100%)}
+.cartaoDeckDia.oculto{display:none}
+.ddDentro{position:relative;z-index:1;display:flex;flex-direction:column;gap:4px;padding:10px 14px;width:100%;box-sizing:border-box}
+.ddRotulo{font-family:var(--ff-titulo);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#8fc8e8}
+.ddNome{font-family:var(--ff-titulo);font-size:17px;line-height:1.1;color:#eef6fb;text-shadow:0 2px 8px #000}
+.ddSub{font-size:12px;color:#c9dbe6}.ddSub b{color:#ffe08a}
+.ddLinha{display:flex;gap:6px;align-items:center;margin-top:2px;flex-wrap:wrap}
+.ddLinha button{padding:5px 14px!important;font-size:13px}
+.ddLinha button.pri{background:linear-gradient(#3f86b0,#2a5f84)!important;border-color:#6fb8e0!important;color:#fff!important;transition:filter .15s,box-shadow .15s}
+.ddLinha button.pri:hover:not(:disabled){filter:brightness(1.15);box-shadow:0 0 12px #4fa8e099}
+.ddEstr{font-size:12px;color:#c9dbe6}.ddEstr summary{cursor:pointer;color:#8fc8e8}.ddEstr div{margin-top:4px;max-height:100px;overflow:auto;line-height:1.35;background:#00000055;border-radius:7px;padding:4px 8px}
+.ddLista{columns:2;column-gap:18px;max-height:60vh;overflow:auto;font-size:13px;line-height:1.5}
 .chDentro{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;padding:44px 16px 14px;width:100%;box-sizing:border-box}
 .chRotulo{position:absolute;top:12px;left:16px;right:16px}
 .chRotulo{display:flex;justify-content:space-between;align-items:center;font-family:var(--ff-titulo);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#ff9a5a;text-shadow:0 0 10px #ff5a2a88}
@@ -1123,6 +1140,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
       <div id="grupoJogar" class="grupoMenu oculto">
         <div class="subtituloMenu">Jogar</div>
         <div id="cartaoChefe" class="cartaoChefe oculto"></div>
+        <div id="cartaoDeckDia" class="cartaoDeckDia oculto"></div>
         <button class="btnMenu" data-ir="bots">Jogar com bots</button>
         <button class="btnMenu" data-ir="entrar">Entrar numa sala</button>
         <button class="btnMenu" data-ir="criar">Criar sala</button>
@@ -3334,7 +3352,11 @@ function desenharFaixaEspectador(){
   if (on && !f.dataset.feito){
     f.dataset.feito = '1';
     f.innerHTML = `<span class="olhoEspec">${OLHO_SVG}</span> Você está <b>assistindo</b>: as mãos ficam escondidas <button class="peq" id="pararAssistir">Parar de assistir</button>`;
-    $('#pararAssistir').onclick = ()=>{ post('/api/sair'); irPara('menu'); };
+    $('#pararAssistir').onclick = ()=>{
+      if (E){ E.assistindo = false; E.fase = 'lobby'; }
+      desenharFaixaEspectador();   // some na hora, sem esperar a ponte
+      post('/api/sair'); irPara('menu');
+    };
   }
   if (!on) delete f.dataset.feito;
 }
@@ -3408,7 +3430,39 @@ async function escolherDeckChefe(C, salvo){
     if (r.erro){ fim(r.erro); avisoLocal(r.erro); desenharChefe(); }
   };
 }
-$('#mnJogar').addEventListener('click', async ()=>{ if (!decks.length) try { decks = await (await fetch('/api/decks')).json(); } catch(e){} carregarChefe(); });
+$('#mnJogar').addEventListener('click', async ()=>{ if (!decks.length) try { decks = await (await fetch('/api/decks')).json(); } catch(e){} carregarChefe(); carregarDeckDia(); });
+
+// ---------------- Deck do dia: jogar com um deck diferente contra um bot normal
+let deckDiaInfo = null;
+async function carregarDeckDia(forcar){
+  try { deckDiaInfo = await (await fetch('/api/deckDia' + (forcar ? '?forcar=1' : ''))).json(); } catch(e){ deckDiaInfo = null; }
+  desenharDeckDia();
+}
+function desenharDeckDia(){
+  const box = $('#cartaoDeckDia'); const D = deckDiaInfo;
+  if (!D || D.vazio || D.erro){ box.classList.add('oculto'); return; }   // sem deck (ou sem Zera): o chefe já mostra o erro
+  box.classList.remove('oculto');
+  const cmd = D.comandante || {};
+  box.style.backgroundImage = `url('${imgCarta(cmd, 'art')}')`;
+  box.innerHTML = `<div class="ddDentro">
+    <div class="ddRotulo">Deck do dia</div>
+    <div class="ddNome">${esc(cmd.nome || D.nome)}</div>
+    <div class="ddSub">${D.euVenci ? 'Você já venceu com este deck. Ele está nos seus decks!' : 'Vença um bot com ele: <b>+150 XP</b> e o deck é seu'}</div>
+    ${D.estrategia ? `<details class="ddEstr"><summary>Como esse deck joga</summary><div>${esc(D.estrategia)}</div></details>` : ''}
+    <div class="ddLinha"><button class="pri" id="ddJogar">${D.euVenci ? 'Jogar de novo' : 'Jogar com ele'}</button><button id="ddLista">Ver lista</button></div>
+  </div>`;
+  $('#ddLista').onclick = ()=>{
+    const cx = abrirModal(`<div class="escDeckCab"><h3 class="subt" style="margin:0">${esc(cmd.nome || D.nome)}</h3><button class="peq" id="ddFechar">✕</button></div>
+      <div class="ddLista">${(D.lista||[]).map(l=>`<div>${esc(l)}</div>`).join('')}</div>`);
+    cx.querySelector('#ddFechar').onclick = ()=>fecharModal(true);
+  };
+  $('#ddJogar').onclick = async ()=>{
+    $('#ddJogar').disabled = true; $('#ddJogar').textContent = 'Preparando...';
+    avisoLocal('Montando a partida com o Deck do dia contra um bot normal...');
+    const r = await post('/api/deckDia', {});
+    if (r.erro){ avisoLocal(r.erro); desenharDeckDia(); }
+  };
+}
 
 // aviso quando alguém assume o 1º lugar do Chefe do dia
 function avisarLiderChefe(){

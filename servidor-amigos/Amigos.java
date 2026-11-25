@@ -48,6 +48,8 @@ public class Amigos {
         String fabricaUltima = ""; boolean fabricaPendente = false;
         Set<String> ciclosPremiados = new HashSet<>();      // ciclos cujo 1º lugar já ganhou o prêmio
         Map<String, Object> liderChefe = null;              // último a assumir o 1º lugar (para o aviso)
+        Map<String, String> deckDiaPorCiclo = new HashMap<>();   // ciclo -> arquivo do Deck do dia (em deckdia/usados)
+        Map<String, List<String>> venceramDeckDia = new HashMap<>();   // ciclo -> códigos de quem venceu com ele
     }
     static Banco b = new Banco();
     static volatile boolean sujo = false;
@@ -64,6 +66,7 @@ public class Amigos {
         srv.createContext("/perfil", ex -> tratar(ex, Amigos::perfil));
         srv.createContext("/partida", ex -> tratar(ex, Amigos::partida));
         srv.createContext("/chefe", ex -> tratar(ex, Amigos::chefe));
+        srv.createContext("/deckDia", ex -> tratar(ex, Amigos::deckDia));
         srv.createContext("/decksChefe", ex -> tratar(ex, c -> {   // todos os decks de chefe que a pessoa já ganhou (a Mesa baixa os que faltam)
             Usuario u = usuario(c); List<Map<String, Object>> l = new ArrayList<>();
             for (Map.Entry<String, List<Map<String, Object>>> e : b.derrotaramChefe.entrySet()) {
@@ -269,6 +272,19 @@ public class Amigos {
                     b.liderChefe = l;
                 }
             }
+            String cicloDeck = str(p, "deckDia");
+            if (venceu && !cicloDeck.isEmpty() && cicloDeck.equals(cicloAtual())) {
+                List<String> v = b.venceramDeckDia.computeIfAbsent(cicloDeck, k -> new ArrayList<>());
+                if (!v.contains(u.codigo)) {
+                    v.add(u.codigo);
+                    ganho.add("Venceu com o Deck do dia", null, 150, false, false);
+                    try {   // prêmio: o próprio deck
+                        JsonObject dd = deckDoCiclo();
+                        if (dd != null) { JsonObject dg = new JsonObject(); dg.add("nome", dd.get("nome")); dg.add("deck", dd.get("deck")); dg.add("comandante", dd.get("comandante")); dg.addProperty("tipo", "deckDia"); deckGanho[0] = dg; }
+                    } catch (Exception ignored) { }
+                    soma(u.recordes, "decksDoDia", 1);
+                }
+            }
             // missões
             missoesDoDia(u);
             Map<String, Integer> soma = new HashMap<>();
@@ -335,13 +351,22 @@ public class Amigos {
     static java.nio.file.Path pastaChefes() { return DADOS.toAbsolutePath().getParent().resolve("chefes"); }
     /** Cada ciclo (20h) pega o chefe mais antigo da fila (chefes/*.json) e o move para chefes/usados/.
      *  Fila vazia: repete o chefe usado que está há mais tempo sem aparecer. */
-    static synchronized JsonObject chefeDoCiclo() throws IOException {
+    static synchronized JsonObject chefeDoCiclo() throws IOException { return doCiclo(pastaChefes(), b.chefePorCiclo); }
+    static java.nio.file.Path pastaDeckDia() { return DADOS.toAbsolutePath().getParent().resolve("deckdia"); }
+    static List<java.nio.file.Path> arquivos(java.nio.file.Path d) {
+        List<java.nio.file.Path> l = new ArrayList<>();
+        try (DirectoryStream<java.nio.file.Path> ds = Files.newDirectoryStream(d, "*.json")) { for (java.nio.file.Path f : ds) l.add(f); } catch (Exception ignored) { }
+        return l;
+    }
+    static synchronized JsonObject deckDoCiclo() throws IOException { Files.createDirectories(pastaDeckDia()); return doCiclo(pastaDeckDia(), b.deckDiaPorCiclo); }
+    /** Fila de uma pasta: cada ciclo pega o arquivo mais antigo e o move para usados/ (fila vazia: repete o usado há mais tempo). */
+    static synchronized JsonObject doCiclo(java.nio.file.Path pasta, Map<String, String> porCiclo) throws IOException {
         String ciclo = cicloAtual();
-        java.nio.file.Path usados = pastaChefes().resolve("usados");
+        java.nio.file.Path usados = pasta.resolve("usados");
         Files.createDirectories(usados);
-        String arq = b.chefePorCiclo.get(ciclo);
+        String arq = porCiclo.get(ciclo);
         if (arq == null || !Files.exists(usados.resolve(arq))) {
-            List<java.nio.file.Path> fila = arquivosChefes();
+            List<java.nio.file.Path> fila = arquivos(pasta);
             fila.sort(Comparator.comparingLong(f -> { try { return Files.getLastModifiedTime(f).toMillis(); } catch (IOException e) { return 0L; } }));
             if (!fila.isEmpty()) {
                 java.nio.file.Path f = fila.get(0);
@@ -349,14 +374,14 @@ public class Amigos {
                 Files.move(f, usados.resolve(arq), StandardCopyOption.REPLACE_EXISTING);
             } else {
                 Map<String, String> ultimoUso = new HashMap<>();
-                for (Map.Entry<String, String> e : b.chefePorCiclo.entrySet()) ultimoUso.merge(e.getValue(), e.getKey(), (x, y) -> x.compareTo(y) > 0 ? x : y);
+                for (Map.Entry<String, String> e : porCiclo.entrySet()) ultimoUso.merge(e.getValue(), e.getKey(), (x, y) -> x.compareTo(y) > 0 ? x : y);
                 List<String> todos = new ArrayList<>();
                 try (DirectoryStream<java.nio.file.Path> ds = Files.newDirectoryStream(usados, "*.json")) { for (java.nio.file.Path f : ds) todos.add(f.getFileName().toString()); }
                 if (todos.isEmpty()) return null;
                 todos.sort(Comparator.comparing(n -> ultimoUso.getOrDefault(n, "")));
                 arq = todos.get(0);
             }
-            b.chefePorCiclo.put(ciclo, arq); sujo = true;
+            porCiclo.put(ciclo, arq); sujo = true;
         }
         JsonObject o = JsonParser.parseString(new String(Files.readAllBytes(usados.resolve(arq)), StandardCharsets.UTF_8)).getAsJsonObject();
         return o;
@@ -368,7 +393,7 @@ public class Amigos {
         java.time.ZonedDateTime agora = java.time.ZonedDateTime.now(BR);
         String hoje = agora.toLocalDate().toString();
         boolean quarta = agora.getDayOfWeek() == java.time.DayOfWeek.WEDNESDAY;
-        if (!forcar && (agora.getHour() < 6 || hoje.equals(b.fabricaUltima) || !(quarta || b.fabricaPendente || arquivosChefes().isEmpty()))) return;
+        if (!forcar && (agora.getHour() < 6 || hoje.equals(b.fabricaUltima) || !(quarta || b.fabricaPendente || arquivosChefes().isEmpty() || arquivos(pastaDeckDia()).size() < 3))) return;
         if (fabricaRodando) return;
         fabricaRodando = true; b.fabricaUltima = hoje; sujo = true;
         new Thread(() -> {
@@ -378,15 +403,28 @@ public class Amigos {
                 java.nio.file.Path dbOrig = java.nio.file.Paths.get(Optional.ofNullable(System.getenv("XMAGE")).orElse("/xmage")).resolve("db");
                 try (DirectoryStream<java.nio.file.Path> ds = Files.newDirectoryStream(dbOrig, "cards*")) { for (java.nio.file.Path f : ds) Files.copy(f, tmp.resolve("db").resolve(f.getFileName()), StandardCopyOption.REPLACE_EXISTING); }
                 String xm = Optional.ofNullable(System.getenv("XMAGE")).orElse("/xmage");
-                ProcessBuilder pb = new ProcessBuilder("java", "-Xmx900m", "-Dfile.encoding=UTF-8",
-                        "-cp", "/srv/classes-fabrica:" + xm + "/lib/*:" + xm + "/plugins/mage-deck-constructed-1.4.63.jar",
-                        "Fabrica", pastaChefes().toString(), DADOS.toAbsolutePath().getParent().resolve("fabrica.json").toString(), "8");
-                pb.directory(tmp.toFile()); pb.redirectErrorStream(true);
-                pb.redirectOutput(ProcessBuilder.Redirect.appendTo(DADOS.toAbsolutePath().getParent().resolve("fabrica.log").toFile()));
-                int cod = pb.start().waitFor();
+                int cod = 0;
+                if (quarta || b.fabricaPendente || arquivosChefes().isEmpty() || forcar) {
+                    ProcessBuilder pb = new ProcessBuilder("java", "-Xmx900m", "-Dfile.encoding=UTF-8",
+                            "-cp", "/srv/classes-fabrica:" + xm + "/lib/*:" + xm + "/plugins/mage-deck-constructed-1.4.63.jar",
+                            "Fabrica", pastaChefes().toString(), DADOS.toAbsolutePath().getParent().resolve("fabrica.json").toString(), "8");
+                    pb.directory(tmp.toFile()); pb.redirectErrorStream(true);
+                    pb.redirectOutput(ProcessBuilder.Redirect.appendTo(DADOS.toAbsolutePath().getParent().resolve("fabrica.log").toFile()));
+                    cod = pb.start().waitFor();
+                }
                 int fila = arquivosChefes().size();
                 b.fabricaPendente = fila < 8; sujo = true;
                 System.out.println("Fábrica de chefes terminou (código " + cod + "): fila com " + fila);
+                if (arquivos(pastaDeckDia()).size() < 3) {   // Deck do dia: completa até 8 quando sobra pouco
+                    Files.createDirectories(pastaDeckDia());
+                    ProcessBuilder pd = new ProcessBuilder("java", "-Xmx900m", "-Dfile.encoding=UTF-8",
+                            "-cp", "/srv/classes-fabrica:" + xm + "/lib/*:" + xm + "/plugins/mage-deck-constructed-1.4.63.jar",
+                            "Fabrica", pastaDeckDia().toString(), DADOS.toAbsolutePath().getParent().resolve("fabrica-deckdia.json").toString(), "8", "deckdia");
+                    pd.directory(tmp.toFile()); pd.redirectErrorStream(true);
+                    pd.redirectOutput(ProcessBuilder.Redirect.appendTo(DADOS.toAbsolutePath().getParent().resolve("fabrica-deckdia.log").toFile()));
+                    int c2 = pd.start().waitFor();
+                    System.out.println("Fábrica do Deck do dia terminou (código " + c2 + "): fila com " + arquivos(pastaDeckDia()).size());
+                }
             } catch (Exception e) { e.printStackTrace(); b.fabricaPendente = true; sujo = true; }
             finally { fabricaRodando = false; }
         }, "fabrica").start();
@@ -423,6 +461,28 @@ public class Amigos {
             rk.add(x);
         }
         r.put("ranking", rk);
+        return r;
+    }
+
+    // ---------------- Deck do dia: um deck variado para jogar contra um bot e conhecer ----------------
+    static Object deckDia(JsonObject c) throws IOException {
+        Usuario u = usuario(c);
+        JsonObject dd = deckDoCiclo();
+        Map<String, Object> r = new LinkedHashMap<>();
+        if (dd == null) { r.put("vazio", true); return r; }
+        String ciclo = cicloAtual();
+        r.put("ciclo", ciclo);
+        r.put("fim", inicioCiclo().plusDays(1).toInstant().toEpochMilli());
+        r.put("nome", str(dd, "nome"));
+        r.put("comandante", dd.get("comandante"));
+        if (dd.has("descricao")) r.put("descricao", str(dd, "descricao"));
+        if (dd.has("estrategia")) r.put("estrategia", str(dd, "estrategia"));
+        r.put("deck", str(dd, "deck"));
+        List<String> v = b.venceramDeckDia.getOrDefault(ciclo, Collections.emptyList());
+        r.put("euVenci", v.contains(u.codigo));
+        List<Map<String, Object>> quem = new ArrayList<>();
+        for (String cod : v) { Usuario o = porCodigo(cod); if (o != null) quem.add(resumo(o)); }
+        r.put("venceram", quem);
         return r;
     }
 

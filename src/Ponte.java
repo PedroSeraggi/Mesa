@@ -133,6 +133,19 @@ public class Ponte implements MageClient {
                 json(ex, 200, Collections.singletonMap("erro", e instanceof IOException ? "Sem conexão com o servidor do grupo. O Tailscale está ligado?" : String.valueOf(e.getMessage())));
             }
         });
+        srv.createContext("/api/deckDia", ex -> {
+            try {
+                if ("POST".equals(ex.getRequestMethod())) {
+                    synchronized (trava) { fase = "conectando"; erro = null; }
+                    mudou();
+                    new Thread(() -> { try { jogarDeckDia(); }
+                        catch (Throwable t) { t.printStackTrace(); synchronized (trava) { fase = "lobby"; erro = String.valueOf(t.getMessage()); } mudou(); } }).start();
+                    json(ex, 200, Collections.singletonMap("ok", true));
+                } else json(ex, 200, infoDeckDia("1".equals(query(ex.getRequestURI().getRawQuery()).get("forcar"))));
+            } catch (Exception e) {
+                json(ex, 200, Collections.singletonMap("erro", e instanceof IOException ? "Sem conexão com o servidor do grupo. O Tailscale está ligado?" : String.valueOf(e.getMessage())));
+            }
+        });
         srv.createContext("/api/prefs", ex -> {   // configurações da tela (cursor, música, volume...) num arquivo: não somem se o navegador limpar os dados
             Path f = MESA.resolve("prefs.json");
             try {
@@ -804,6 +817,45 @@ public class Ponte implements MageClient {
         ultimaCriacao = new LinkedHashMap<>();
         ultimaCriacao.put("tipo", "chefe"); ultimaCriacao.put("deck", meuDeck); ultimaCriacao.put("nivel", NIVEL_CHEFE); ultimaCriacao.put("ciclo", ciclo);
     }
+    // ---------------- Deck do dia (você joga com um deck do Zera contra um bot normal) ----------------
+    static final int NIVEL_DECK_DIA = 7;
+    volatile String deckDiaCiclo = null;
+    volatile Object deckDiaCache = null; volatile long deckDiaCacheEm = 0;
+    Object infoDeckDia(boolean forcar) throws IOException {
+        if (!forcar && deckDiaCache != null && System.currentTimeMillis() - deckDiaCacheEm < 60_000) return deckDiaCache;
+        JsonObject c = new JsonObject(); c.addProperty("id", idMesa());
+        JsonObject r = postAmigos("deckDia", c);
+        if (r.has("deck")) {   // a tela mostra a lista (Ver lista), mas sem as linhas do .dck
+            List<String> l = new ArrayList<>();
+            for (String ln : r.get("deck").getAsString().split("\n")) {
+                String t = ln.trim(); if (t.isEmpty()) continue;
+                boolean sb = t.startsWith("SB:"); if (sb) t = t.substring(3).trim();
+                l.add(t.replaceAll("\\[[^\\]]*\\]\\s*", ""));
+            }
+            r.remove("deck"); r.add("lista", GSON.toJsonTree(l));
+        }
+        deckDiaCache = GSON.fromJson(r, Map.class); deckDiaCacheEm = System.currentTimeMillis();
+        return deckDiaCache;
+    }
+    void jogarDeckDia() throws Exception {
+        JsonObject c = new JsonObject(); c.addProperty("id", idMesa());
+        JsonObject dd = postAmigos("deckDia", c);
+        if (dd.has("vazio")) throw new IllegalStateException("O Deck do dia ainda não foi escolhido no servidor do grupo.");
+        String ciclo = dd.get("ciclo").getAsString();
+        Path dir = CACHE.resolve("chefe"); Files.createDirectories(dir);
+        String arq = "deckdia-" + ciclo + ".dck";
+        Files.write(dir.resolve(arq), dd.get("deck").getAsString().getBytes(StandardCharsets.UTF_8));
+        // o bot joga com um dos seus decks, sorteado
+        List<String> meus = new ArrayList<>();
+        try (DirectoryStream<Path> ds = Files.newDirectoryStream(DECKS, "*.dck")) { for (Path f : ds) meus.add(f.getFileName().toString()); }
+        if (meus.isEmpty()) throw new IllegalStateException("Você precisa ter pelo menos um deck para o bot usar.");
+        String bot = meus.get(new Random().nextInt(meus.size()));
+        criarPartida("@chefe/" + arq, Collections.singletonList(bot), NIVEL_DECK_DIA);
+        deckDiaCiclo = ciclo;
+        ultimaCriacao = new LinkedHashMap<>();
+        ultimaCriacao.put("tipo", "deckDia"); ultimaCriacao.put("nivel", NIVEL_DECK_DIA); ultimaCriacao.put("ciclo", ciclo);
+    }
+
     volatile boolean assistindo = false;
     /** Assistir a uma partida (sem ver mãos, sem jogar). O servidor responde com WATCHGAME. */
     void assistir(UUID mesa) throws Exception {
@@ -950,6 +1002,7 @@ public class Ponte implements MageClient {
                 if (eu.get("maiorGolpe") != null) p.add("maiorGolpe", GSON.toJsonTree(eu.get("maiorGolpe")));
                 p.add("jogadores", GSON.toJsonTree(nomes));
                 if (chefeCiclo != null && ultimaCriacao != null && "chefe".equals(ultimaCriacao.get("tipo"))) p.addProperty("chefe", chefeCiclo);
+                if (deckDiaCiclo != null && ultimaCriacao != null && "deckDia".equals(ultimaCriacao.get("tipo"))) p.addProperty("deckDia", deckDiaCiclo);
                 JsonObject c = new JsonObject();
                 c.addProperty("id", idMesa()); c.add("partida", p);
                 Map<String, Object> r = GSON.fromJson(postAmigos("partida", c), Map.class);
@@ -2025,7 +2078,10 @@ public class Ponte implements MageClient {
                     if (u == null) throw new IllegalStateException("A revanche é com quem criou a sala.");
                     sairDoJogoAtual();
                     synchronized (trava) { fase = "lobby"; resultado = null; }
-                    if ("chefe".equals(u.get("tipo"))) {
+                    if ("deckDia".equals(u.get("tipo"))) {
+                        new Thread(() -> { try { jogarDeckDia(); }
+                            catch (Throwable t) { synchronized (trava) { fase = "lobby"; erro = String.valueOf(t.getMessage()); } mudou(); } }).start();
+                    } else if ("chefe".equals(u.get("tipo"))) {
                         new Thread(() -> { try { enfrentarChefe((String) u.get("deck")); }
                             catch (Throwable t) { synchronized (trava) { fase = "lobby"; erro = String.valueOf(t.getMessage()); } mudou(); } }).start();
                     } else if ("bots".equals(u.get("tipo"))) {
@@ -2213,6 +2269,7 @@ public class Ponte implements MageClient {
         deckAtual = meuDeck;
         oponentesAtuais = new ArrayList<>(oponentes);
         if (!(oponentes.size() == 1 && oponentes.get(0).startsWith("@chefe/"))) { chefeCiclo = null; chefeNome = null; }
+        deckDiaCiclo = null;   // jogarDeckDia marca de novo depois de criar
         ultimaCriacao = new LinkedHashMap<>();
         ultimaCriacao.put("tipo", "bots"); ultimaCriacao.put("deck", meuDeck); ultimaCriacao.put("oponentes", new ArrayList<>(oponentes)); ultimaCriacao.put("nivel", skill);
         synchronized (trava) { fase = "iniciando"; }
@@ -2301,8 +2358,13 @@ public class Ponte implements MageClient {
     void sairDoJogoAtual() {
         if (assistindo) {
             UUID g = gameId;
+            if (g != null) abandonados.add(g);   // atualizações atrasadas da partida assistida não trazem a tela de volta
+            UUID chat = gameChatId;
             assistindo = false; gameId = null; tableId = null; gameChatId = null;
+            synchronized (trava) { if (!"fim".equals(fase)) fase = "lobby"; jogo = null; prompt = null; }
+            mudou();
             try { if (g != null && session != null) session.stopWatching(g); } catch (Exception ignored) { }
+            try { if (chat != null && session != null) session.leaveChat(chat); } catch (Exception ignored) { }
             return;
         }
         apagarPartida();
@@ -2469,7 +2531,9 @@ public class Ponte implements MageClient {
             case WATCHGAME: {
                 TableClientMessage m = (TableClientMessage) d;
                 if (!assistindo || tableId == null || !tableId.equals(m.getCurrentTableId())) break;
-                gameId = m.getGameId() != null ? m.getGameId() : cb.getObjectId(); playerId = null;   // no WATCHGAME o jogo vem como id da mensagem
+                UUID gw = m.getGameId() != null ? m.getGameId() : cb.getObjectId();
+                if (gw == null || abandonados.contains(gw)) break;
+                gameId = gw; playerId = null;   // no WATCHGAME o jogo vem como id da mensagem
                 stats = new Estatisticas(); stats.gameId = String.valueOf(gameId);
                 session.watchGame(gameId);
                 try { session.getGameChatId(gameId).ifPresent(id -> { gameChatId = id; session.joinChat(id); }); } catch (Exception ignored) { }
