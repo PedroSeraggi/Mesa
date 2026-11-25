@@ -157,6 +157,56 @@ public class Ponte implements MageClient {
                 json(ex, 200, Collections.singletonMap("erro", "sem conexão com o servidor do grupo"));
             }
         });
+        srv.createContext("/api/playmat", ex -> {   // o meu playmat: modelo pronto ou foto (vai para o Zera, todos veem)
+            try {
+                JsonObject c = "POST".equals(ex.getRequestMethod()) ? corpo(ex) : new JsonObject();
+                c.addProperty("id", idMesa());
+                if (meuNome != null) c.addProperty("jogador", meuNome);
+                json(ex, 200, postAmigos("playmat", c));
+                synchronized (playmatsCache) { playmatsCache.clear(); }
+            } catch (Exception e) {
+                json(ex, 200, Collections.singletonMap("erro", e instanceof IOException ? "Sem conexão com o servidor do grupo." : String.valueOf(e.getMessage())));
+            }
+        });
+        srv.createContext("/api/playmats", ex -> {   // playmat de cada jogador da partida (nomes do XMage)
+            try {
+                String q = query(ex.getRequestURI().getRawQuery()).getOrDefault("n", "");
+                long agora = System.currentTimeMillis();
+                synchronized (playmatsCache) {
+                    Object[] c = playmatsCache.get(q);
+                    if (c != null && agora - (Long) c[0] < 60_000) { json(ex, 200, c[1]); return; }
+                }
+                JsonObject c = new JsonObject(); c.addProperty("id", idMesa());
+                com.google.gson.JsonArray js = new com.google.gson.JsonArray();
+                for (String n : q.split("\\|")) if (!n.isEmpty()) js.add(n);
+                c.add("jogadores", js);
+                Object r = GSON.fromJson(postAmigos("playmats", c), Map.class);
+                synchronized (playmatsCache) { playmatsCache.put(q, new Object[]{agora, r}); }
+                json(ex, 200, r);
+            } catch (Exception e) { json(ex, 200, new JsonObject()); }
+        });
+        srv.createContext("/api/playmatImg", ex -> {   // imagem do playmat (baixa do Zera uma vez por versão e guarda)
+            try {
+                Map<String, String> q = query(ex.getRequestURI().getRawQuery());
+                String cod = q.getOrDefault("c", ""), ver = q.getOrDefault("v", "0");
+                if (!cod.matches("[A-Za-z0-9]{3,12}") || !ver.matches("\\d{1,15}")) { ex.sendResponseHeaders(404, -1); ex.close(); return; }
+                Path dir = CACHE.resolve("playmats"); Files.createDirectories(dir);
+                Path f = dir.resolve(cod + "_" + ver + ".jpg");
+                if (!Files.exists(f)) {
+                    HttpURLConnection hc = (HttpURLConnection) new URL("http://" + enderecoZeraReal() + ":" + PORTA_AMIGOS + "/playmatImg?c=" + cod).openConnection();
+                    hc.setConnectTimeout(4000); hc.setReadTimeout(15000);
+                    if (hc.getResponseCode() != 200) { ex.sendResponseHeaders(404, -1); ex.close(); return; }
+                    byte[] d; try (InputStream in = hc.getInputStream()) { d = lerTudo(in); }
+                    try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir, cod + "_*.jpg")) { for (Path v : ds) Files.deleteIfExists(v); }   // versões antigas
+                    Files.write(f, d);
+                }
+                byte[] d = Files.readAllBytes(f);
+                ex.getResponseHeaders().set("Content-Type", "image/jpeg");
+                ex.getResponseHeaders().set("Cache-Control", "max-age=31536000");
+                ex.sendResponseHeaders(200, d.length);
+                try (OutputStream os = ex.getResponseBody()) { os.write(d); }
+            } catch (Exception e) { try { ex.sendResponseHeaders(500, -1); } catch (Exception ignored) { } ex.close(); }
+        });
         srv.createContext("/api/prefs", ex -> {   // configurações da tela (cursor, música, volume...) num arquivo: não somem se o navegador limpar os dados
             Path f = MESA.resolve("prefs.json");
             try {
@@ -2945,6 +2995,7 @@ public class Ponte implements MageClient {
         }).start();
     }
 
+    final Map<String, Object[]> playmatsCache = new HashMap<>();
     // ---------------- 2v2 online: times ----------------
     /** Times da mesa: o que está no Zera, mais quem sentou depois (entra no time com vaga), sem quem saiu. */
     @SuppressWarnings("unchecked")

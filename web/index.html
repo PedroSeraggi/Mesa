@@ -243,6 +243,16 @@ html.modoDesenho #mesa,html.modoDesenho #mesa *{cursor:crosshair!important}
 .anelChip{border-color:#e8c870!important;color:#ffe08a}
 .anelTagJ{background:#3a2a08;border-color:#e8c870;color:#ffe08a}
 .corpoTab{flex:1;min-height:0;display:flex}
+/* playmat de cada jogador: fica atrás do campo e da zona de comando, com um véu escuro para as cartas aparecerem */
+.tab.comPlaymat .corpoTab{background:linear-gradient(#0b0705aa,#0b0705aa),var(--pm);background-size:auto,cover;background-position:center}
+.tab.comPlaymat .corpoTab.pmPadrao{background:var(--pm)}
+.pmGrade{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.pmOp{position:relative;aspect-ratio:16/9;border-radius:9px;border:2px solid var(--borda);cursor:pointer;background-size:cover;background-position:center;overflow:hidden;transition:transform .12s,border-color .12s}
+.pmOp:hover{transform:translateY(-2px);border-color:var(--borda2)}
+.pmOp.sel{border-color:var(--ouro);box-shadow:0 0 0 2px var(--ouro),0 0 16px #E4C87455}
+.pmOp span{position:absolute;left:0;right:0;bottom:0;padding:3px 8px;font-size:12px;color:#f3e6c8;background:linear-gradient(0deg,#000c,transparent);text-shadow:0 1px 3px #000}
+.pmOp.foto{display:grid;place-items:center;border-style:dashed;color:var(--txt2);font-size:13px;text-align:center;background-color:#1a120c}
+.pmDica{font-size:12.5px;color:var(--txt3);margin-top:6px}
 .corpoTab>.campo{flex:1;min-width:0}
 .ladoCmd{flex:none;width:calc(var(--carta-w,92px)*1.35 + 20px);padding:10px;border-left:1px solid var(--borda);display:flex;flex-direction:column;align-items:center;gap:8px;background:#00000014}
 .ladoCmd .carta{--w:calc(var(--carta-w,92px)*1.35)}
@@ -1432,6 +1442,10 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
       </div>
       <div class="pfFavWrap"><h3 class="subt">Deck mais usado</h3><div id="pfFavorito"></div></div>
     </div>
+
+    <h3 class="subt">Playmat</h3>
+    <div id="pfPlaymat"></div>
+    <input type="file" id="pfArqPlaymat" accept="image/*" class="oculto">
 
     <h3 class="subt">Estatísticas</h3>
     <div id="pfStats" class="stats3"></div>
@@ -3564,7 +3578,77 @@ function reduzirImagem(arq, w, h, q=.85){
   });
 }
 let pfDecksCache = null;
+
+// ---------------- Playmat: modelos prontos (desenhados aqui) ou a foto do jogador (guardada no Zera) ----------------
+const GRADE = (cor)=>`linear-gradient(${cor} 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,${cor} 1px,transparent 1px) 0 0/48px 48px`;
+const PLAYMATS = {
+  'feltro-verde':   {nome:'Feltro verde',   bg:'radial-gradient(ellipse at center,#2f5c3c 0%,#1a3524 70%,#11241a 100%)'},
+  'feltro-azul':    {nome:'Feltro azul',    bg:'radial-gradient(ellipse at center,#2b4a6e 0%,#182c45 70%,#0f1d2f 100%)'},
+  'feltro-vermelho':{nome:'Feltro vinho',   bg:'radial-gradient(ellipse at center,#6a2a2a 0%,#401818 70%,#2a0f10 100%)'},
+  'feltro-roxo':    {nome:'Feltro roxo',    bg:'radial-gradient(ellipse at center,#4e3566 0%,#2e1f40 70%,#1e142b 100%)'},
+  'feltro-preto':   {nome:'Preto fosco',    bg:'radial-gradient(ellipse at center,#2a2622 0%,#151210 75%,#0c0a09 100%)'},
+  'madeira':        {nome:'Madeira',        bg:'repeating-linear-gradient(92deg,#4a2f1a 0,#5a3a20 18px,#3f2716 34px,#55361e 52px),linear-gradient(#0000,#0004)'},
+  'pedra':          {nome:'Pedra',          bg:'radial-gradient(circle at 20% 30%,#5a5550 0,#0000 40%),radial-gradient(circle at 75% 70%,#4a4642 0,#0000 45%),linear-gradient(135deg,#3a3633,#24211f)'},
+  'grade-verde':    {nome:'Grade verde',    bg:GRADE('#ffffff14') + ',radial-gradient(ellipse at center,#2f5c3c 0%,#1a3524 75%)'},
+  'grade-azul':     {nome:'Grade azul',     bg:GRADE('#9fd0ff1a') + ',radial-gradient(ellipse at center,#22405f 0%,#13243a 75%)'},
+  'grade-escura':   {nome:'Grade escura',   bg:GRADE('#e4c87414') + ',linear-gradient(#1c1612,#120e0b)'}
+};
+function fundoPlaymat(pm){   // pm = {playmat, codigo, versao} -> valor CSS de background (ou '')
+  if (!pm || !pm.playmat) return '';
+  if (pm.playmat === 'foto') return `url('/api/playmatImg?c=${encodeURIComponent(pm.codigo)}&v=${Math.round(pm.versao||0)}')`;
+  return (PLAYMATS[pm.playmat] || {}).bg || '';
+}
+let meuPlaymat = null;
+async function desenharPlaymatPerfil(){
+  const box = $('#pfPlaymat'); if (!box) return;
+  try { meuPlaymat = await (await fetch('/api/playmat')).json(); } catch(e){ meuPlaymat = {erro:'Sem conexão com o servidor do grupo.'}; }
+  if (meuPlaymat.erro){ box.innerHTML = `<div class="pmDica">${esc(meuPlaymat.erro)}</div>`; return; }
+  const atual = meuPlaymat.playmat || '';
+  const foto = atual === 'foto' ? fundoPlaymat(meuPlaymat) : '';
+  box.innerHTML = `<div class="pmGrade">
+      <div class="pmOp ${!atual?'sel':''}" data-pm="" style="background:linear-gradient(180deg,var(--painel),var(--bg2))"><span>Padrão da Mesa</span></div>
+      ${Object.entries(PLAYMATS).map(([id, m])=>`<div class="pmOp ${atual===id?'sel':''}" data-pm="${id}" style="background:${m.bg}"><span>${esc(m.nome)}</span></div>`).join('')}
+      ${foto ? `<div class="pmOp sel" style="background-image:${foto}"><span>Sua imagem</span></div>` : ''}
+      <div class="pmOp foto" id="pmSubir">＋ Subir minha imagem</div>
+    </div>
+    <div class="pmDica">Os outros jogadores veem o seu playmat atrás do seu campo, em todas as partidas. Imagens largas (16:9) ficam melhor.</div>`;
+  box.querySelectorAll('[data-pm]').forEach(el=>el.onclick = async ()=>{
+    const r = await post('/api/playmat', {preset: el.dataset.pm});
+    if (r.erro) avisoLocal(r.erro); else { avisoLocal('Playmat trocado!'); playmatsJogo = {}; }
+    desenharPlaymatPerfil();
+  });
+  $('#pmSubir').onclick = ()=>$('#pfArqPlaymat').click();
+}
+$('#pfArqPlaymat').onchange = async ev=>{
+  const f = ev.target.files && ev.target.files[0]; ev.target.value = '';
+  if (!f) return;
+  avisoLocal('Enviando o playmat...');
+  try {
+    const img = await new Promise((ok, erro)=>{ const i = new Image(); i.onload = ()=>ok(i); i.onerror = erro; i.src = URL.createObjectURL(f); });
+    const larg = Math.min(1920, img.naturalWidth), alt = Math.round(img.naturalHeight * larg / img.naturalWidth);
+    const cv = document.createElement('canvas'); cv.width = larg; cv.height = alt;
+    cv.getContext('2d').drawImage(img, 0, 0, larg, alt);
+    let q = .85, dados = cv.toDataURL('image/jpeg', q);
+    while (dados.length > 2_400_000 && q > .4){ q -= .1; dados = cv.toDataURL('image/jpeg', q); }   // fica leve para todos baixarem
+    const r = await post('/api/playmat', {imagem: dados.split(',')[1]});
+    if (r.erro) avisoLocal(r.erro); else { avisoLocal('Playmat enviado! Todos vão ver na próxima partida.'); playmatsJogo = {}; }
+  } catch(e){ avisoLocal('Não consegui ler essa imagem.'); }
+  desenharPlaymatPerfil();
+};
+// playmats dos jogadores da partida (busca no Zera a cada minuto)
+let playmatsJogo = {}, playmatsChave = '', playmatsQuando = 0;
+function playmatsDaPartida(){
+  const nomes = ((E && E.jogo && E.jogo.jogadores) || []).filter(j=>!ehBotNome(j.nome)).map(j=>j.nome).sort();
+  const chave = nomes.join('|');
+  if (!nomes.length || (chave === playmatsChave && Date.now() - playmatsQuando < 60000)) return;
+  playmatsChave = chave; playmatsQuando = Date.now();
+  fetch('/api/playmats?n=' + encodeURIComponent(chave)).then(r=>r.json()).then(m=>{
+    const novo = JSON.stringify(m||{});
+    if (novo !== JSON.stringify(playmatsJogo)){ playmatsJogo = m || {}; if (E && E.jogo) desenharMesa(); }
+  }).catch(()=>{});
+}
 async function desenharPerfil(){
+  desenharPlaymatPerfil();
   const p = await carregarPerfil();
   fetch('/api/amigos').then(r=>r.json()).then(async a=>{ const n = a && a.foto && a.foto.nivel; $('#pfNivel').innerHTML = n ? `<div class="pfNivelLinha">${barraNivel(n)}</div>` : '';
     if (a && a.foto && a.foto.codigo){ const eu = await post('/api/amigos', {acao:'perfil', codigo:a.foto.codigo}); $('#pfChefes').innerHTML = galeriaChefesHtml(eu.trofeus, true); } }).catch(()=>{});
@@ -4443,6 +4527,13 @@ function desenharMesa(){
   }
   const efeitosPendentes = capturarEfeitos();
   mesa.innerHTML = h;
+  playmatsDaPartida();
+  mesa.querySelectorAll('.tab').forEach((t,i)=>{
+    const pm = playmatsJogo[(ordem[i]||{}).nome], bg = fundoPlaymat(pm);
+    if (!bg) return;
+    t.classList.add('comPlaymat'); t.style.setProperty('--pm', bg);
+    if (pm.playmat !== 'foto') t.querySelector('.corpoTab').classList.add('pmPadrao');
+  });
   if (dupla2v2){ const mt = meuTime(); mesa.querySelectorAll('.tab').forEach((t,i)=>t.classList.add(timeDe((ordem[i]||{}).nome)!==mt ? 'ladoBot' : 'ladoTime')); }
   dispararEfeitos(efeitosPendentes);
   if (visao==='livre' && !cam.ajustada){ cam.ajustada = true; centralizarCamera(); }

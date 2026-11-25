@@ -34,6 +34,7 @@ public class Amigos {
     // ---- dados (tudo em memória; gravado no arquivo quando muda) ----
     static class Usuario {
         String id, codigo, nome = "?", avatar = "", status = "", xmage = ""; JsonObject sala, perfil; long visto;
+        String playmat = ""; long playmatVer = 0;   // playmat: "" (padrão), nome de um modelo pronto ou "foto" (imagem em playmats/<código>.jpg)
         long xp = 0; String diaVitoria = ""; String diaMissoes = ""; Map<String, Integer> progresso = new HashMap<>(); Set<String> missoesFeitas = new HashSet<>();
         JsonObject recordes = new JsonObject(); List<JsonObject> historico = new ArrayList<>();
     }
@@ -69,6 +70,9 @@ public class Amigos {
         srv.createContext("/deckDia", ex -> tratar(ex, Amigos::deckDia));
         srv.createContext("/mao", ex -> tratar(ex, Amigos::mao));
         srv.createContext("/times", ex -> tratar(ex, Amigos::times));
+        srv.createContext("/playmat", ex -> tratar(ex, Amigos::playmat));
+        srv.createContext("/playmats", ex -> tratar(ex, Amigos::playmats));
+        srv.createContext("/playmatImg", Amigos::playmatImg);
         srv.createContext("/decksChefe", ex -> tratar(ex, c -> {   // todos os decks de chefe que a pessoa já ganhou (a Mesa baixa os que faltam)
             Usuario u = usuario(c); List<Map<String, Object>> l = new ArrayList<>();
             for (Map.Entry<String, List<Map<String, Object>>> e : b.derrotaramChefe.entrySet()) {
@@ -464,6 +468,53 @@ public class Amigos {
         }
         r.put("ranking", rk);
         return r;
+    }
+
+    // ---------------- Playmat: cada jogador escolhe um modelo ou sobe a própria imagem ----------------
+    static java.nio.file.Path pastaPlaymats() { return DADOS.toAbsolutePath().getParent().resolve("playmats"); }
+    static Object playmat(JsonObject c) throws IOException {
+        Usuario u = usuario(c);
+        if (c.has("imagem")) {   // JPEG em base64 (a Mesa já reduz antes de mandar)
+            byte[] img = Base64.getDecoder().decode(texto(c, "imagem", 4_000_000, ""));
+            if (img.length < 1000 || img.length > 2_500_000 || (img[0] & 0xff) != 0xFF || (img[1] & 0xff) != 0xD8) throw new IllegalArgumentException("imagem inválida");
+            Files.createDirectories(pastaPlaymats());
+            Files.write(pastaPlaymats().resolve(u.codigo + ".jpg"), img);
+            u.playmat = "foto"; u.playmatVer = System.currentTimeMillis(); sujo = true;
+        } else if (c.has("preset")) {
+            String pr = texto(c, "preset", 30, "");
+            if (!pr.matches("[a-z0-9-]*")) throw new IllegalArgumentException("modelo inválido");
+            u.playmat = pr; u.playmatVer = System.currentTimeMillis(); sujo = true;
+        }
+        if (c.has("jogador")) u.xmage = texto(c, "jogador", 64, u.xmage);
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("playmat", u.playmat); r.put("versao", u.playmatVer); r.put("codigo", u.codigo);
+        return r;
+    }
+    /** Playmat de cada jogador da partida, pelo nome do XMage. */
+    static Object playmats(JsonObject c) {
+        usuario(c);
+        Map<String, Object> r = new LinkedHashMap<>();
+        if (!c.has("jogadores")) return r;
+        for (JsonElement e : c.getAsJsonArray("jogadores")) {
+            String n = e.getAsString();
+            for (Usuario o : b.porId.values()) if (n.equals(o.xmage) && !o.playmat.isEmpty()) {
+                Map<String, Object> x = new LinkedHashMap<>(); x.put("playmat", o.playmat); x.put("versao", o.playmatVer); x.put("codigo", o.codigo);
+                r.put(n, x); break;
+            }
+        }
+        return r;
+    }
+    static void playmatImg(HttpExchange ex) throws IOException {
+        try {
+            String q = ex.getRequestURI().getRawQuery(); String cod = "";
+            if (q != null) for (String par : q.split("&")) if (par.startsWith("c=")) cod = par.substring(2);
+            java.nio.file.Path f = pastaPlaymats().resolve(cod + ".jpg");
+            if (!cod.matches("[A-Za-z0-9]{3,12}") || !Files.exists(f)) { ex.sendResponseHeaders(404, -1); ex.close(); return; }
+            byte[] d = Files.readAllBytes(f);
+            ex.getResponseHeaders().set("Content-Type", "image/jpeg");
+            ex.sendResponseHeaders(200, d.length);
+            try (OutputStream os = ex.getResponseBody()) { os.write(d); }
+        } catch (Exception e) { try { ex.sendResponseHeaders(500, -1); } catch (Exception ignored) { } ex.close(); }
     }
 
     // ---------------- 2v2 online: times de cada mesa (o XMage lê o arquivo ao começar, para alternar os lugares) ----------------
