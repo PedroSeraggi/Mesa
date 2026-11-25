@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia dos efeitos</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=EB+Garamond&display=swap" rel="stylesheet">
+<style>
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at center,#3a2614,#140c06);color:#e8d9b8;font-family:'EB Garamond',serif;overflow:hidden}
+h1{font-family:Cinzel;color:#d8b25a;text-align:center;margin:18px 0 4px;font-size:22px}
+.dica{text-align:center;color:#b9a37a;font-size:14px}
+.mesa{display:flex;justify-content:space-between;align-items:center;padding:30px 9vw;height:52vh}
+.carta{width:150px;aspect-ratio:63/88;border-radius:8px;background-size:cover;background-position:center;box-shadow:0 6px 18px #000a;border:1px solid #0008}
+.pilha{display:flex;flex-direction:column;align-items:center;gap:8px;font-family:Cinzel;font-size:13px;color:#d8b25a}
+.alvos{display:flex;gap:18px}
+.ctrl{display:flex;flex-direction:column;align-items:center;gap:10px}
+.linha{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+button{font-family:Cinzel;font-size:13px;padding:8px 14px;border-radius:6px;border:1px solid #8a6a2e;background:#2a1b0e;color:#e8d9b8;cursor:pointer}
+button.on{background:#c0982f;color:#1a1008;border-color:#e8c870}
+.W{border-color:#ffe08a}.U{border-color:#3fa9ff}.B{border-color:#9b4dff}.R{border-color:#ff4a12}.G{border-color:#3fd14a}.C{border-color:#b8c4d0}
+</style></head><body>
+<h1>Prévia dos efeitos de magia</h1>
+<div class="dica">Escolha a cor e a ação, depois clique em Lançar (ou clique numa carta-alvo).</div>
+<div class="mesa">
+  <div class="pilha"><div class="carta" id="origem"></div>Pilha</div>
+  <div class="alvos" id="alvos"></div>
+</div>
+<div class="ctrl">
+  <div class="linha" id="cores"></div>
+  <div class="linha" id="acoes"></div>
+  <div class="linha"><button id="lancar" class="on">Lançar ›</button><button id="todas">Ver as 5 cores</button></div>
+</div>
+<script src="efeitos.js"></script>
+<script>
+const IMG = n => `url('https://api.scryfall.com/cards/named?format=image&version=normal&exact=${encodeURIComponent(n).replace(/'/g,'%27')}')`;
+const MAGIAS = {W:'Swords to Plowshares',U:'Counterspell',B:'Murder',R:'Lightning Bolt',G:'Beast Within',C:'Ugin\'s Conjurant'};
+const NOMES = {W:'Branca',U:'Azul',B:'Preta',R:'Vermelha',G:'Verde',C:'Incolor'};
+const ALVOS = ['Serra Angel','Llanowar Elves','Shivan Dragon'];
+let cor='B', acao='destruir';
+function cartasAlvo(){ document.getElementById('alvos').innerHTML = ALVOS.map(n=>`<div class="carta alvo" style="background-image:${IMG(n)}"></div>`).join('');
+  document.querySelectorAll('.alvo').forEach(el=>el.onclick=()=>lancar(el)); }
+function botoes(){
+  document.getElementById('cores').innerHTML = Object.keys(NOMES).map(k=>`<button class="${k} ${k===cor?'on':''}" data-c="${k}">${NOMES[k]}</button>`).join('');
+  document.getElementById('acoes').innerHTML = ['destruir','exilar','anular'].map(a=>`<button class="${a===acao?'on':''}" data-a="${a}">${a[0].toUpperCase()+a.slice(1)}</button>`).join('');
+  document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{cor=b.dataset.c; document.getElementById('origem').style.backgroundImage=IMG(MAGIAS[cor]); botoes();});
+  document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{acao=b.dataset.a; botoes();});
+}
+function centro(el){ const r=el.getBoundingClientRect(); return {x:(r.left+r.right)/2,y:(r.top+r.bottom)/2}; }
+let ocupado=false;
+async function lancar(alvo, c=cor){
+  if (ocupado) return; ocupado=true;
+  const alvos=[...document.querySelectorAll('.alvo')]; alvo = alvo || alvos[Math.floor(Math.random()*alvos.length)];
+  alvo.style.visibility='hidden';
+  await Efeitos.lancar({de:centro(document.getElementById('origem')), cor:c, acao, alvo});
+  setTimeout(()=>{ alvo.style.visibility=''; alvo.animate([{opacity:0},{opacity:1}],400); ocupado=false; }, 500);
+}
+document.getElementById('lancar').onclick=()=>lancar();
+document.getElementById('todas').onclick=async()=>{ for (const c of ['W','U','B','R','G']){ cor=c; document.getElementById('origem').style.backgroundImage=IMG(MAGIAS[c]); botoes(); await lancar(null,c); await new Promise(r=>setTimeout(r,1000)); } };
+document.getElementById('origem').style.backgroundImage=IMG(MAGIAS[cor]);
+cartasAlvo(); botoes();
+</script></body></html>

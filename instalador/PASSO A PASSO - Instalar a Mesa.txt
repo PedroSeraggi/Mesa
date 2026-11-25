@@ -1,0 +1,124 @@
+================================================================
+  MESA 1.0 - PASSO A PASSO PARA INSTALAR NO PC DE UM AMIGO
+================================================================
+
+O que vai precisar:
+  - O instalador, baixado do GitHub (rápido, uns 375 MB):
+    https://github.com/PedroSeraggi/Mesa/releases/latest
+    -> em "Assets", clique em "Instalar-Mesa-1.0.exe".
+  - A chave do Oráculo (o Twelvez manda no WhatsApp).
+  - Windows 10 ou 11.
+  - Internet (para as imagens das cartas e para jogar online).
+
+NAO precisa instalar Java, Python nem o XMage: ja vem tudo dentro.
+
+
+----------------------------------------------------------------
+PARTE 1 - INSTALAR A MESA (uns 3 minutos)
+----------------------------------------------------------------
+
+1. Dê dois cliques em "Instalar Mesa 1.0.exe".
+
+2. Se aparecer a tela azul "O Windows protegeu o computador":
+     -> clique em "Mais informações"
+     -> clique em "Executar assim mesmo"
+   (Isso aparece para qualquer programa novo que não tem
+    assinatura paga. É normal.)
+
+3. Clique em "Avançar" até o fim. Deixe marcado
+   "Criar atalho na área de trabalho".
+   Não pede senha de administrador.
+
+4. No final, deixe marcado "Abrir a Mesa agora" e clique em
+   "Concluir". A Mesa abre numa janela própria.
+   (A primeira vez demora uns 20 a 40 segundos, porque o servidor
+    do XMage está ligando. Das próximas vezes é mais rápido.)
+
+5. Pronto: na área de trabalho fica o atalho "Mesa", com o M dourado.
+
+
+----------------------------------------------------------------
+PARTE 2 - PRIMEIRA VEZ NA MESA
+----------------------------------------------------------------
+
+1. Vá em PERFIL: coloque o nome (é assim que os amigos vão ver),
+   a foto e o banner, se quiser. Clique em "Salvar perfil".
+
+2. Vá em DECKS:
+   - Já vêm alguns decks prontos para testar.
+   - "Colar lista": cola uma lista de deck (do Moxfield, Archidekt...).
+   - "Novo deck": monta do zero buscando as cartas.
+   - "Oráculo monta": descreve uma ideia e ele monta um deck.
+
+3. ORÁCULO (assistente de regras): vá em CONFIGURAÇÕES -> "Oráculo",
+   cole a chave que o Twelvez mandou no WhatsApp e clique em
+   "Salvar chave". Só precisa fazer isso UMA vez (continua salva
+   nas atualizações). Clique em "Testar" para ver se funciona.
+
+4. Teste contra bots: JOGAR -> Jogar com bots. Assim você vê se
+   tudo funciona antes de jogar com a galera.
+
+
+----------------------------------------------------------------
+PARTE 3 - JOGAR ONLINE COM OS AMIGOS (Radmin VPN)
+----------------------------------------------------------------
+O Radmin VPN cria uma "rede de casa" entre os PCs, pela internet.
+Todo mundo precisa ter, inclusive quem cria a sala.
+
+1. Baixe o Radmin VPN no site oficial: https://www.radmin-vpn.com/br/
+   (o instalador da Mesa pode abrir esse site no final).
+   Instale normalmente.
+
+2. Abra o Radmin VPN -> "Rede" -> "Entrar em uma rede existente".
+   Nome da rede: ______________________   (preencha)
+   Senha:        ______________________   (preencha)
+
+3. Pronto. Quando alguém criar uma sala na Mesa, ela aparece
+   sozinha em JOGAR -> "Entrar em sala" -> "Salas na sua rede".
+   Se não aparecer, peça o código da sala (ex.: MESA-0DC3-E2T)
+   e cole no campo de conexão.
+
+4. NA PRIMEIRA VEZ QUE CRIAR UMA SALA, o Windows pergunta se pode
+   liberar o "Java(TM) Platform SE binary" na rede:
+     -> marque "Redes privadas"
+     -> clique em "Permitir acesso"
+   Se não fizer isso, os amigos não conseguem entrar na sala.
+   (Não precisa marcar "Redes públicas".)
+
+
+----------------------------------------------------------------
+SE DER PROBLEMA
+----------------------------------------------------------------
+
+- A Mesa não abre / fica tela em branco:
+  espere uns 30 segundos e abra o atalho "Mesa" de novo.
+
+- "Não consegui alcançar o servidor" ao entrar numa sala:
+  confira se os dois estão com o Radmin VPN ligado e na mesma rede,
+  e se quem criou a sala liberou o Java no firewall (Parte 3, item 4).
+
+- A Mesa 3D está travando:
+  no Chrome, abra chrome://settings/system, ligue
+  "Usar aceleração gráfica quando disponível" e reinicie o Chrome.
+
+- Música ou sons altos/baixos:
+  Configurações -> Som (ou o botão ⚙ durante a partida).
+
+- ATUALIZAÇÕES: quando sair versão nova, a própria Mesa avisa no
+  menu ("Nova versão disponível"). Clique em "Atualizar": ela baixa,
+  fecha e abre o instalador; é só Avançar. Perfil, decks e a chave
+  do Oráculo continuam.
+
+- Desinstalar:
+  Configurações do Windows -> Aplicativos -> Mesa -> Desinstalar.
+  (Os decks e o perfil ficam guardados na pasta, caso reinstale.)
+
+
+----------------------------------------------------------------
+ATALHOS NA PARTIDA
+----------------------------------------------------------------
+  T          virar/usar a carta do seu campo embaixo do mouse
+  Shift + D  desenhar na mesa (Câmera livre; some em 4 segundos)
+  Shift + P  ping: marcar um ponto para todos verem (Câmera livre)
+  Esc        fechar janelas / sair do modo desenho
+  Botão direito numa carta -> "Perguntar ao Oráculo"

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Escolher sons</title>
+<link rel="icon" type="image/png" href="icone.png">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:wght@400;600&display=swap" rel="stylesheet">
+<script src="sons.js"></script>
+<style>
+:root{--ouro:#C0982F;--ouro2:#e8c870;--txt:#f0e4c8;--txt2:#b9a37a;--txt3:#8a7656;--painel:#241a10;--bg2:#1a130b;--borda:#3a2c1a}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% 0%,#2a1d10,#0c0805 70%) fixed;color:var(--txt);font-family:'EB Garamond',serif;user-select:none}
+header{position:sticky;top:0;z-index:5;background:#140d07f2;border-bottom:1px solid var(--borda);padding:12px 20px;display:flex;flex-direction:column;gap:10px}
+h1{font-family:Cinzel;color:var(--ouro);margin:0;font-size:22px}
+.dica{color:var(--txt2);font-size:14px}
+.papeis{display:flex;gap:8px;flex-wrap:wrap}
+.papel{border:1px solid var(--borda);background:var(--bg2);border-radius:8px;padding:6px 10px;font-size:13px;display:flex;flex-direction:column;gap:2px;min-width:150px;cursor:pointer}
+.papel.on{border-color:var(--ouro);box-shadow:0 0 0 2px #C0982F55}
+.papel b{font-family:Cinzel;color:var(--ouro2);font-size:12px;letter-spacing:.06em}
+.papel span{color:var(--txt3);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.papel.escolhido span{color:#9fd18b}
+.linhaTopo{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button{font-family:Cinzel;font-size:12px;padding:6px 12px;border-radius:6px;border:1px solid #8a6a2e;background:#2a1b0e;color:var(--txt);cursor:pointer}
+button.pri{background:var(--ouro);color:#1a1008}
+main{padding:16px 20px 60px}
+h2{font-family:Cinzel;color:var(--ouro);font-size:15px;letter-spacing:.1em;text-transform:uppercase;margin:22px 0 10px}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.som{border:1px solid var(--borda);background:var(--painel);border-radius:8px;padding:10px;text-align:left;font-family:'EB Garamond',serif;font-size:14px;color:var(--txt);display:flex;justify-content:space-between;align-items:center;gap:6px;transition:border-color .1s,transform .1s}
+.som:hover{border-color:var(--ouro2);transform:translateY(-1px)}
+.som.usado{border-color:#7FA063;background:#1f2a16}
+.som .tag{font-size:10px;font-family:Cinzel;color:#9fd18b}
+.toca{animation:pisca .3s}
+@keyframes pisca{0%{box-shadow:0 0 0 0 #e8c870}100%{box-shadow:0 0 0 8px #e8c87000}}
+</style></head><body>
+<header>
+  <h1>Escolher os sons da Mesa</h1>
+  <div class="dica">1) Clique numa <b>função</b> abaixo (ex.: "Passar o mouse"). 2) Passe o mouse pelos sons para ouvir. 3) Clique no que gostar: ele vira o som daquela função. As escolhas já valem na Mesa (aperte F5 lá).</div>
+  <div class="papeis" id="papeis"></div>
+  <div class="linhaTopo"><button id="testarTodos">Ouvir minhas escolhas</button><button id="limpar">Voltar tudo para os sons gerados</button>
+    <label class="dica"><input type="checkbox" id="soClique"> Tocar só ao clicar (não ao passar o mouse)</label></div>
+</header>
+<main id="main"></main>
+<script>
+const PAPEIS = [
+  ['hover','Passar o mouse'], ['maoCarta','Cartas da mão'], ['clique','Clicar'], ['carta','Jogar carta'], ['compra','Comprar carta'],
+  ['moeda','Moeda (passar)'], ['ataque','Ataque'], ['impacto','Impacto da magia'], ['lancar','Magia voando'], ['aviso','Aviso']
+];
+let escolhas = {}; try { escolhas = JSON.parse(localStorage.getItem('sonsEscolhidos')||'{}'); } catch(e){}
+let papelAtivo = 'hover';
+const cache = {};
+function tocarArquivo(url){
+  let a = cache[url]; if (!a){ a = cache[url] = new Audio(url); a.preload = 'auto'; }
+  a.currentTime = 0; a.volume = .7; a.play().catch(()=>{});
+}
+function salvar(){ try { localStorage.setItem('sonsEscolhidos', JSON.stringify(escolhas)); } catch(e){} desenharPapeis(); marcarUsados(); }
+function desenharPapeis(){
+  const box = document.getElementById('papeis');
+  box.innerHTML = PAPEIS.map(([k,n])=>`<div class="papel ${k===papelAtivo?'on':''} ${escolhas[k]?'escolhido':''}" data-p="${k}"><b>${n}</b><span>${escolhas[k] ? escolhas[k].split('/').pop() : 'som gerado (atual)'}</span></div>`).join('');
+  box.querySelectorAll('[data-p]').forEach(el=>el.onclick=()=>{ papelAtivo = el.dataset.p; desenharPapeis();
+    const f = escolhas[papelAtivo]; if (f) tocarArquivo(f); else Sons.tocar(papelAtivo, 'R'); });
+}
+function marcarUsados(){
+  const usados = new Map(Object.entries(escolhas).map(([k,v])=>[v,k]));
+  document.querySelectorAll('.som').forEach(b=>{ const k = usados.get(b.dataset.url); b.classList.toggle('usado', !!k);
+    b.querySelector('.tag').textContent = k ? (PAPEIS.find(p=>p[0]===k)||[])[1] : ''; });
+}
+(async ()=>{
+  const lista = await (await fetch('sons/kenney/lista.json')).json();
+  const grupos = [['Interface (cliques, brilhos, vidro)', 'interface'], ['RPG (cartas/livros, moedas, metal, couro)', 'rpg']];
+  document.getElementById('main').innerHTML = `<h2>Sons gerados (os de agora)</h2><div class="grade">${PAPEIS.map(([k,n])=>`<button class="som gerado" data-gerado="${k}">${n}<span class="tag"></span></button>`).join('')}</div>`
+    + grupos.map(([t,p])=>`<h2>${t}</h2><div class="grade">${lista[p].map(f=>`<button class="som" data-url="sons/kenney/${p}/${f}">${f.replace('.ogg','').replace(/_/g,' ')}<span class="tag"></span></button>`).join('')}</div>`).join('');
+  document.querySelectorAll('.som').forEach(b=>{
+    const ouvir = ()=>{ b.classList.remove('toca'); void b.offsetWidth; b.classList.add('toca'); if (b.dataset.url) tocarArquivo(b.dataset.url); else Sons.tocar(b.dataset.gerado, 'R'); };
+    b.onmouseenter = ()=>{ if (!document.getElementById('soClique').checked) ouvir(); };
+    b.onclick = ()=>{ ouvir(); if (b.dataset.url) escolhas[papelAtivo] = b.dataset.url; else delete escolhas[papelAtivo]; salvar(); };
+  });
+  desenharPapeis(); marcarUsados();
+})();
+document.getElementById('testarTodos').onclick = async ()=>{
+  for (const [k] of PAPEIS){ const f = escolhas[k]; if (f) tocarArquivo(f); else Sons.tocar(k, 'R'); await new Promise(r=>setTimeout(r, 700)); }
+};
+document.getElementById('limpar').onclick = ()=>{ if (confirm('Voltar todos para os sons gerados?')){ escolhas = {}; salvar(); } };
+Sons.configurar({ui:true, fx:true, vol:.6});
+</script></body></html>

@@ -1,0 +1,27 @@
+# ===== NUNCA subir: segredos e dados pessoais de quem joga =====
+.env
+perfil*.json
+config*.json
+paradas.json
+historico-decks.json
+tokens-decks.json
+versao.txt
+
+# ===== gerado / cache / logs =====
+classes/
+cache/
+*.log
+__pycache__/
+
+# ===== backups e testes locais =====
+*-antes-*
+src/Ponte-antes-*.java
+web/index-antes-*.html
+web/mesa3d-previa-v*.html
+pacote/
+mesa-antigo.ico
+acao.py
+avancar.py
+testar_paradas.py
+teste_amigos.py
+teste_estado.py

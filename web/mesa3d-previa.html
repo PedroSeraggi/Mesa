@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Mesa 3D (protótipo)</title>
+<link rel="icon" type="image/png" href="icone.png">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--ouro:#C0982F;--ouro2:#e8c870;--txt:#f0e4c8;--txt2:#b9a37a;--cw:88px;--ch:123px}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:radial-gradient(ellipse at 50% 30%,#1c140c,#070504 70%);color:var(--txt);font-family:'EB Garamond',serif;overflow:hidden;user-select:none}
+#barra{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:50;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:96vw;background:#140d07e6;border:1px solid #5a4422;border-radius:8px;padding:6px 10px;font-size:13px}
+#barra b{font-family:Cinzel;color:var(--ouro);margin-right:4px}
+#barra .sep{width:1px;height:22px;background:#5a4422;margin:0 4px}
+button{font-family:Cinzel;font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid #8a6a2e;background:#2a1b0e;color:var(--txt);cursor:pointer}
+button.on{background:var(--ouro);color:#1a1008}
+#dica{position:fixed;bottom:8px;left:12px;z-index:50;font-size:12px;color:var(--txt2)}
+#aviso{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:55;background:#140d07ee;border:1px solid var(--ouro);border-radius:8px;padding:8px 16px;font-family:Cinzel;font-size:14px;display:none}
+
+/* ---------- cena 3D ---------- */
+#cena{position:fixed;inset:0;perspective:1500px;perspective-origin:50% 36%;cursor:grab}
+#cena.arrastando{cursor:grabbing}
+#camera{position:absolute;left:50%;top:27%;width:0;height:0;transform-style:preserve-3d;pointer-events:none}
+#mesa{position:absolute;width:2400px;height:2400px;left:-1200px;top:-1200px;border-radius:50%;transform-style:preserve-3d;pointer-events:none;
+  background:radial-gradient(circle at 50% 50%,#2f6a3a 0%,#245830 48%,#1b4425 72%,#16381f 76%,transparent 76.2%),
+             radial-gradient(circle,#6b4423 0%,#5a381b 78%,#3c2410 80%,transparent 80.3%);
+  box-shadow:0 40px 120px #000}
+#mesa::before{content:'';position:absolute;inset:4%;border-radius:50%;border:3px solid #b8903c88;box-shadow:inset 0 0 140px #000b;pointer-events:none}
+/* luz quente vinda do centro + textura do feltro */
+#mesa::after{content:'';position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 50% 50%,#ffd48a2e 0%,#ffd48a10 30%,transparent 55%),repeating-radial-gradient(circle at 50% 50%,transparent 0 6px,#00000008 6px 7px)}
+
+.zona,.faixa,.colCentro,.colLado,.lado,.maoMesa{pointer-events:none}
+.carta,.placa,.caixa3d,.moeda{pointer-events:auto}
+.zona{position:absolute;left:50%;top:50%;transform-style:preserve-3d;display:flex;flex-direction:row;align-items:stretch;gap:14px;padding:16px 18px;border:2px solid #d6b25a66;border-radius:14px;background:#0f2a1640;transition:box-shadow .4s,border-color .4s}
+.zona.eu{border-color:#e8c870aa;background:#0f2a1660}
+.zona.vez{border-color:#ffe39a;box-shadow:0 0 0 3px #e8c87088,0 0 60px #ffd06a55,inset 0 0 80px #ffd06a22}
+.colCentro{flex:1;display:flex;flex-direction:column;gap:12px;transform-style:preserve-3d;min-width:0}
+.colLado{width:112px;flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:4px;transform-style:preserve-3d;border-radius:10px;background:#00000018}
+.colLado>div{transform-style:preserve-3d}
+.rotLado{font-family:Cinzel;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#ffffff40;margin-top:4px}
+.faixa{display:flex;gap:12px;height:150px;align-items:center;flex-wrap:nowrap;position:relative;padding:8px 10px;border-radius:8px;background:#00000014;transform-style:preserve-3d}
+.faixa.baixa{height:138px}
+.faixa.aperta>.slot+.slot{margin-left:calc(-1 * var(--sob))}
+.faixa::before{content:attr(data-rot);position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:Cinzel;font-size:30px;letter-spacing:.2em;color:#ffffff12;pointer-events:none;white-space:nowrap}
+.placa{position:absolute;display:flex;align-items:center;gap:10px;padding:6px 14px 6px 6px;border-radius:30px;background:#140d07ee;border:1px solid var(--ouro);white-space:nowrap;transform:translateZ(2px);cursor:pointer}
+.placa:hover{border-color:var(--ouro2);box-shadow:0 0 16px #e8c87066}
+.placa .av{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-family:Cinzel;font-weight:700;font-size:20px;color:#1a1008;border:2px solid var(--ouro2)}
+.placa .nm{font-family:Cinzel;font-size:18px;color:var(--txt)}
+.placa .vida{font-family:Cinzel;font-size:26px;color:var(--ouro2);margin-left:6px}
+
+/* ---------- cartas ---------- */
+.slot{position:relative;transform-style:preserve-3d;flex:none}
+.carta{position:relative;width:var(--cw);height:var(--ch);border-radius:6px;background:#222 center/cover no-repeat;transition:transform .25s ease,box-shadow .2s,filter .2s;transform:translateZ(1px);flex:none;cursor:pointer;
+  box-shadow:4px 7px 10px #000b,0 0 0 1px #0008}
+.carta:hover{transform:translateZ(16px) scale(1.06);box-shadow:10px 20px 24px #000c,0 0 0 2px var(--ouro2)}
+.slot.vir>.carta{transform:translateZ(1px) rotate(90deg)}
+.slot.vir>.carta:hover{transform:translateZ(16px) rotate(90deg) scale(1.06)}
+.slot.vir{width:var(--ch);display:flex;justify-content:center;align-items:center}
+.carta.cmd{box-shadow:0 0 0 2px var(--ouro2),0 0 18px #e8c87088,4px 7px 10px #000b}
+/* anexos: equipamentos e auras saem por baixo da criatura, em escada */
+.slot .anexo{position:absolute;left:0;top:0;transform:translate(calc(var(--k) * 14px),calc(var(--k) * 18px)) translateZ(0)}
+.slot .anexo:hover{transform:translate(calc(var(--k) * 14px),calc(var(--k) * 18px)) translateZ(20px) scale(1.06)}
+.slot.comAnexo{margin-right:calc(var(--n) * 14px);margin-bottom:calc(var(--n) * 18px)}
+/* marcadores sobre a carta */
+.fichas{position:absolute;left:50%;bottom:8px;transform:translateX(-50%) translateZ(8px);display:flex;gap:3px;pointer-events:none;transform-style:preserve-3d}
+.ficha{min-width:30px;height:24px;padding:0 6px;border-radius:12px;display:grid;place-items:center;font-family:Cinzel;font-weight:700;font-size:13px;color:#fff;box-shadow:0 3px 0 #0008,0 6px 8px #0009;border:2px solid #fff6}
+.ficha.mais{background:radial-gradient(circle at 35% 30%,#8fe08a,#2e8a33)}
+.ficha.dano{background:radial-gradient(circle at 35% 30%,#ff8a7a,#a8261a)}
+.ficha.leal{background:radial-gradient(circle at 35% 30%,#9ac8ff,#2a5ea8)}
+.qtd{position:absolute;top:-8px;right:-8px;transform:translateZ(10px);background:var(--ouro);color:#1a1008;font-family:Cinzel;font-weight:700;font-size:14px;border-radius:12px;padding:1px 8px;box-shadow:0 3px 6px #000a;pointer-events:none}
+.pilhaIgual{position:absolute;inset:0;border-radius:6px;background:#0006;transform:translate(5px,5px) translateZ(0)}
+/* destaques */
+.carta.jogavel{box-shadow:0 0 0 2px #7dff8a,0 0 22px #4cd96388,4px 7px 10px #000b}
+.carta.alvo{animation:alvoPulsa 1.1s ease-in-out infinite}
+@keyframes alvoPulsa{0%,100%{box-shadow:0 0 0 3px #ffcf4a,0 0 14px #ffcf4a88}50%{box-shadow:0 0 0 3px #fff2b0,0 0 34px #ffcf4acc}}
+.slot.ataca>.carta{transform:translateY(-38px) translateZ(26px) rotateX(-18deg);box-shadow:0 0 0 2px #ff6a4a,0 0 26px #ff4a1a88,8px 26px 26px #000c}
+
+/* ---------- montes 3D ---------- */
+.caixa3d{position:relative;width:var(--cw);height:var(--ch);transform-style:preserve-3d;cursor:pointer;flex:none}
+.caixa3d .f{position:absolute;border:1px solid #00000066}
+.caixa3d .topo{inset:0;border-radius:5px;transform:translateZ(var(--a));background:linear-gradient(135deg,#4a2e18,#21140a);border:2px solid #b8903c;display:grid;place-items:center;font-family:Cinzel;color:var(--ouro2);font-size:22px;text-shadow:0 2px 4px #000;box-shadow:inset 0 0 18px #000a;background-size:cover;background-position:center}
+.caixa3d .lad{background:repeating-linear-gradient(90deg,#d9cfb8 0 1px,#b9ad94 1px 2px)}
+.caixa3d .n{left:0;top:0;width:100%;height:var(--a);transform-origin:top;transform:rotateX(90deg)}
+.caixa3d .s{left:0;bottom:0;width:100%;height:var(--a);transform-origin:bottom;transform:rotateX(-90deg)}
+.caixa3d .o{left:0;top:0;width:var(--a);height:100%;transform-origin:left;transform:rotateY(-90deg)}
+.caixa3d .l{right:0;top:0;width:var(--a);height:100%;transform-origin:right;transform:rotateY(90deg)}
+.caixa3d .s,.caixa3d .n{background:repeating-linear-gradient(0deg,#d9cfb8 0 1px,#a89c84 1px 2px)}
+.caixa3d .sombra{position:absolute;inset:4px;border-radius:6px;background:#000;filter:blur(8px);opacity:.6;transform:translate(8px,10px)}
+.caixa3d:hover .topo{border-color:var(--ouro2);box-shadow:0 0 18px #e8c87088,inset 0 0 18px #000a}
+.caixa3d.exilio{transform:rotate(90deg);margin:-10px 0}
+.caixa3d.exilio .topo{filter:grayscale(.85) brightness(.9)}
+.moeda{position:relative;width:86px;height:86px;transform-style:preserve-3d;cursor:pointer;margin-top:auto;margin-bottom:6px}
+.moeda .d{position:absolute;inset:0;border-radius:50%;background:#7a5a1c}
+.moeda .face{position:absolute;inset:0;border-radius:50%;transform:translateZ(9px);background:radial-gradient(circle at 35% 30%,#fff3c0,#e8c870 25%,#c0982f 60%,#8a6a2e);border:3px solid #6b4f18;display:grid;place-items:center;font-family:Cinzel;font-weight:700;font-size:11px;color:#3a2808;text-align:center;line-height:1.1;box-shadow:inset 0 0 10px #6b4f18}
+.moeda:hover .face{filter:brightness(1.15)}
+.moeda.gira{animation:giraMoeda .8s ease-out}
+@keyframes giraMoeda{0%{transform:translateZ(0) rotateY(0)}40%{transform:translateZ(90px) rotateY(400deg)}100%{transform:translateZ(0) rotateY(720deg)}}
+
+/* ---------- mãos em pé na mesa ---------- */
+.maoMesa{position:absolute;left:50%;top:calc(100% + 14px);height:150px;display:flex;justify-content:center;align-items:flex-end;transform-style:preserve-3d;transform:translateX(-50%) rotateX(-62deg);transform-origin:50% 100%}
+.maoMesa .carta{width:104px;height:145px;margin:0 -14px;transform-origin:50% 100%;border-radius:7px;box-shadow:0 6px 14px #000c}
+.maoMesa .carta:hover{transform:translateZ(30px) translateY(-46px) scale(1.18)!important;z-index:5;box-shadow:0 16px 30px #000,0 0 0 2px var(--ouro2)}
+.maoMesa .carta.jogavel{box-shadow:0 0 0 2px #7dff8a,0 0 18px #4cd963aa}
+.maoMesa.costas .carta{width:84px;height:117px;margin:0 -16px;background:linear-gradient(135deg,#4a2e18,#21140a);border:2px solid #b8903c;display:grid;place-items:center;font-family:Cinzel;color:var(--ouro2);font-size:18px;cursor:default}
+.maoMesa.costas .carta:hover{transform:none!important;box-shadow:0 6px 14px #000c}
+
+.chaves{position:absolute;right:-8px;top:14%;display:flex;flex-direction:column;gap:3px;transform:translateZ(9px);pointer-events:none;transform-style:preserve-3d}
+.chaves span{font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif;background:#120d09f0;border:1px solid #c0982f99;border-radius:6px;font-size:14px;min-width:26px;text-align:center;line-height:22px;box-shadow:0 3px 0 #0008,0 5px 8px #0009}
+.slot.vir .chaves{transform:translateZ(9px) rotate(-90deg)}
+#zoomHab{position:fixed;right:24px;top:calc(50% + 218px);width:300px;z-index:60;display:none;flex-wrap:wrap;gap:6px;pointer-events:none}
+#zoomHab span{font-family:"Segoe UI",sans-serif,"Segoe UI Emoji";background:#1c130bee;border:1px solid #8a6a2e;border-radius:999px;padding:3px 10px;font-size:13px}
+#zoom{position:fixed;right:24px;top:50%;transform:translateY(-50%);width:300px;height:418px;border-radius:14px;background:center/cover no-repeat;box-shadow:0 20px 60px #000;z-index:60;pointer-events:none;display:none}
+.arrastada{position:fixed;z-index:75;width:150px;height:209px;border-radius:9px;background:center/cover no-repeat;pointer-events:none;box-shadow:0 26px 50px #000d,0 0 0 2px var(--ouro2);transform:translate(-50%,-60%) rotate(-4deg);transition:box-shadow .15s,opacity .15s}
+.arrastada.pode{box-shadow:0 26px 50px #000d,0 0 0 3px #7dff8a,0 0 30px #4cd963aa}
+.arrastada.nao{opacity:.75;box-shadow:0 26px 50px #000d,0 0 0 3px #ff6a4a}
+.zona.soltar{border-color:#7dff8a;box-shadow:0 0 0 3px #7dff8a88,0 0 70px #4cd96366,inset 0 0 90px #4cd96322}
+.maoMesa .carta.levantada{opacity:.25}
+.voando{position:fixed;z-index:70;border-radius:8px;background:center/cover no-repeat;box-shadow:0 20px 40px #000c;pointer-events:none}
+</style></head><body>
+<div id="barra"><b>Mesa 3D</b>
+  <span>Jogadores:</span><button data-jn="2">2</button><button data-jn="3">3</button><button data-jn="4" class="on">4</button>
+  <span class="sep"></span><button id="centro">Centralizar</button><button id="ver">De cima</button>
+  <span class="sep"></span><button id="comprar">Comprar carta</button><button id="simAlvo">Simular alvo</button><button id="simAtaque">Simular ataque</button>
+</div>
+<div id="aviso"></div>
+<div id="dica">Arraste = girar/inclinar · rodinha = zoom · clique na placa de um jogador = olhar a área dele · arraste (ou clique) uma carta brilhando da mão até a sua área = jogar</div>
+<div id="cena"><div id="camera"><div id="mesa"></div></div></div>
+<div id="zoom"></div><div id="zoomHab"></div>
+<script>
+const IMG = n => `https://api.scryfall.com/cards/named?format=image&version=normal&exact=${encodeURIComponent(n)}`;
+const CHAVES = {
+  'Flying':['🕊️','Voar'], 'First strike':['⚔️','Iniciativa'], 'Double strike':['⚔️²','Golpe duplo'], 'Deathtouch':['💀','Toque mortífero'],
+  'Lifelink':['❤️','Vínculo com a vida'], 'Vigilance':['👁️','Vigilância'], 'Trample':['🐘','Atropelar'], 'Menace':['👹','Ameaça'],
+  'Haste':['⚡','Ímpeto'], 'Reach':['🏹','Alcance'], 'Hexproof':['🔒','Resistência a magia'], 'Indestructible':['🛡️','Indestrutível'], 'Defender':['🏰','Defensor']};
+// nas cartas reais isso vem do XMage; aqui é só exemplo
+const HAB = {'Lyra Dawnbringer':['Flying','First strike','Lifelink'], 'Serra Angel':['Flying','Vigilance'], 'Resplendent Angel':['Flying'],
+  'Shivan Dragon':['Flying'], 'Old Gnawbone':['Flying'], 'Sliver Hivelord':['Indestructible'], 'Archangel Avacyn':['Flying','Vigilance'],
+  'Vampire Nocturnus':[], 'Cordial Vampire':[], 'Sun Titan':['Vigilance'], 'Mentor of the Meek':[]};
+const chavesHtml = n => { const h = (HAB[n]||[]).filter(k=>CHAVES[k]); return h.length ? `<div class="chaves">${h.map(k=>`<span title="${CHAVES[k][1]}">${CHAVES[k][0]}</span>`).join('')}</div>` : ''; };
+const TERRENO = new Set(['Plains','Island','Swamp','Mountain','Forest','Command Tower']);
+const C = (n, x={}) => Object.assign({n, vir:false, cont:{}, anexos:[]}, x);
+const JOG = [
+  {nome:'Twelvez', cor:'#A487C4', vida:40, cmd:"Giada, Font of Hope", grim:84, cem:['Swords to Plowshares','Lightning Helix'], exi:['Llanowar Elves'],
+   terras:[C('Plains'),C('Plains',{vir:true}),C('Plains'),C('Command Tower',{vir:true}),C('Plains'),C('Plains'),C('Plains',{vir:true}),C('Emeria, the Sky Ruin'),C('Castle Ardenvale'),C('Kor Haven'),C('Eiganjo Castle'),C('Mistveil Plains')],
+   criat:[C('Serra Angel',{cont:{mais:2}, anexos:['Sword of Fire and Ice']}),C('Lyra Dawnbringer'),C('Resplendent Angel',{cont:{dano:2}})],
+   outros:[{n:'Sol Ring',q:1},{n:'Smothering Tithe',q:1},{n:'Treasure',q:3,ficha:true}]},
+  {nome:'Amigo', cor:'#6f9fc4', vida:37, cmd:'The Ur-Dragon', grim:79, cem:['Cultivate'], exi:[],
+   terras:[C('Mountain'),C('Forest',{vir:true}),C('Island'),C('Swamp'),C('Jungle Shrine'),C('Savage Lands'),C('Crumbling Necropolis'),C('Arcane Sanctum'),C('Seaside Citadel'),C('Opulent Palace'),C('Frontier Bivouac'),C('Mystic Monastery'),C('Nomad Outpost')],
+   criat:[C('Shivan Dragon',{cont:{mais:1}}),C('Old Gnawbone')], outros:[{n:'Arcane Signet',q:1}]},
+  {nome:'Julio', cor:'#7FA063', vida:40, cmd:'Edgar Markov', grim:82, cem:[], exi:['Bloodghast'],
+   terras:[C('Swamp'),C('Swamp',{vir:true}),C('Mountain'),C('Plains')],
+   criat:[C('Vampire Nocturnus'),C('Cordial Vampire',{cont:{mais:3}})], outros:[{n:'Vampire',q:4,ficha:true},{n:'Liliana, Death Wielder',q:1,leal:5}]},
+  {nome:'Bia', cor:'#d07a3a', vida:31, cmd:'The First Sliver', grim:77, cem:['Counterspell','Rampant Growth'], exi:[],
+   terras:[C('Forest'),C('Island'),C('Mountain')],
+   criat:[C('Sliver Hivelord'),C('Virulent Sliver',{anexos:['Rancor']})], outros:[]},
+];
+let MAO = ['Plains','Swords to Plowshares','Smothering Tithe','Archangel Avacyn','Wrath of God','Path to Exile'];
+let BIBLIO = ['Mentor of the Meek','Plains','Righteous Confluence','Sun Titan','Plains','Akroma\'s Will'];
+const JOGAVEIS = new Set(['Plains','Swords to Plowshares','Path to Exile','Mentor of the Meek','Sun Titan']);
+let n = 4, vez = 1, foco = -1, alvoMode = false;
+let cam = {tilt:52, giro:0, zoom:1}, alvoCam = {...cam};
+
+function aviso(t){ const a = document.getElementById('aviso'); a.textContent = t; a.style.display = 'block'; clearTimeout(aviso.t); aviso.t = setTimeout(()=>a.style.display='none', 2200); }
+function fichas(c){
+  const f = [];
+  if (c.cont.mais) f.push(`<span class="ficha mais">+${c.cont.mais}/+${c.cont.mais}</span>`);
+  if (c.cont.dano) f.push(`<span class="ficha dano">${c.cont.dano}</span>`);
+  if (c.leal) f.push(`<span class="ficha leal">${c.leal}</span>`);
+  return f.length ? `<div class="fichas">${f.join('')}</div>` : '';
+}
+function cartaSlot(c, i, k, tipo){
+  const anex = (c.anexos||[]);
+  const cls = ['carta']; if (alvoMode && i!==0 && tipo==='criat') cls.push('alvo');
+  return `<div class="slot ${c.vir?'vir':''} ${c.ataca?'ataca':''} ${anex.length?'comAnexo':''}" style="--n:${anex.length}" data-j="${i}" data-t="${tipo}" data-k="${k}">
+    ${anex.map((a,q)=>`<div class="carta anexo" data-n="${a}" style="--k:${anex.length-q};background-image:url('${IMG(a)}')"></div>`).join('')}
+    <div class="${cls.join(' ')}" data-n="${c.n}" style="background-image:url('${IMG(c.n)}')">${fichas(c)}${chavesHtml(c.n)}</div></div>`;
+}
+function agrupar(lista){
+  const g = new Map();
+  lista.forEach((c,k)=>{ if (c.ataca || Object.keys(c.cont).length || c.anexos.length){ g.set('u'+k, {c, ks:[k]}); return; }
+    const ch = c.n + '|' + c.vir; if (!g.has(ch)) g.set(ch, {c, ks:[]}); g.get(ch).ks.push(k); });
+  return [...g.values()];
+}
+function terraSlot(gr, i){
+  const c = gr.c, q = gr.ks.length;
+  return `<div class="slot ${c.vir?'vir':''}" data-j="${i}" data-t="terra" data-k="${gr.ks[0]}">
+    <div class="carta" data-n="${c.n}" style="background-image:url('${IMG(c.n)}')">${q>1?'<div class="pilhaIgual"></div>':''}${q>1?`<span class="qtd">×${q}</span>`:''}</div></div>`;
+}
+function outroSlot(o){
+  return `<div class="slot"><div class="carta" data-n="${o.n}" style="background-image:url('${IMG(o.n)}')">
+    ${o.q>1?'<div class="pilhaIgual"></div>':''}${o.q>1?`<span class="qtd">×${o.q}</span>`:''}${fichas({cont:{}, leal:o.leal})}</div></div>`;
+}
+function caixa(q, titulo, topo, extra=''){
+  const a = Math.max(5, Math.round(q*0.45));
+  return `<div class="caixa3d ${extra}" title="${titulo}: ${q}" style="--a:${a}px"><div class="sombra"></div><div class="f lad n"></div><div class="f lad s"></div><div class="f lad o"></div><div class="f lad l"></div>
+    <div class="f topo" ${topo?`style="background-image:url('${IMG(topo)}');color:#fff"`:''}>${topo?'':q}</div></div>`;
+}
+function maoHtml(p, i){
+  const q = i===0 ? MAO.length : 5 + i, m = (q-1)/2;
+  const cs = Array.from({length:q}, (_,k)=>{ const a=(k-m)*4, y=Math.abs(k-m)*4;
+    return i===0 ? `<div class="carta ${JOGAVEIS.has(MAO[k])?'jogavel':''}" data-n="${MAO[k]}" data-mao="${k}" style="background-image:url('${IMG(MAO[k])}');transform:translateY(${y}px) rotate(${a}deg)"></div>`
+                 : `<div class="carta" style="transform:translateY(${y}px) rotate(${a}deg)">✦</div>`; }).join('');
+  return `<div class="maoMesa ${i===0?'':'costas'}" id="${i===0?'minhaMao':''}">${cs}</div>`;
+}
+function angulo(i){ return i * 360/n; }
+function zonaHtml(p, i){
+  const W = n===2 ? 1300 : n===3 ? 1040 : 860;
+  const R = n===2 ? 500 : n===3 ? 600 : 660;
+  return `<div class="zona ${i===0?'eu':''} ${i===vez?'vez':''}" data-z="${i}" style="width:${W}px;transform:translate(-50%,-50%) rotate(${angulo(i)}deg) translateY(${R}px)">
+    <div class="colLado">
+      <div class="rotLado">Comandante</div><div class="carta cmd" data-n="${p.cmd}" style="background-image:url('${IMG(p.cmd)}')"></div>
+      ${i===0?`<div class="moeda" id="moeda" title="Passar a vez">${Array.from({length:9},(_,k)=>`<div class="d" style="transform:translateZ(${k}px)"></div>`).join('')}<div class="face">PASSAR<br>A VEZ</div></div>`:''}
+    </div>
+    <div class="colCentro">
+      <div class="faixa" data-rot="CRIATURAS">${p.criat.map((c,k)=>cartaSlot(c,i,k,'criat')).join('')}</div>
+      <div class="faixa baixa" data-rot="OUTROS">${p.outros.map(outroSlot).join('')}</div>
+      <div class="faixa baixa" data-rot="TERRENOS">${agrupar(p.terras).map(g=>terraSlot(g,i)).join('')}</div>
+    </div>
+    <div class="colLado">
+      <div class="rotLado">Grimório</div><div id="${i===0?'meuGrim':''}">${caixa(p.grim, 'Grimório')}</div>
+      <div class="rotLado">Cemitério</div><div id="${i===0?'meuCem':''}">${caixa(p.cem.length, 'Cemitério', p.cem[p.cem.length-1])}</div>
+      ${p.exi.length?`<div class="rotLado">Exílio</div>${caixa(p.exi.length, 'Exílio', p.exi[p.exi.length-1], 'exilio')}`:''}
+    </div>
+    ${maoHtml(p, i)}
+    <div class="placa" data-placa="${i}" title="Clique para olhar a área de ${p.nome}" style="left:-10px;bottom:-66px"><div class="av" style="background:${p.cor}">${p.nome[0]}</div><span class="nm">${p.nome}</span><span class="vida">${p.vida}</span></div>
+  </div>`;
+}
+function apertarFaixas(){
+  document.querySelectorAll('.faixa').forEach(f=>{
+    const slots = [...f.children]; if (slots.length < 2) return;
+    const larg = f.clientWidth - 20, precisa = slots.reduce((a,s)=>a + s.offsetWidth + 12, 0) ;
+    if (precisa <= larg) return;
+    f.classList.add('aperta');
+    let sob = Math.max(0, (precisa-larg)/(slots.length-1));
+    f.style.setProperty('--sob', sob + 'px');
+    // ajusta até caber de verdade (cartas viradas ocupam mais)
+    for (let t=0; t<20 && f.scrollWidth > f.clientWidth + 1 && sob < 80; t++){ sob += 4; f.style.setProperty('--sob', sob + 'px'); }
+  });
+}
+function montar(){
+  document.querySelectorAll('button[data-jn]').forEach(b=>b.classList.toggle('on', +b.dataset.jn===n));
+  document.getElementById('mesa').innerHTML = JOG.slice(0,n).map(zonaHtml).join('');
+  apertarFaixas();
+  ligar();
+}
+// ---------- interação ----------
+function ligar(){
+  const z = document.getElementById('zoom');
+  document.querySelectorAll('.carta[data-n]').forEach(el=>{
+    el.onmouseenter = ()=>{ z.style.backgroundImage = `url('${IMG(el.dataset.n)}')`; z.style.display='block';
+      const h = (HAB[el.dataset.n]||[]).filter(k=>CHAVES[k]), zh = document.getElementById('zoomHab');
+      zh.innerHTML = h.map(k=>`<span>${CHAVES[k][0]} ${CHAVES[k][1]}</span>`).join(''); zh.style.display = h.length ? 'flex' : 'none'; };
+    el.onmouseleave = ()=>{ z.style.display='none'; document.getElementById('zoomHab').style.display='none'; };
+  });
+  document.querySelectorAll('.slot[data-t] > .carta:not(.anexo)').forEach(el=>el.onclick = ()=>{
+    if (moveu) return;
+    const s = el.parentElement, p = JOG[+s.dataset.j], lista = s.dataset.t==='criat' ? p.criat : p.terras, c = lista[+s.dataset.k];
+    if (alvoMode && el.classList.contains('alvo')){ alvoMode = false; aviso(`Alvo escolhido: ${c.n} (de ${p.nome})`); montar(); return; }
+    if (+s.dataset.j === 0){ c.vir = !c.vir; montar(); }
+  });
+  document.querySelectorAll('#minhaMao .carta').forEach(el=>{
+    el.onclick = ()=>{ if (!moveu && !arrastou) jogarDaMao(+el.dataset.mao, el); };
+    el.onpointerdown = ev=>iniciarArraste(ev, el);
+  });
+  document.querySelectorAll('[data-placa]').forEach(el=>el.onclick = ev=>{ ev.stopPropagation(); if (!moveu) focar(+el.dataset.placa); });
+  const m = document.getElementById('moeda');
+  if (m) m.onclick = ()=>{ if (moveu) return; m.classList.remove('gira'); void m.offsetWidth; m.classList.add('gira');
+    JOG.forEach(p=>p.criat.forEach(c=>c.ataca=false));
+    setTimeout(()=>{ vez = (vez+1) % n; montar(); aviso(`Vez de ${JOG[vez].nome}`); }, 750); };
+}
+// carta voando em tela (de um retângulo a outro) para comprar/jogar
+function voar(img, de, para, ms=650){
+  const v = document.createElement('div'); v.className = 'voando'; v.style.backgroundImage = img ? `url('${IMG(img)}')` : 'linear-gradient(135deg,#4a2e18,#21140a)';
+  Object.assign(v.style, {left:de.left+'px', top:de.top+'px', width:de.width+'px', height:de.height+'px'});
+  document.body.appendChild(v);
+  const dx = para.left-de.left, dy = para.top-de.top, sx = para.width/de.width, sy = para.height/de.height;
+  return v.animate([{transform:'translate(0,0) scale(1,1) rotate(0)', transformOrigin:'0 0'},
+                    {transform:`translate(${dx*.5}px,${dy*.5-120}px) scale(${(1+sx)/2*1.25},${(1+sy)/2*1.25}) rotate(-8deg)`, transformOrigin:'0 0', offset:.5},
+                    {transform:`translate(${dx}px,${dy}px) scale(${sx},${sy}) rotate(0)`, transformOrigin:'0 0'}],
+    {duration:ms, easing:'cubic-bezier(.3,.7,.3,1)', fill:'forwards'}).finished.then(()=>v.remove());
+}
+async function comprar(){
+  if (!BIBLIO.length) return aviso('Grimório de teste vazio');
+  const grim = document.querySelector('#meuGrim .topo').getBoundingClientRect();
+  const nova = BIBLIO.shift(); JOG[0].grim--; MAO.push(nova); montar();
+  const alvo = document.querySelector('#minhaMao .carta:last-child'); alvo.style.visibility = 'hidden';
+  await voar(nova, grim, alvo.getBoundingClientRect());
+  alvo.style.visibility = '';
+}
+async function jogarDaMao(k, el, deRet){
+  const nome = MAO[k]; if (!JOGAVEIS.has(nome)) return aviso('Essa não dá para jogar agora (exemplo)');
+  const de = deRet || el.getBoundingClientRect(); document.getElementById('zoom').style.display = 'none';
+  MAO.splice(k,1);
+  const ehTerra = TERRENO.has(nome), magia = /Swords|Path/.test(nome);
+  if (magia) JOG[0].cem.push(nome);
+  else (ehTerra ? JOG[0].terras : JOG[0].criat).push(C(nome));
+  montar();
+  const dest = magia ? document.querySelector('#meuCem .topo') : document.querySelector(`[data-z="0"] .faixa[data-rot="${ehTerra?'TERRENOS':'CRIATURAS'}"] .slot:last-child > .carta`);
+  if (!dest) return;
+  dest.style.visibility = 'hidden';
+  await voar(nome, de, dest.getBoundingClientRect(), 600);
+  dest.style.visibility = '';
+}
+// ---------- arrastar da mão para a mesa ----------
+let arraste = null, arrastou = false;
+function sobreMinhaArea(x, y){
+  const z = document.querySelector('.zona[data-z="0"]'), m = document.getElementById('minhaMao');
+  if (!z) return false;
+  const r = z.getBoundingClientRect(), mr = m.getBoundingClientRect();
+  return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom && y < mr.top + 20;
+}
+function iniciarArraste(ev, el){
+  ev.stopPropagation(); ev.preventDefault();       // não mexe a câmera
+  arrastou = false;
+  arraste = {el, k:+el.dataset.mao, nome:el.dataset.n, x0:ev.clientX, y0:ev.clientY, fant:null};
+}
+addEventListener('pointermove', ev=>{
+  if (!arraste) return;
+  if (!arraste.fant){
+    if (Math.hypot(ev.clientX-arraste.x0, ev.clientY-arraste.y0) < 8) return;
+    arrastou = true;
+    const f = document.createElement('div'); f.className = 'arrastada'; f.style.backgroundImage = `url('${IMG(arraste.nome)}')`;
+    document.body.appendChild(f); arraste.fant = f; arraste.el.classList.add('levantada');
+    document.getElementById('zoom').style.display = 'none'; document.getElementById('zoomHab').style.display = 'none';
+  }
+  const f = arraste.fant; f.style.left = ev.clientX + 'px'; f.style.top = ev.clientY + 'px';
+  const dentro = sobreMinhaArea(ev.clientX, ev.clientY), pode = JOGAVEIS.has(arraste.nome);
+  f.classList.toggle('pode', dentro && pode); f.classList.toggle('nao', dentro && !pode);
+  document.querySelector('.zona[data-z="0"]').classList.toggle('soltar', dentro && pode);
+});
+addEventListener('pointerup', async ev=>{
+  if (!arraste) return;
+  const a = arraste; arraste = null;
+  document.querySelector('.zona[data-z="0"]')?.classList.remove('soltar');
+  if (!a.fant) return;                                   // foi só um clique
+  const r = a.fant.getBoundingClientRect();
+  if (sobreMinhaArea(ev.clientX, ev.clientY) && JOGAVEIS.has(a.nome)){
+    a.fant.remove(); await jogarDaMao(a.k, null, r);
+  } else {
+    if (sobreMinhaArea(ev.clientX, ev.clientY)) aviso('Essa não dá para jogar agora (exemplo)');
+    const volta = a.el.getBoundingClientRect();         // volta para a mão
+    await a.fant.animate([{left:ev.clientX+'px', top:ev.clientY+'px'},{left:(volta.left+volta.width/2)+'px', top:(volta.top+volta.height*.6)+'px', opacity:.3}],{duration:280, easing:'ease-in', fill:'forwards'}).finished;
+    a.fant.remove(); a.el.classList.remove('levantada');
+  }
+  setTimeout(()=>arrastou=false, 0);
+});
+function focar(i){
+  if (foco === i){ foco = -1; ajustar(); alvoCam.tilt = 52; alvoCam.giro = 0; return; }
+  foco = i; alvoCam.giro = -angulo(i); alvoCam.tilt = 40; alvoCam.zoom = Math.min(1.8, baseZoom()*1.55);
+  if (i) aviso(`Olhando a área de ${JOG[i].nome} · clique de novo na placa para voltar`);
+}
+// ---------- câmera ----------
+function aplicarCam(){ document.getElementById('camera').style.transform = `scale(${cam.zoom}) rotateX(${cam.tilt}deg) rotateZ(${cam.giro}deg)`; }
+function loop(){ for (const k of ['tilt','giro','zoom']) cam[k] += (alvoCam[k]-cam[k])*0.16; aplicarCam(); requestAnimationFrame(loop); }
+let arr = null, moveu = false;
+const cena = document.getElementById('cena');
+cena.addEventListener('pointerdown', e=>{ arr = {x:e.clientX, y:e.clientY, t:alvoCam.tilt, g:alvoCam.giro}; moveu = false; cena.classList.add('arrastando'); });
+addEventListener('pointermove', e=>{ if (!arr) return;
+  const dx = e.clientX-arr.x, dy = e.clientY-arr.y; if (Math.abs(dx)+Math.abs(dy) > 5) moveu = true;
+  if (moveu){ alvoCam.giro = arr.g + dx*0.25; alvoCam.tilt = Math.max(0, Math.min(68, arr.t - dy*0.2)); } });
+addEventListener('pointerup', ()=>{ arr = null; cena.classList.remove('arrastando'); setTimeout(()=>moveu=false, 0); });
+cena.addEventListener('wheel', e=>{ e.preventDefault(); alvoCam.zoom = Math.max(.35, Math.min(2.2, alvoCam.zoom * (e.deltaY<0 ? 1.1 : 0.9))); }, {passive:false});
+cena.addEventListener('contextmenu', e=>e.preventDefault());
+function baseZoom(){ return Math.max(.35, Math.min(innerWidth/2100, innerHeight/1500)); }
+function ajustar(){ alvoCam.zoom = baseZoom(); }
+document.getElementById('centro').onclick = ()=>{ foco = -1; ajustar(); alvoCam.tilt = 52; alvoCam.giro = 0; };
+document.getElementById('ver').onclick = ()=>{ alvoCam.tilt = 0; };
+document.getElementById('comprar').onclick = comprar;
+document.getElementById('simAlvo').onclick = ()=>{ alvoMode = !alvoMode; montar(); if (alvoMode) aviso('Escolha uma criatura de um oponente (brilhando)'); };
+document.getElementById('simAtaque').onclick = ()=>{ const at = !JOG[0].criat.some(c=>c.ataca); JOG[0].criat.forEach((c,k)=>c.ataca = at && k<2); montar(); if (at) aviso('Serra Angel e Lyra atacando'); };
+document.querySelectorAll('button[data-jn]').forEach(b=>b.onclick=()=>{ n = +b.dataset.jn; vez = Math.min(vez, n-1); foco = -1; montar(); document.getElementById('centro').click(); });
+montar(); ajustar(); cam = {...alvoCam}; aplicarCam(); loop();
+</script></body></html>
