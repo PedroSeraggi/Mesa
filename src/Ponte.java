@@ -776,7 +776,7 @@ public class Ponte implements MageClient {
     }
     volatile Estatisticas stats = null;
     // ---------------- Chefe do dia (1 contra 1, deck forte vindo do Zera) ----------------
-    static final int NIVEL_CHEFE = 6;   // nível da IA do chefe (o "difícil" de hoje); dá para subir depois
+    static final int NIVEL_CHEFE = 8;   // nível da IA do chefe (o "difícil" comum é 6); 10 = pensa mais, mas fica lento
     volatile String chefeCiclo = null, chefeNome = null;
     volatile Object chefeCache = null; volatile long chefeCacheEm = 0;
     Object infoChefe(boolean forcar) throws IOException {
