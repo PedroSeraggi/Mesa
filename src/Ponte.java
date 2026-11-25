@@ -617,6 +617,8 @@ public class Ponte implements MageClient {
         List<Map<String, Object>> eliminacoes = new ArrayList<>();
         List<Map<String, Object>> vidaPorTurno = new ArrayList<>();
         Set<String> comandantes = new HashSet<>();
+        Map<String, Integer> criaturasDerrotadas = new HashMap<>();
+        Map<String, String> criaturaDono = new HashMap<>(), criaturaAtacando = new HashMap<>();
         String atacante = null; int turno = 0;
 
         static final java.util.regex.Pattern TURNO = java.util.regex.Pattern.compile("^TURN (\\d+) for (.+?) \\(([-\\d ]+)\\)");
@@ -677,6 +679,26 @@ public class Ponte implements MageClient {
             if (js == null) return;
             if (ordem.isEmpty()) for (Map<String, Object> p : js) ordem.add((String) p.get("nome"));
             int t = jogo.get("turno") instanceof Number ? ((Number) jogo.get("turno")).intValue() : turno;
+            // criaturas que saíram do campo: conta para o jogador do turno (se não era dele) ou para quem ela atacava
+            Map<String, String> donoAgora = new HashMap<>(), atacandoAgora = new HashMap<>();
+            for (Map<String, Object> p : js)
+                for (Object c : (List<Object>) p.getOrDefault("campo", Collections.emptyList()))
+                    if (c instanceof Map && Boolean.TRUE.equals(((Map<String, Object>) c).get("criatura"))) donoAgora.put(String.valueOf(((Map<String, Object>) c).get("id")), (String) p.get("nome"));
+            for (Object cb : (List<Object>) jogo.getOrDefault("combate", Collections.emptyList())) if (cb instanceof Map) {
+                Map<String, Object> cm = (Map<String, Object>) cb;
+                for (Object a : (List<Object>) cm.getOrDefault("atacantes", Collections.emptyList())) atacandoAgora.put(String.valueOf(a), String.valueOf(cm.get("defensor")));
+            }
+            String ativo = jogo.get("ativo") == null ? null : String.valueOf(jogo.get("ativo"));
+            for (Map.Entry<String, String> e : criaturaDono.entrySet()) {
+                if (donoAgora.containsKey(e.getKey())) continue;
+                String dono = e.getValue(), credito = null;
+                if (ativo != null && !ativo.equals(dono)) credito = ativo;
+                else if (criaturaAtacando.containsKey(e.getKey())) credito = criaturaAtacando.get(e.getKey());
+                if (credito != null && !credito.equals(dono) && ordem.contains(credito)) soma(criaturasDerrotadas, credito, 1);
+            }
+            criaturaDono = donoAgora;
+            for (Map.Entry<String, String> e : atacandoAgora.entrySet()) criaturaAtacando.put(e.getKey(), e.getValue());
+            criaturaAtacando.keySet().retainAll(donoAgora.keySet());
             for (Map<String, Object> p : js) {
                 String nome = (String) p.get("nome");
                 for (Object c : (List<Object>) p.getOrDefault("comando", Collections.emptyList()))
@@ -712,6 +734,7 @@ public class Ponte implements MageClient {
                 x.put("danoCausado", causado); x.put("danoRecebido", recebido); x.put("danoCmd", cmd);
                 x.put("magias", magias.getOrDefault(nome, 0)); x.put("compras", compras.getOrDefault(nome, 0));
                 x.put("vidaGanha", vidaGanha.getOrDefault(nome, 0)); x.put("ataques", ataques.getOrDefault(nome, 0));
+                x.put("criaturas", criaturasDerrotadas.getOrDefault(nome, 0));
                 Object[] g = maiorGolpe.get(nome);
                 if (g != null) { Map<String, Object> gm = new LinkedHashMap<>(); gm.put("n", g[0]); gm.put("carta", g[1]); gm.put("em", g[2]); gm.put("turno", g[3]); x.put("maiorGolpe", gm); }
                 String mvp = null; int mvpN = 0;
@@ -819,7 +842,9 @@ public class Ponte implements MageClient {
             p.addProperty("venceu", venceu);
             p.addProperty("deck", nomeDoArquivo(deckAtual));
             com.google.gson.JsonArray ops = new com.google.gson.JsonArray();
-            for (String o : oponentesAtuais) ops.add(nomeDoArquivo(o));
+            List<String> outros = outrosJogadores();
+            if (!outros.isEmpty()) for (String o : outros) ops.add(o);
+            else for (String o : oponentesAtuais) ops.add(nomeDoArquivo(o));
             p.add("oponentes", ops);
             p.addProperty("turnos", turnos);
             com.google.gson.JsonArray l = perfil().getAsJsonArray("partidas");
@@ -827,6 +852,61 @@ public class Ponte implements MageClient {
             while (l.size() > 200) l.remove(0);
         }
         salvarPerfil();
+        enviarPartidaAoZera(venceu, turnos);
+    }
+    @SuppressWarnings("unchecked")
+    List<String> outrosJogadores() {
+        List<String> r = new ArrayList<>();
+        try { for (Map<String, Object> p : (List<Map<String, Object>>) jogo.get("jogadores")) if (!Boolean.TRUE.equals(p.get("eu"))) r.add(String.valueOf(p.get("nome"))); } catch (Exception ignored) { }
+        return r;
+    }
+    static boolean ehBot(String nome) { return nome != null && nome.matches("^(IA|Bot) \\d+ .*"); }
+    /** XP: o Zera calcula e guarda (nível, missões, recordes). Contra bots vale 30/40/50% (fácil/normal/difícil). */
+    @SuppressWarnings("unchecked")
+    void enviarPartidaAoZera(boolean venceu, int turnos) {
+        final Estatisticas st = stats;
+        final UUID gid = gameId;
+        final Map<String, Object> jg = jogo;
+        if (st == null || gid == null) return;
+        new Thread(() -> {
+            try {
+                Map<String, Object> res = st.resumo(jg, "");
+                Map<String, Object> eu = null;
+                for (Map<String, Object> x : (List<Map<String, Object>>) res.get("jogadores")) if (meuNome != null && meuNome.equals(x.get("nome"))) eu = x;
+                if (eu == null) return;
+                List<String> nomes = (List<String>) res.get("ordem");
+                boolean temBot = nomes.stream().anyMatch(Ponte::ehBot);
+                int humanos = (int) nomes.stream().filter(n -> !ehBot(n)).count();
+                double mult = 1.0;
+                if (temBot) {
+                    int nivel = ultimaCriacao != null && ultimaCriacao.get("nivel") instanceof Number ? ((Number) ultimaCriacao.get("nivel")).intValue() : 4;
+                    mult = nivel >= 6 ? 0.5 : nivel <= 2 ? 0.3 : 0.4;
+                }
+                JsonObject p = new JsonObject();
+                p.addProperty("gameId", gid.toString());
+                p.addProperty("data", new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()));
+                p.addProperty("venceu", venceu); p.addProperty("turnos", turnos);
+                p.addProperty("deck", nomeDoArquivo(deckAtual)); p.addProperty("multiplicador", mult); p.addProperty("humanos", humanos);
+                p.add("eliminou", GSON.toJsonTree(eu.getOrDefault("eliminou", new ArrayList<>())));
+                Object el = eu.get("eliminado");
+                if (el instanceof Map && ((Map<String, Object>) el).get("por") != null) p.addProperty("eliminadoPor", String.valueOf(((Map<String, Object>) el).get("por")));
+                p.addProperty("criaturas", ((Number) eu.getOrDefault("criaturas", 0)).intValue());
+                p.addProperty("compras", ((Number) eu.getOrDefault("compras", 0)).intValue());
+                p.addProperty("magias", ((Number) eu.getOrDefault("magias", 0)).intValue());
+                p.addProperty("dano", ((Number) eu.getOrDefault("danoCausado", 0)).intValue());
+                p.addProperty("danoCmd", ((Number) eu.getOrDefault("danoCmd", 0)).intValue());
+                if (eu.get("maiorGolpe") != null) p.add("maiorGolpe", GSON.toJsonTree(eu.get("maiorGolpe")));
+                p.add("jogadores", GSON.toJsonTree(nomes));
+                JsonObject c = new JsonObject();
+                c.addProperty("id", idMesa()); c.add("partida", p);
+                Map<String, Object> r = GSON.fromJson(postAmigos("partida", c), Map.class);
+                synchronized (trava) { if (resultado != null) resultado.put("xp", r); }
+                mudou();
+            } catch (Exception e) {
+                synchronized (trava) { if (resultado != null) resultado.put("xpErro", "Sem conexão com o servidor do grupo: o XP desta partida não foi contado."); }
+                mudou();
+            }
+        }).start();
     }
 
     // =====================================================================
@@ -1191,6 +1271,7 @@ public class Ponte implements MageClient {
         b.addProperty("nome", nome);
         String av = avatarMini(); if (av != null) b.addProperty("avatar", av);
         b.addProperty("status", statusParaAmigos());
+        if (meuNome != null) b.addProperty("xmage", meuNome);
         Map<String, Object> sl = salaParaAmigos(); if (sl != null) b.add("sala", GSON.toJsonTree(sl));
         return b;
     }
@@ -1230,6 +1311,24 @@ public class Ponte implements MageClient {
             decks.add(d);
         });
         r.put("decks", decks);
+        List<Map<String, Object>> todos = new ArrayList<>();
+        try {
+            for (String a : listarDecks()) {
+                Map<String, Object> d = new LinkedHashMap<>();
+                d.put("nome", nomeDoArquivo(a));
+                List<Map<String, Object>> cs = new ArrayList<>(), cmds = new ArrayList<>(); int qtdCartas = 0;
+                for (Object[] x : lerCartas(DECKS.resolve(a))) {
+                    Map<String, Object> c = new LinkedHashMap<>(); c.put("qtd", x[0]); c.put("nome", x[1]); c.put("set", x[2]); c.put("num", x[3]);
+                    if ((Boolean) x[4]) { c.put("comandante", true); cmds.add(c); }
+                    cs.add(c); qtdCartas += (Integer) x[0];
+                }
+                int[] jv = porDeck.get(nomeDoArquivo(a));
+                d.put("cmds", cmds); d.put("cartas", qtdCartas); d.put("jogos", jv == null ? 0 : jv[0]); d.put("vitorias", jv == null ? 0 : jv[1]);
+                d.put("lista", cs);
+                todos.add(d);
+            }
+        } catch (Exception ignored) { }
+        r.put("todosDecks", todos);
         Collections.reverse(partidas);
         r.put("ultimas", partidas.size() > 10 ? partidas.subList(0, 10) : partidas);
         return r;

@@ -351,6 +351,40 @@ html.modoDesenho #mesa,html.modoDesenho #mesa *{cursor:crosshair!important}
 #faixaEspec.oculto{display:none}
 .olhoEspec{display:flex;color:#9cc4e8}
 body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
+.nvChip{display:inline-block;font-family:var(--ff-titulo);font-size:10.5px;letter-spacing:.06em;padding:1px 7px;border-radius:999px;background:#3a2a08;border:1px solid #e8c87088;color:#ffe08a;vertical-align:middle;white-space:nowrap}
+.nvChip.grande{font-size:14px;padding:3px 12px;margin-left:8px}
+.nvBloco{display:flex;align-items:center;gap:10px}.nvBloco small{color:var(--txt2);white-space:nowrap}
+.nvBarra{flex:1;height:8px;border-radius:999px;background:#00000055;border:1px solid var(--borda);overflow:hidden}
+.nvBarra i{display:block;height:100%;background:linear-gradient(90deg,#c9a24a,#ffe08a);border-radius:999px}
+.nvBarra.mini{height:4px;margin-top:4px;max-width:160px}
+.xpFim{display:flex;flex-direction:column;gap:8px;background:linear-gradient(#3a2612aa,#24170caa);border:1px solid #e8c87066;border-radius:12px;padding:12px 14px}
+.xpTopo{display:flex;align-items:center;gap:12px}.xpTopo b{font-family:var(--ff-titulo);font-size:26px;color:var(--ouro)}
+.xpSubiu{background:#ffe08a;color:#1a1008;font-weight:700;border-radius:999px;padding:3px 12px;animation:alvoTab 1.1s ease-in-out 3}
+.xpGanhos{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--txt2)}.xpGanhos b{color:#ffe08a}
+.msLista{display:flex;flex-direction:column;gap:6px;padding:2px 14px 6px}
+.msItem{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:center;background:#00000026;border-radius:8px;padding:7px 9px}
+.msItem b{display:block;font-size:13px}.msItem span{font-size:11.5px;color:var(--txt2)}
+.msItem>div:first-child{grid-column:1;grid-row:1;text-align:left}.msItem em{font-style:normal;font-size:12px;color:#ffe08a;grid-column:2;grid-row:1}.msBarra{grid-row:2}
+.msBarra{grid-column:1 / -1;height:5px;border-radius:999px;background:#00000055;overflow:hidden}.msBarra i{display:block;height:100%;background:#8fd77a}
+.msItem.feita{opacity:.65}.msItem.feita b{text-decoration:line-through}
+.apConf{display:flex;align-items:center;justify-content:center;gap:22px;background:#00000033;border-radius:12px;padding:10px;flex-wrap:wrap}
+.apConf div{text-align:center}.apConf small{display:block;color:var(--txt2);font-size:12px}.apConf b{font-family:var(--ff-titulo);font-size:34px;color:var(--ouro)}
+.apConf>span{font-size:24px;color:var(--txt2)}.apConf em{width:100%;text-align:center;font-style:normal;font-size:12px;color:var(--txt2)}
+.apDeck{height:auto;min-height:96px}.apDeckBts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}.apDeckBts button{padding:3px 8px;font-size:11.5px}
+.apLista{display:flex;flex-direction:column;gap:12px;max-height:84vh}
+.apCmds{display:flex;gap:10px}.apCmds img{width:150px;border-radius:9px}
+.apCartas{columns:3 190px;column-gap:18px;font-size:13.5px;overflow:auto}.apCartas div{padding:2px 0;break-inside:avoid;cursor:default}.apCartas div:hover{color:var(--ouro)}
+.amAv u.nvSelo{position:absolute;left:-4px;bottom:-4px;min-width:17px;height:17px;padding:0 3px;box-sizing:border-box;border-radius:999px;background:linear-gradient(#ffe08a,#c9a24a);color:#1a1008;border:2px solid #1d130c;font:700 10px/13px var(--ff-titulo);text-align:center;text-decoration:none;box-shadow:0 1px 4px #000a}
+.bnAvGrande u.nvSelo{min-width:22px;height:22px;font-size:12px;line-height:18px;left:-5px;bottom:-5px}
+.pfNivelLinha{margin-top:8px;max-width:340px}.pfNivelLinha .nvBloco small{color:#e8dcc4;text-shadow:0 1px 4px #000}
+.btnMissoes{position:fixed;right:132px;bottom:18px;z-index:45;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;padding:0!important;border:1px solid var(--borda2);background:var(--painel);color:var(--ouro);cursor:pointer;box-shadow:0 6px 20px #000a}
+.btnMissoes:hover{border-color:var(--ouro)}.btnMissoes.oculto{display:none}
+.btnMissoes span{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;border-radius:999px;background:#c0503a;color:#fff;font-size:10px;line-height:16px;text-align:center;font-weight:700}
+.btnMissoes span:empty{display:none}
+#caixaMissoes{position:fixed;right:18px;bottom:64px;z-index:46;width:320px;max-width:calc(100vw - 36px);background:linear-gradient(#24170e,#1a110b);border:1px solid var(--borda2);border-radius:12px;box-shadow:0 12px 40px #000c;padding:12px 0 8px;display:flex;flex-direction:column;gap:8px}
+#caixaMissoes.oculto{display:none}
+#caixaMissoes .nvBloco{padding:0 14px}
+.cmCab{padding:0 14px}.cmCab b{display:block;font-family:var(--ff-titulo);color:var(--ouro);font-size:15px;letter-spacing:.06em}.cmCab span{font-size:12px;color:var(--txt2)}
 .rmsg{max-width:88%;padding:8px 11px;border-radius:10px;line-height:1.4;font-size:14px;white-space:normal;word-wrap:break-word;user-select:text;-webkit-user-select:text}
 .rmsg.eu{align-self:flex-end;background:#3a2a14;border:1px solid #6b5426}
 .rmsg.ia{align-self:flex-start;background:var(--bg2);border:1px solid var(--borda2)}
@@ -606,7 +640,7 @@ html.fundoParado #cena .slide.ativo{animation:none}
 @keyframes kenburns{from{transform:scale(1.02) translateX(0)}to{transform:scale(1.12) translateX(-2%)}}
 #cena .veu{position:absolute;inset:0;background:linear-gradient(90deg,#0c0805f2 0%,#0c0805d9 22%,#0c080599 36%,#0c080533 52%,transparent 64%),linear-gradient(0deg,#0c080566 0%,transparent 22%)}
 #lobby:not(.naMenu) #cena .veu{background:#0c0805c8}
-#lobby>*:not(#cena):not(#btnAmigos):not(#painelAmigos):not(#convitesAmigos){position:relative;z-index:1}
+#lobby>*:not(#cena):not(#btnAmigos):not(#painelAmigos):not(#convitesAmigos):not(#btnMissoes):not(#caixaMissoes){position:relative;z-index:1}
 #cena .sol{animation:pulsoSol 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 #cena .halo{animation:halo 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 #cena .giro{animation:girar 90s linear infinite}
@@ -960,6 +994,8 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
 <canvas id="brasas"></canvas>
 </div>
   <div class="menuTopo"><button class="peq oculto" id="btnVoltar">← Menu</button><div class="marca">MESA</div><div id="chipPerfil" class="chipPerfil" title="Perfil"></div></div>
+  <button id="btnMissoes" class="btnMissoes oculto" title="Missões de hoje"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg><span id="nMissoes"></span></button>
+  <div id="caixaMissoes" class="oculto"></div>
   <button id="btnAmigos" class="btnAmigos" title="Amigos">Amigos <span id="nAmigos"></span></button>
   <div id="painelAmigos" class="oculto"></div>
   <div id="convitesAmigos"></div>
@@ -1078,7 +1114,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
       <div class="pfCapaBts"><button class="peq" id="pfTrocarBanner">Trocar banner</button></div>
       <div class="pfIdent">
         <div class="pfAvatarWrap"><div id="avatarGrande" class="avatarGrande"></div><button class="pfFotoBt" id="pfTrocarFoto" title="Trocar foto">Trocar foto</button></div>
-        <div class="pfNomeBloco"><div class="pfNomeGrande" id="pfNomeGrande"></div><div class="pfFrase" id="pfFraseVer"></div></div>
+        <div class="pfNomeBloco"><div class="pfNomeGrande" id="pfNomeGrande"></div><div class="pfFrase" id="pfFraseVer"></div><div id="pfNivel"></div></div>
       </div>
     </div>
     <input type="file" id="pfArqFoto" accept="image/*" class="oculto"><input type="file" id="pfArqBanner" accept="image/*" class="oculto">
@@ -1105,7 +1141,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
   </div></div>
 </div>
 <div id="fechada" class="oculto"><div><h1>Mesa</h1><p>A Mesa foi fechada.</p><p class="dicaMenu">Pode fechar esta aba. Para jogar de novo, abra o atalho Mesa.</p></div></div>
-<div id="fim" class="oculto"><div class="caixa fimCaixa"><h2 id="fimTit"></h2><div id="fimTxt" style="color:var(--txt2);white-space:pre-line"></div><div id="fimResumo"></div>
+<div id="fim" class="oculto"><div class="caixa fimCaixa"><h2 id="fimTit"></h2><div id="fimTxt" style="color:var(--txt2);white-space:pre-line"></div><div id="fimXp"></div><div id="fimResumo"></div>
   <div class="linhaBts fimBts"><button class="pri oculto" id="fimRevanche">Revanche</button><button id="fimNovo">Voltar ao menu</button></div></div></div>
 <div id="avisos"></div>
 <div id="hover" class="oculto"></div>
@@ -2769,10 +2805,11 @@ async function atualizarAmigos(){
   $('#nAmigos').textContent = (on || ped) ? (on + (ped ? ' · ' + ped + ' pedido' + (ped>1?'s':'') : '')) : '';
   if (painelAmigosAberto) desenharAmigos();
   desenharConvites();
+  desenharMissoes();
 }
 function avAmigo(a, online){
   const ini = esc(((a.nome||'?')[0]||'?').toUpperCase());
-  return `<div class="amAv" ${a.avatar?`style="background-image:url('${a.avatar}')"`:''}>${a.avatar?'':ini}${online===undefined?'':`<i class="${online?'on':''}"></i>`}</div>`;
+  return `<div class="amAv" ${a.avatar?`style="background-image:url('${a.avatar}')"`:''}>${a.avatar?'':ini}${online===undefined?'':`<i class="${online?'on':''}"></i>`}${a.nivel?`<u class="nvSelo" title="Nível ${a.nivel}">${a.nivel}</u>`:''}</div>`;
 }
 function quandoVisto(ms){
   if (!ms) return 'offline';
@@ -2813,8 +2850,9 @@ function desenharAmigos(){
   const meuNome = eu.nome || 'Você';
   const conectado = f && !A.erro;
   const meuAv = eu.avatar ? `style="background-image:url('${eu.avatar}')"` : `style="background:${esc(eu.cor||'#A487C4')}"`;
-  $('#amEu').innerHTML = `<div class="amAv bnAvGrande" ${meuAv}>${eu.avatar?'':esc((meuNome[0]||'?').toUpperCase())}<i class="${conectado?'on':''}"></i></div>
-    <div class="bnEuInfo"><b>${esc(meuNome)}</b><span class="${conectado?'bnVerde':'bnCinza'}">${conectado?'Online':'Desconectado'}</span></div>
+  $('#amEu').innerHTML = `<div class="amAv bnAvGrande" ${meuAv}>${eu.avatar?'':esc((meuNome[0]||'?').toUpperCase())}<i class="${conectado?'on':''}"></i>${f && f.nivel ? `<u class="nvSelo" title="Nível ${f.nivel.nivel}">${f.nivel.nivel}</u>` : ''}</div>
+    <div class="bnEuInfo"><b>${esc(meuNome)}</b><span class="${conectado?'bnVerde':'bnCinza'}">${conectado?'Online':'Desconectado'}</span>
+      ${f && f.nivel ? `<div class="nvBarra mini"><i style="width:${Math.round(f.nivel.noNivel*100/Math.max(1,f.nivel.paraSubir))}%"></i></div>` : ''}</div>
     ${f ? `<div class="bnCod" title="Seu código: passe para os amigos te adicionarem (clique para copiar)"><small>código</small><b id="amMeuCod">${esc(f.codigo)}</b></div>` : ''}`;
   if ($('#amMeuCod')) $('#amMeuCod').parentElement.onclick = ()=>{ try{ navigator.clipboard.writeText(f.codigo); avisoLocal('Código copiado.'); }catch(e){} };
 
@@ -2878,7 +2916,7 @@ async function verPerfilAmigo(codigo){
     <div class="pfCapa" style="background-image:url('${esc(p.banner||'fundos/gw-30.jpg')}')">
       <div class="pfCapaBts"><button class="peq" id="apFechar">✕ Fechar</button></div>
       <div class="pfIdent"><div class="pfAvatarWrap">${avHtml}</div>
-        <div class="pfNomeBloco"><div class="pfNomeGrande">${esc(p.nome||r.nome||'?')}</div><div class="pfFrase">${esc(p.frase||'')}</div></div></div>
+        <div class="pfNomeBloco"><div class="pfNomeGrande">${esc(p.nome||r.nome||'?')} ${r.nivel?`<span class="nvChip grande">Nível ${r.nivel.nivel}</span>`:''}</div><div class="pfFrase">${esc(p.frase||'')}</div></div></div>
     </div>
     <div class="apSit">${situacao}<span class="amCod">código <b>${esc(r.codigo)}</b></span>${r.amigo?'':'<span class="apOff">· ainda não é seu amigo</span>'}</div>
     ${r.perfil ? `
@@ -2886,14 +2924,58 @@ async function verPerfilAmigo(codigo){
     ${fav ? `<div class="pfFav" style="${arte(fav)?`background-image:url('${arte(fav)}')`:''}"><div class="dentro"><div class="num">${fav.jogos}<small>partidas</small></div>
       <div class="nomeFav">${esc(fav.nome)}<small>${esc(cmdNomes(fav))}${cmdNomes(fav)?' · ':''}${fav.vitorias} vitória(s) · ${Math.round(fav.vitorias*100/Math.max(1,fav.jogos))}%</small></div></div></div>`
       : '<div class="pfVazio">Ainda não jogou nenhuma partida.</div>'}
+    ${confrontoHtml(r, p)}
     <h3 class="subt">Estatísticas</h3>
     <div class="stats3"><div><b>${total}</b><span>partidas</span></div><div><b>${vit}</b><span>vitórias</span></div><div><b>${total-vit}</b><span>derrotas</span></div><div><b>${total?Math.round(vit*100/total):0}%</b><span>aproveitamento</span></div></div>
-    ${decksP.length > 1 ? `<div class="pfDecks">${decksP.slice(1).map(d=>`<div class="pfDeckMini" style="${arte(d)?`background-image:url('${arte(d)}')`:''}"><div><b>${esc(d.nome)}</b><span>${d.jogos} partida(s) · ${d.vitorias} vitória(s)</span></div></div>`).join('')}</div>` : ''}
+    ${recordesHtml(r.recordes)}
+    ${(p.todosDecks||[]).length ? `<h3 class="subt">Decks (${p.todosDecks.length})</h3><div class="pfDecks">${p.todosDecks.map((d,i)=>`<div class="pfDeckMini apDeck" style="${arte(d)?`background-image:url('${arte(d)}')`:''}"><div><b>${esc(d.nome)}</b><span>${esc(cmdNomes(d)||'sem comandante')} · ${d.jogos} partida(s)${d.jogos?` · ${d.vitorias} vitória(s)`:''}</span>
+        <span class="apDeckBts"><button class="peq" data-verdeck="${i}">Ver lista</button><button class="peq" data-copiardeck="${i}">Copiar para meus decks</button></span></div></div>`).join('')}</div>`
+      : decksP.length > 1 ? `<div class="pfDecks">${decksP.slice(1).map(d=>`<div class="pfDeckMini" style="${arte(d)?`background-image:url('${arte(d)}')`:''}"><div><b>${esc(d.nome)}</b><span>${d.jogos} partida(s) · ${d.vitorias} vitória(s)</span></div></div>`).join('')}</div>` : ''}
     <h3 class="subt">Últimas partidas</h3>
     <div class="ultimas">${(p.ultimas||[]).length ? p.ultimas.map(x=>`<div><span class="r ${x.venceu?'v':'d'}">${x.venceu?'Vitória':'Derrota'}</span><span style="flex:1">${esc(x.deck||'')} <span style="color:var(--txt3)">vs ${esc((x.oponentes||[]).join(', '))}</span></span><span style="color:var(--txt3)">${x.turnos?`T${x.turnos} · `:''}${esc(x.data||'')}</span></div>`).join('') : '<div class="dicaMenu" style="background:none;border:none">Nenhuma partida registrada.</div>'}</div>`
     : '<div class="dicaMenu" style="margin-top:44px">Essa pessoa ainda está numa versão antiga da Mesa: o perfil aparece quando ela atualizar.</div>'}
   </div>`;
   $('#apFechar').onclick = ()=>fecharModal(true);
+  cx.querySelectorAll('[data-verdeck]').forEach(b=>b.onclick=()=>verListaDeck(p.todosDecks[+b.dataset.verdeck], p.nome||r.nome, codigo));
+  cx.querySelectorAll('[data-copiardeck]').forEach(b=>b.onclick=()=>copiarDeckAmigo(p.todosDecks[+b.dataset.copiardeck], p.nome||r.nome));
+}
+function confrontoHtml(r, p){
+  const c = r.confronto, h = [];
+  if (c && (c.eu || c.ele || (c.ultimas||[]).length)) h.push(`<div class="apConf"><div><small>Você</small><b>${c.eu}</b></div><span>×</span><div><small>${esc(p.nome||r.nome)}</small><b>${c.ele}</b></div>
+      <em>${(c.ultimas||[]).length} partida(s) juntos registrada(s)</em></div>`);
+  const rv = [];
+  if (r.rival) rv.push(`<div><small>Rival (quem mais o eliminou)</small><b>${esc(r.rival.nome)}</b><span>${r.rival.vezes} vez(es)</span></div>`);
+  if (r.vitima) rv.push(`<div><small>Vítima favorita</small><b>${esc(r.vitima.nome)}</b><span>${r.vitima.vezes} vez(es)</span></div>`);
+  if (!h.length && !rv.length) return '';
+  return `<h3 class="subt">Confronto direto</h3>${h.join('') || '<div class="dicaMenu" style="background:none;border:none;padding:0">Vocês ainda não jogaram juntos (as partidas contam a partir desta versão).</div>'}${rv.length?`<div class="rsDest">${rv.join('')}</div>`:''}`;
+}
+function recordesHtml(rc){
+  if (!rc || !rc.partidas) return '';
+  const it = [];
+  if (rc.maiorGolpe) it.push(['Maior golpe', `${rc.maiorGolpe.n} de dano`, `${rc.maiorGolpe.carta}${rc.maiorGolpe.em?` em ${rc.maiorGolpe.em}`:''}`]);
+  if (rc.vitoriaMaisRapida) it.push(['Vitória mais rápida', `Turno ${rc.vitoriaMaisRapida}`, '']);
+  if (rc.partidaMaisLonga) it.push(['Partida mais longa', `${rc.partidaMaisLonga} turnos`, '']);
+  it.push(['Sequência de vitórias', `${rc.sequencia||0}`, `recorde: ${rc.melhorSequencia||0}`]);
+  if (rc.dano) it.push(['Dano total causado', rc.dano, `em ${rc.partidas} partida(s)`]);
+  if (rc.eliminacoes) it.push(['Eliminações', rc.eliminacoes, '']);
+  return `<h3 class="subt">Recordes</h3><div class="rsDest">${it.map(([t,v,q])=>`<div><small>${t}</small><b>${esc(String(v))}</b><span>${esc(q)}</span></div>`).join('')}</div>`;
+}
+function verListaDeck(d, dono, codigo){
+  const cmds = (d.lista||[]).filter(c=>c.comandante), resto = (d.lista||[]).filter(c=>!c.comandante).sort((a,b)=>a.nome.localeCompare(b.nome));
+  const cx = abrirModal(`<div class="apLista"><h3 class="subt" style="margin:0">${esc(d.nome)} <span class="dicaMenu" style="background:none;border:none">de ${esc(dono)} · ${d.cartas} cartas</span></h3>
+    ${cmds.length?`<div class="apCmds">${cmds.map(c=>`<img src="${imgCarta(c)}" alt="${esc(c.nome)}" title="${esc(c.nome)}">`).join('')}</div>`:''}
+    <div class="apCartas">${resto.map(c=>`<div data-img="${esc(imgCarta(c))}">${c.qtd>1?`<b>${c.qtd}×</b> `:''}${esc(c.nome)}</div>`).join('')}</div>
+    <div class="linhaBts"><button id="alVoltar">Voltar ao perfil</button><button class="pri" id="alCopiar">Copiar para meus decks</button></div></div>`);
+  cx.querySelectorAll('[data-img]').forEach(el=>{ el.onmouseenter = ev=>{ const h = $('#hover'); h.innerHTML = `<img src="${el.dataset.img}" style="width:250px;border-radius:12px">`; h.classList.remove('oculto'); posicionarHover(ev); }; el.onmouseleave = esconderHover; });
+  $('#alVoltar').onclick = ()=>{ esconderHover(); verPerfilAmigo(codigo); };
+  $('#alCopiar').onclick = ()=>copiarDeckAmigo(d, dono);
+}
+async function copiarDeckAmigo(d, dono){
+  const nome = `${d.nome} (de ${dono})`;
+  const r = await post('/api/deck/salvar', {nome, cartas: (d.lista||[]).map(c=>({qtd:c.qtd, nome:c.nome, set:c.set, num:c.num, comandante:!!c.comandante}))});
+  if (r.erro){ avisoLocal('Não deu para copiar: ' + r.erro); return; }
+  pfDecksCache = null; decks = [];
+  avisoLocal(`Deck "${nome}" copiado para os seus decks.`);
 }
 async function acaoAmigo(acao, codigo, extra){
   const r = await post('/api/amigos', Object.assign({acao, codigo}, extra||{}));
@@ -3001,6 +3083,7 @@ function reduzirImagem(arq, w, h, q=.85){
 let pfDecksCache = null;
 async function desenharPerfil(){
   const p = await carregarPerfil();
+  fetch('/api/amigos').then(r=>r.json()).then(a=>{ const n = a && a.foto && a.foto.nivel; $('#pfNivel').innerHTML = n ? `<div class="pfNivelLinha">${barraNivel(n)}</div>` : ''; }).catch(()=>{});
   corEscolhida = p.cor;
   $('#pfNome').value = p.nome || ''; $('#pfFrase').value = p.frase || '';
   const atualizaAvatar = ()=>{
@@ -3107,6 +3190,45 @@ async function assistirMesa(sala){
   painelAmigosAberto = false; $('#painelAmigos').classList.add('oculto');
 }
 
+// ---------------- nível e missões
+let caixaMissoesAberta = false;
+function desenharMissoes(){
+  const f = amigos && amigos.foto, ms = (f && f.missoes) || [];
+  $('#btnMissoes').classList.toggle('oculto', !ms.length);
+  const falta = ms.filter(m=>!m.feita).length;
+  $('#nMissoes').textContent = falta || '';
+  if (!caixaMissoesAberta) return;
+  const n = f.nivel;
+  $('#caixaMissoes').innerHTML = `<div class="cmCab"><b>Missões de hoje</b><span>${ms.length-falta}/${ms.length} concluídas · renovam à meia-noite</span></div>
+    ${n ? barraNivel(n) : ''}<div class="msLista">${missoesHtml(ms)}</div>`;
+}
+$('#btnMissoes').onclick = ()=>{ caixaMissoesAberta = !caixaMissoesAberta; $('#caixaMissoes').classList.toggle('oculto', !caixaMissoesAberta); desenharMissoes(); };
+function barraNivel(n, compacta){
+  if (!n) return '';
+  const pct = Math.round((n.noNivel||0)*100/Math.max(1,n.paraSubir||1));
+  return compacta ? `<span class="nvChip" title="${n.noNivel}/${n.paraSubir} XP para o próximo nível">Nv ${n.nivel}</span>`
+    : `<div class="nvBloco"><span class="nvChip">Nível ${n.nivel}</span><div class="nvBarra"><i style="width:${pct}%"></i></div><small>${n.noNivel} / ${n.paraSubir} XP</small></div>`;
+}
+function missoesHtml(ms){
+  return (ms||[]).map(m=>`<div class="msItem ${m.feita?'feita':''}"><div><b>${esc(m.texto)}</b><span>${m.feita?'Concluída':`${m.progresso} / ${m.meta}`}</span></div>
+    <div class="msBarra"><i style="width:${Math.round(m.progresso*100/Math.max(1,m.meta))}%"></i></div><em>+${m.xp} XP</em></div>`).join('');
+}
+let xpMostrado = null;
+function desenharXpFim(r){
+  const box = $('#fimXp');
+  if (r.assistindo){ box.innerHTML = ''; return; }
+  if (r.xpErro){ box.innerHTML = `<div class="xpFim"><div class="amErro">${esc(r.xpErro)}</div></div>`; return; }
+  const x = r.xp;
+  if (!x){ box.innerHTML = `<div class="xpFim"><span class="dicaMenu" style="background:none;border:none">Calculando XP...</span></div>`; return; }
+  if (xpMostrado === x) return; xpMostrado = x;
+  if (x.repetida){ box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="xpFim">
+    <div class="xpTopo"><b>+${x.total} XP</b>${x.subiu?`<span class="xpSubiu">Subiu para o nível ${x.nivel.nivel}!</span>`:''}</div>
+    ${barraNivel(x.nivel)}
+    <div class="xpGanhos">${(x.ganhos||[]).map(g=>`<span>${esc(g.motivo)} <b>+${g.xp}</b></span>`).join('') || '<span>Partida curta demais (menos de 3 turnos): sem XP.</span>'}</div>
+  </div>`;
+}
+
 // ---------------- resumo da partida
 const CORES_RES = ['#E4C874','#6f9fc4','#B85742','#7FA063','#A487C4','#d07a3a'];
 let resumoAtual = null;
@@ -3186,6 +3308,7 @@ function desenhar(){
     $('#fimTxt').textContent = (r.texto||'').split('\n').map(tr).join('\n');
     if (r.assistindo) $('#fimTit').textContent = 'Fim da partida';
     desenharResumo(r.resumo);
+    desenharXpFim(r);
     $('#fimRevanche').classList.toggle('oculto', !r.revanche);
   } else $('#fim').classList.add('oculto');
   if (!E.jogo) return;
