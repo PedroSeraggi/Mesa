@@ -587,6 +587,40 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 #maoParc .mpCartas img{width:86px;border-radius:5px;flex:none;cursor:zoom-in;transition:transform .12s}
 #maoParc .mpCartas img:hover{transform:translateY(-4px)}
 #maoParc .mpVazio{color:#bfa88f;font-size:12.5px;padding:4px 6px}
+/* ---------- entrada do comandante: desce, flutua e despenca no tabuleiro do dono ---------- */
+#mesa.tremeCmd{animation:tremeCmd .45s cubic-bezier(.36,.07,.19,.97)}
+@keyframes tremeCmd{10%{transform:translate(-6px,4px)}20%{transform:translate(7px,-5px)}35%{transform:translate(-5px,-3px)}50%{transform:translate(4px,5px)}65%{transform:translate(-3px,2px)}80%{transform:translate(2px,-2px)}}
+#mesa .carta.pulaCmd{animation:pulaCmd .55s cubic-bezier(.3,1.6,.5,1) both;animation-delay:var(--pd)}
+@keyframes pulaCmd{0%{translate:0 0;rotate:0deg}30%{translate:var(--px) var(--py);rotate:var(--pr)}100%{translate:0 0;rotate:0deg}}
+#entCmd{position:fixed;inset:0;z-index:8500;pointer-events:none;display:none}
+#entCmd.on{display:block}
+#entCmd .veu{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,#0000 0%,#000a 60%,#000d 100%);opacity:0;animation:ecVeuIn .4s forwards}
+#entCmd.sai .veu{animation:ecVeuOut .5s forwards}
+@keyframes ecVeuIn{to{opacity:1}}@keyframes ecVeuOut{from{opacity:1}to{opacity:0}}
+#entCmd .ecCarta{position:absolute;left:50%;top:40%;width:min(15vw,190px);aspect-ratio:63/88;border-radius:4.5%/3.3%;background:#000 center/cover;
+  transform:translate(-50%,-170%) scale(.7) rotate(-6deg);opacity:0;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--cor) 70%,#fff),0 0 40px 10px color-mix(in srgb,var(--cor) 70%,transparent),0 24px 50px #000c;
+  animation:ecDesce var(--tIn) cubic-bezier(.2,.9,.3,1.15) forwards, ecFlut 2s ease-in-out var(--tIn) infinite}
+@keyframes ecDesce{to{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0)}}
+@keyframes ecFlut{0%,100%{transform:translate(-50%,-50%) scale(1) rotate(0)}50%{transform:translate(-50%,-54%) scale(1.02) rotate(.8deg)}}
+#entCmd.cai .ecCarta{animation:ecCai .42s cubic-bezier(.55,0,.9,.4) forwards}
+@keyframes ecCai{0%{transform:translate(-50%,-50%) scale(1)}25%{transform:translate(-50%,-62%) scale(1.12) rotate(-2deg)}100%{opacity:1;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.42) rotate(0)}}
+#entCmd.cai .ecCarta.assenta{animation:ecAssenta .5s ease-out forwards}
+@keyframes ecAssenta{from{opacity:1;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.42)}to{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.36)}}
+#entCmd .ecOnda{position:absolute;width:24vmin;height:24vmin;border-radius:50%;border:4px solid color-mix(in srgb,var(--cor) 80%,#fff);transform:translate(-50%,-50%) scale(.2);opacity:0}
+#entCmd .ecOnda.vai{animation:ecOnda .7s ease-out forwards}
+@keyframes ecOnda{0%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(3.4)}}
+#entCmd .ecClarao{position:absolute;width:40vmin;height:40vmin;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--cor) 50%,#fff) 0%,transparent 65%);transform:translate(-50%,-50%) scale(.3);opacity:0}
+#entCmd .ecClarao.vai{animation:ecClarao .5s ease-out forwards}
+@keyframes ecClarao{0%{opacity:.95}100%{opacity:0;transform:translate(-50%,-50%) scale(1.6)}}
+#entCmd .ecPoeira{position:absolute;width:6px;height:6px;border-radius:50%;background:color-mix(in srgb,var(--cor) 50%,#fff);box-shadow:0 0 8px var(--cor);animation:ecPoeira .8s ease-out forwards}
+@keyframes ecPoeira{from{opacity:1;transform:translate(0,0)}to{opacity:0;transform:translate(var(--x),var(--y))}}
+#entCmd .ecTxt{position:absolute;left:0;right:0;top:calc(40% + min(11vw,140px));text-align:center;opacity:0;transform:translateY(8px);animation:ecTxtIn .45s ease-out calc(var(--tIn) - .1s) forwards}
+#entCmd.cai .ecTxt{animation:ecVeuOut .25s forwards}
+@keyframes ecTxtIn{to{opacity:1;transform:none}}
+#entCmd .ecTxt small{display:block;font-family:var(--ff-titulo);font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:color-mix(in srgb,var(--cor) 60%,#fff)}
+#entCmd .ecTxt b{display:block;font-family:var(--ff-titulo);font-weight:800;font-size:clamp(20px,2.4vw,34px);color:#fff;text-shadow:0 2px 12px #000,0 0 24px var(--cor);margin-top:4px}
+@media (prefers-reduced-motion:reduce){#mesa.tremeCmd{animation:none}#mesa .carta.pulaCmd{animation:none}}
 /* 2v2: barras de vida do time (cada jogador carrega metade; se uma zera, o time perde) */
 #vidaTime{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:40;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;width:min(460px,60vw)}
 #vidaTime .vtLinha{width:100%;box-sizing:border-box}
@@ -1429,6 +1463,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
       <label class="radioLinha"><input type="checkbox" id="cfgSemEfeitosMenu"> Remover efeitos especiais do menu</label>
       <label class="radioLinha"><input type="checkbox" id="cfgReduzir"> Reduzir todas as animações (para PCs mais lentos)</label>
       <label class="radioLinha"><input type="checkbox" id="cfgConfirmarPassar"> Perguntar "tem certeza?" ao passar a minha fase principal</label>
+      <label class="radioLinha"><input type="checkbox" id="cfgEntradaCmd"> Animação quando um comandante entra em campo</label>
     </div>
     <div class="blocoJogar">
       <div class="tituloBloco">Som</div>
@@ -2551,6 +2586,8 @@ function desenharConfig(){
   $('#cfgReduzir').onchange = e=>{ cfgApp.reduzir = e.target.checked; salvarCfgApp(); };
   $('#cfgConfirmarPassar').checked = !!cfgApp.confirmarPassar;
   $('#cfgConfirmarPassar').onchange = e=>{ cfgApp.confirmarPassar = e.target.checked; salvarCfgApp(); };
+  $('#cfgEntradaCmd').checked = cfgApp.entradaCmd !== false;
+  $('#cfgEntradaCmd').onchange = e=>{ cfgApp.entradaCmd = e.target.checked; salvarCfgApp(); };
   $('#cfgMusica').onchange = e=>{ cfgApp.musica = e.target.checked; salvarCfgApp(); desenharConfig(); };
   $('#cfgVolume').oninput = e=>{ cfgApp.volume = +e.target.value; $('#cfgVolumeTxt').textContent = cfgApp.volume + '%'; musica.volume(cfgApp.volume/100); localSet('cfgApp', JSON.stringify(cfgApp)); };
   musica.carregar().then(n=>{
@@ -4152,6 +4189,7 @@ function desenhar(){
   desenharTopo(); desenharMesa(); desenharMao(); desenharPrompt(); desenharLateral();
   desenharFaixaEspectador();
   desenharVidaTime();
+  try { verificarEntradaCmd(); } catch(e){ console.error(e); }
   controlarMaoParceiro();
 }
 
@@ -4527,6 +4565,97 @@ function ligarMesa3d(){
   mesa.addEventListener('contextmenu', ev=>{ if (visao==='3d') ev.preventDefault(); });
 })();
 
+
+// ---------------- entrada do comandante ----------------
+// quando o comandante de alguém entra no campo: desce, flutua com o nome e despenca no tabuleiro do dono
+// (1ª vez de cada comandante 2,5 s; nas outras 1,5 s). Não trava o jogo: a partida segue por trás.
+let cmdVistos = null, cmdJaEntrou = new Set(), cmdChaveJogo = '';
+function verificarEntradaCmd(){
+  if (!E || E.fase !== 'jogo' || !E.jogo) { cmdVistos = null; return; }
+  const js = E.jogo.jogadores || [];
+  const chave = js.map(j=>j.nome).sort().join('|');
+  if (chave !== cmdChaveJogo){ cmdChaveJogo = chave; cmdVistos = null; cmdJaEntrou = new Set(); }
+  danoComandante();   // atualiza quem é comandante de quem
+  const agora = [];
+  for (const p of js) for (const c of (p.campo||[])) if (nomesComandantes.get(c.nome) === p.nome) agora.push([p, c]);
+  const ids = new Set(agora.map(([p,c])=>c.id));
+  if (cmdVistos === null){ cmdVistos = ids; agora.forEach(([p,c])=>cmdJaEntrou.add(p.nome+'|'+c.nome)); return; }   // abriu/reconectou: não anima o que já estava
+  for (const [p, c] of agora) if (!cmdVistos.has(c.id)){
+    const k = p.nome + '|' + c.nome, rapida = cmdJaEntrou.has(k);
+    cmdJaEntrou.add(k);
+    if (cfgApp.entradaCmd !== false) telaEntradaCmd(p, c, rapida);
+    break;   // uma por vez
+  }
+  cmdVistos = ids;
+}
+let ecAC = null;
+function ecAudio(){ if (!ecAC) ecAC = new (window.AudioContext||window.webkitAudioContext)(); return ecAC; }
+function ecRuido(a, seg){ const n = a.sampleRate*seg, b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0); for (let i=0;i<n;i++) d[i] = Math.random()*2-1; const s = a.createBufferSource(); s.buffer = b; return s; }
+function ecSomChegada(vol){
+  const a = ecAudio(), t = a.currentTime, saida = a.createGain(); saida.gain.value = vol; saida.connect(a.destination);
+  const r = ecRuido(a, 1), f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(200, t); f.frequency.exponentialRampToValueAtTime(1400, t+.55);
+  const g = a.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.5, t+.45); g.gain.exponentialRampToValueAtTime(.001, t+.8);
+  r.connect(f).connect(g).connect(saida); r.start(t); r.stop(t+1);
+}
+function ecSomImpacto(vol){
+  const a = ecAudio(), t = a.currentTime, saida = a.createGain(); saida.gain.value = vol;
+  const n = a.sampleRate * 2.4, eb = a.createBuffer(2, n, a.sampleRate);
+  for (let c=0;c<2;c++){ const d = eb.getChannelData(c); for (let i=0;i<n;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/n, 3); }
+  const cv = a.createConvolver(); cv.buffer = eb; const molhado = a.createGain(); molhado.gain.value = .55;
+  saida.connect(a.destination); saida.connect(cv); cv.connect(molhado).connect(a.destination);
+  const o = a.createOscillator(), og = a.createGain(); o.type = 'sine';
+  o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(32, t+.9);
+  og.gain.setValueAtTime(0, t); og.gain.linearRampToValueAtTime(1, t+.01); og.gain.exponentialRampToValueAtTime(.001, t+1.4);
+  o.connect(og).connect(saida); o.start(t); o.stop(t+1.5);
+  const o2 = a.createOscillator(), ws = a.createWaveShaper(), og2 = a.createGain(); o2.type = 'triangle';
+  o2.frequency.setValueAtTime(60, t); o2.frequency.exponentialRampToValueAtTime(28, t+.6);
+  const curva = new Float32Array(256); for (let i=0;i<256;i++){ const x = i/128-1; curva[i] = Math.tanh(x*4); } ws.curve = curva;
+  og2.gain.setValueAtTime(.5, t); og2.gain.exponentialRampToValueAtTime(.001, t+.7);
+  o2.connect(ws).connect(og2).connect(saida); o2.start(t); o2.stop(t+.8);
+  const r = ecRuido(a, .35), bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = .8;
+  const rg = a.createGain(); rg.gain.setValueAtTime(.9, t); rg.gain.exponentialRampToValueAtTime(.001, t+.3);
+  r.connect(bp).connect(rg).connect(saida); r.start(t); r.stop(t+.35);
+}
+let ecTimers = [];
+function telaEntradaCmd(p, c, rapida){
+  ecTimers.forEach(clearTimeout); ecTimers = [];
+  const depois = (ms, f)=>ecTimers.push(setTimeout(f, ms));
+  let el = $('#entCmd'); if (!el){ el = document.createElement('div'); el.id = 'entCmd'; document.body.appendChild(el); }
+  el.className = ''; void el.offsetWidth;
+  const cart = ((E && E.cartoes) || []).find(x=>x.jogador===p.nome) || {};
+  const cor = cart.cor || '#E4C874', nome = p.eu ? 'Você' : (cart.nome || p.nome);
+  const tIn = rapida ? .4 : .7, flutua = rapida ? 450 : 1150, queda = 420;
+  el.style.setProperty('--cor', cor); el.style.setProperty('--tIn', tIn + 's');
+  // destino: o tabuleiro do dono (no 3D ou se não achar, o meio da tela)
+  const cab = document.querySelector(`#mesa .cab[data-jog="${p.id}"]`), tab = cab && cab.closest('.tab');
+  const r = tab ? tab.getBoundingClientRect() : null, ok = r && r.width > 0;
+  const cx = innerWidth/2, cy = innerHeight*.4, tx = ok ? r.left + r.width/2 : cx, ty = ok ? r.top + r.height/2 : innerHeight*.6;
+  el.style.setProperty('--dx', (tx-cx) + 'px'); el.style.setProperty('--dy', (ty-cy) + 'px');
+  el.innerHTML = `<div class="veu"></div><div class="ecCarta" style="background-image:url('${imgCarta(c)}')"></div>
+    <div class="ecClarao" style="left:${tx}px;top:${ty}px"></div><div class="ecOnda" style="left:${tx}px;top:${ty}px"></div>
+    <div class="ecTxt"><small>${esc(nome)} ${p.eu ? 'invocou' : 'invocou'}</small><b>${esc(c.nome)}</b></div>`;
+  el.classList.add('on');
+  const vol = cfgApp.somFx === false ? 0 : Math.min(1.5, (cfgApp.volFx ?? 50) / 50);   // 50 (padrão) = o volume da prévia
+  try { if (vol) ecSomChegada(.35 * vol); } catch(e){}
+  depois(tIn*1000 + flutua, ()=>el.classList.add('cai'));
+  depois(tIn*1000 + flutua + queda, ()=>{
+    try { if (vol) ecSomImpacto(.6 * vol); } catch(e){}
+    const carta = el.querySelector('.ecCarta'); if (carta) carta.classList.add('assenta');
+    el.querySelectorAll('.ecClarao,.ecOnda').forEach(x=>x.classList.add('vai'));
+    for (let i=0;i<26;i++){ const pz = document.createElement('div'); pz.className = 'ecPoeira'; const g = Math.random()*Math.PI*2, rr = 60 + Math.random()*200;
+      pz.style.left = tx+'px'; pz.style.top = ty+'px'; pz.style.setProperty('--x', Math.cos(g)*rr+'px'); pz.style.setProperty('--y', Math.sin(g)*rr*.6+'px'); el.appendChild(pz); }
+    const mesa = $('#mesa'); mesa.classList.remove('tremeCmd'); void mesa.offsetWidth; mesa.classList.add('tremeCmd');
+    document.querySelectorAll('#mesa .carta').forEach(k=>{
+      const b = k.getBoundingClientRect(); if (!b.width) return;
+      const dx = b.left + b.width/2 - tx, dy = b.top + b.height/2 - ty, dist = Math.hypot(dx, dy) || 1, forca = Math.max(.15, 1 - dist/900);
+      k.style.setProperty('--px', (dx/dist) * 14 * forca + 'px'); k.style.setProperty('--py', (-10 - 18*forca) + 'px');
+      k.style.setProperty('--pr', ((Math.random()*2-1) * 10 * forca) + 'deg'); k.style.setProperty('--pd', (dist/2500) + 's');
+      k.classList.remove('pulaCmd'); void k.offsetWidth; k.classList.add('pulaCmd');
+    });
+  });
+  depois(tIn*1000 + flutua + queda + 700, ()=>el.classList.add('sai'));
+  depois(tIn*1000 + flutua + queda + 1250, ()=>{ el.className = ''; el.innerHTML = ''; $('#mesa').classList.remove('tremeCmd'); });
+}
 function desenharMesa(){
   const usar3d = visao==='3d' && E.jogo.jogadores.length <= 4;
   if (visao==='3d' && !usar3d){ visao = 'todos'; }        // 5 ou 6 jogadores: volta para a visão normal

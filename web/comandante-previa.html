@@ -4,38 +4,58 @@
 <style>
 :root{--ff:'Cinzel',serif}
 body{margin:0;height:100vh;overflow:hidden;background:#15100b;font-family:'EB Garamond',serif;color:#eee}
-/* um "tabuleiro" falso só para ver o efeito por cima */
+#app{position:absolute;inset:0}
+#app.treme{animation:treme .45s cubic-bezier(.36,.07,.19,.97)}
+@keyframes treme{10%{transform:translate(-6px,4px)}20%{transform:translate(7px,-5px)}35%{transform:translate(-5px,-3px)}50%{transform:translate(4px,5px)}65%{transform:translate(-3px,2px)}80%{transform:translate(2px,-2px)}}
+/* tabuleiro falso com cartas, para ver o impacto */
 .mesaFake{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:12px;padding:60px 14px 140px}
-.mesaFake div{background:linear-gradient(180deg,#2a1f16,#1a130d);border:1px solid #4a3a28;border-radius:6px}
+.area{background:linear-gradient(180deg,#2a1f16,#1a130d);border:1px solid #4a3a28;border-radius:6px;display:flex;flex-wrap:wrap;align-content:flex-start;gap:8px;padding:12px;position:relative}
+.area.alvo{box-shadow:inset 0 0 0 1px #E4C87488}
+.cf{width:62px;aspect-ratio:63/88;border-radius:5px;background:#000 center/cover;box-shadow:0 3px 8px #000a}
+.cf.pula{animation:pula .55s cubic-bezier(.3,1.6,.5,1) both;animation-delay:var(--d)}
+@keyframes pula{0%{transform:none}30%{transform:translate(var(--x),var(--y)) rotate(var(--r))}100%{transform:none}}
 .maoFake{position:absolute;left:0;right:0;bottom:0;height:120px;background:#1a130d;border-top:1px solid #4a3a28}
 #ctrl{position:fixed;left:16px;top:12px;z-index:50;display:flex;gap:8px;flex-wrap:wrap}
 #ctrl button{font-family:var(--ff);background:#3a2a18;border:1px solid #E4C874;color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer}
 #ctrl button:hover{filter:brightness(1.2)}
 #ctrl select{background:#1a130d;color:#fff;border:1px solid #E4C874;border-radius:8px;padding:6px}
 
-/* ---------- entrada do comandante ---------- */
+/* ---------- entrada ---------- */
 #ent{position:fixed;inset:0;z-index:20;pointer-events:none;display:none}
 #ent.on{display:block}
-#ent .veu{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,#0000 0%,#000a 60%,#000c 100%);opacity:0;animation:veuIn .35s forwards}
-#ent.sai .veu{animation:veuOut .45s forwards}
+#ent .veu{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,#0000 0%,#000a 60%,#000d 100%);opacity:0;animation:veuIn .4s forwards}
+#ent.sai .veu{animation:veuOut .5s forwards}
 @keyframes veuIn{to{opacity:1}}@keyframes veuOut{from{opacity:1}to{opacity:0}}
+/* 1) desce do alto e fica flutuando no meio */
 #ent .carta{position:absolute;left:50%;top:40%;width:min(15vw,190px);aspect-ratio:63/88;border-radius:4.5%/3.3%;background:#000 center/cover;
-  transform:translate(-50%,-160%) scale(.7) rotate(-6deg);opacity:0;box-shadow:0 0 0 2px color-mix(in srgb,var(--cor) 70%,#fff),0 0 40px 10px color-mix(in srgb,var(--cor) 70%,transparent),0 24px 50px #000c;
-  animation:desce var(--tIn) cubic-bezier(.2,.9,.3,1.15) forwards, flut 2.4s ease-in-out var(--tIn) infinite}
+  transform:translate(-50%,-170%) scale(.7) rotate(-6deg);opacity:0;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--cor) 70%,#fff),0 0 40px 10px color-mix(in srgb,var(--cor) 70%,transparent),0 24px 50px #000c;
+  animation:desce var(--tIn) cubic-bezier(.2,.9,.3,1.15) forwards, flut 2s ease-in-out var(--tIn) infinite}
 @keyframes desce{to{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0)}}
-@keyframes flut{0%,100%{transform:translate(-50%,-50%) scale(1) rotate(0)}50%{transform:translate(-50%,-53%) scale(1.01) rotate(.6deg)}}
-#ent.sai .carta{animation:somePraBaixo .45s ease-in forwards}
-@keyframes somePraBaixo{from{opacity:1;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(-50%,-20%) scale(.6)}}
-/* anel de luz que expande quando a carta chega */
-#ent .onda{position:absolute;left:50%;top:40%;width:20vmin;height:20vmin;border-radius:50%;border:3px solid color-mix(in srgb,var(--cor) 80%,#fff);transform:translate(-50%,-50%) scale(.4);opacity:0;animation:onda .8s ease-out var(--tIn) forwards}
-@keyframes onda{0%{opacity:.9}100%{opacity:0;transform:translate(-50%,-50%) scale(3.2)}}
-#ent .txt{position:absolute;left:0;right:0;top:calc(40% + min(11vw,140px));text-align:center;opacity:0;transform:translateY(8px);animation:txtIn .4s ease-out calc(var(--tIn) - .1s) forwards}
-#ent.sai .txt{animation:veuOut .3s forwards}
+@keyframes flut{0%,100%{transform:translate(-50%,-50%) scale(1) rotate(0)}50%{transform:translate(-50%,-54%) scale(1.02) rotate(.8deg)}}
+/* 2) ergue um pouco e despenca com tudo no tabuleiro do dono */
+#ent.cai .carta{animation:cai .42s cubic-bezier(.55,0,.9,.4) forwards}
+@keyframes cai{0%{transform:translate(-50%,-50%) scale(1)}25%{transform:translate(-50%,-62%) scale(1.12) rotate(-2deg)}100%{opacity:1;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.42) rotate(0)}}
+#ent.cai .carta.assenta{animation:assenta .5s ease-out forwards}
+@keyframes assenta{from{opacity:1;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.42)}to{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.36)}}
+#ent .onda{position:absolute;width:24vmin;height:24vmin;border-radius:50%;border:4px solid color-mix(in srgb,var(--cor) 80%,#fff);transform:translate(-50%,-50%) scale(.2);opacity:0}
+#ent .onda.vai{animation:onda .7s ease-out forwards}
+@keyframes onda{0%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(3.4)}}
+#ent .clarao{position:absolute;width:40vmin;height:40vmin;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--cor) 50%,#fff) 0%,transparent 65%);transform:translate(-50%,-50%) scale(.3);opacity:0}
+#ent .clarao.vai{animation:clarao .5s ease-out forwards}
+@keyframes clarao{0%{opacity:.95}100%{opacity:0;transform:translate(-50%,-50%) scale(1.6)}}
+#ent .poeira{position:absolute;width:6px;height:6px;border-radius:50%;background:color-mix(in srgb,var(--cor) 50%,#fff);box-shadow:0 0 8px var(--cor);animation:poeira .8s ease-out forwards}
+@keyframes poeira{from{opacity:1;transform:translate(0,0)}to{opacity:0;transform:translate(var(--x),var(--y))}}
+#ent .txt{position:absolute;left:0;right:0;top:calc(40% + min(11vw,140px));text-align:center;opacity:0;transform:translateY(8px);animation:txtIn .45s ease-out calc(var(--tIn) - .1s) forwards}
+#ent.cai .txt{animation:veuOut .25s forwards}
 @keyframes txtIn{to{opacity:1;transform:none}}
 #ent .txt small{display:block;font-family:var(--ff);font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:color-mix(in srgb,var(--cor) 60%,#fff)}
 #ent .txt b{display:block;font-family:var(--ff);font-weight:800;font-size:clamp(20px,2.4vw,34px);color:#fff;text-shadow:0 2px 12px #000,0 0 24px var(--cor);margin-top:4px}
 </style></head><body>
-<div class="mesaFake"><div></div><div></div><div></div><div></div></div><div class="maoFake"></div>
+<div id="app">
+  <div class="mesaFake"><div class="area" id="a0"></div><div class="area" id="a1"></div><div class="area" id="a2"></div><div class="area alvo" id="a3"></div></div>
+  <div class="maoFake"></div>
+</div>
 <div id="ctrl">
   <select id="qual">
     <option value="Edgar Markov|Kaldrax|#c0392b">Edgar Markov (Kaldrax)</option>
@@ -43,36 +63,93 @@ body{margin:0;height:100vh;overflow:hidden;background:#15100b;font-family:'EB Ga
     <option value="Krenko, Mob Boss|HUSHANICK|#e07a2a">Krenko (HUSHANICK)</option>
     <option value="Atraxa, Praetors' Voice|Lucas|#7a5ad0">Atraxa (Lucas)</option>
   </select>
-  <button id="b1">Primeira vez (1,5 s)</button>
-  <button id="b2">Vezes seguintes (0,8 s)</button>
+  <button id="b1">Primeira vez (2,5 s)</button>
+  <button id="b2">Vezes seguintes (1,5 s)</button>
 </div>
 <div id="ent"></div>
 <script>
 const img = n => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n).replace(/'/g,'%27')}&format=image&version=normal`;
-// som curto: um "tambor" grave e um brilho (gerado aqui, sem arquivo)
-function somEntrada(vol=.35, curto=false){
-  const a = new (window.AudioContext||window.webkitAudioContext)(), t = a.currentTime;
-  const o = a.createOscillator(), g = a.createGain(); o.type = 'sine';
-  o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(48, t+.5);
-  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t+.02); g.gain.exponentialRampToValueAtTime(.001, t+.7);
-  o.connect(g).connect(a.destination); o.start(t); o.stop(t+.75);
-  if (curto) return;
-  [523, 659, 784, 1046].forEach((hz,k)=>{ const s = a.createOscillator(), sg = a.createGain(); s.type = 'triangle'; s.frequency.value = hz;
-    const t0 = t + .05 + k*.05; sg.gain.setValueAtTime(0, t0); sg.gain.linearRampToValueAtTime(vol*.12, t0+.03); sg.gain.exponentialRampToValueAtTime(.001, t0+1.1);
-    s.connect(sg).connect(a.destination); s.start(t0); s.stop(t0+1.2); });
+// cartas falsas no tabuleiro
+const FAKE = ['Sol Ring','Arcane Signet','Command Tower','Swords to Plowshares','Lightning Greaves','Cultivate','Rhystic Study','Cyclonic Rift','Swiftfoot Boots','Llanowar Elves','Beast Within','Counterspell'];
+['a0','a1','a2','a3'].forEach((id,k)=>{ document.getElementById(id).innerHTML = FAKE.slice(k*2, k*2+6).map(n=>`<div class="cf" style="background-image:url('${img(n)}')"></div>`).join(''); });
+
+// ---------- som: estrondo cinematográfico (grave + impacto + eco), feito no navegador ----------
+let AC = null;
+function ac(){ if (!AC) AC = new (window.AudioContext||window.webkitAudioContext)(); return AC; }
+function eco(a, seg){   // resposta de "salão": ruído que decai, para o convolver
+  const n = a.sampleRate * seg, b = a.createBuffer(2, n, a.sampleRate);
+  for (let c=0;c<2;c++){ const d = b.getChannelData(c); for (let i=0;i<n;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/n, 3); }
+  const cv = a.createConvolver(); cv.buffer = b; return cv;
 }
-let timer = null;
+function ruido(a, seg){ const n = a.sampleRate*seg, b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0); for (let i=0;i<n;i++) d[i] = Math.random()*2-1; const s = a.createBufferSource(); s.buffer = b; return s; }
+// chegada: um "whoosh" grave que cresce (a carta descendo)
+function somChegada(vol){
+  const a = ac(), t = a.currentTime, saida = a.createGain(); saida.gain.value = vol; saida.connect(a.destination);
+  const r = ruido(a, 1), f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(200, t); f.frequency.exponentialRampToValueAtTime(1400, t+.55);
+  const g = a.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.5, t+.45); g.gain.exponentialRampToValueAtTime(.001, t+.8);
+  r.connect(f).connect(g).connect(saida); r.start(t); r.stop(t+1);
+}
+// impacto: bumbo grave + estalo + cauda com eco
+function somImpacto(vol){
+  const a = ac(), t = a.currentTime, saida = a.createGain(); saida.gain.value = vol;
+  const cv = eco(a, 2.4), molhado = a.createGain(); molhado.gain.value = .55;
+  saida.connect(a.destination); saida.connect(cv); cv.connect(molhado).connect(a.destination);
+  // grave que cai de 90 Hz para 32 Hz (o "BUM")
+  const o = a.createOscillator(), og = a.createGain(); o.type = 'sine';
+  o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(32, t+.9);
+  og.gain.setValueAtTime(0, t); og.gain.linearRampToValueAtTime(1, t+.01); og.gain.exponentialRampToValueAtTime(.001, t+1.4);
+  o.connect(og).connect(saida); o.start(t); o.stop(t+1.5);
+  // sub-harmônico distorcido, para dar corpo
+  const o2 = a.createOscillator(), ws = a.createWaveShaper(), og2 = a.createGain(); o2.type = 'triangle';
+  o2.frequency.setValueAtTime(60, t); o2.frequency.exponentialRampToValueAtTime(28, t+.6);
+  const curva = new Float32Array(256); for (let i=0;i<256;i++){ const x = i/128-1; curva[i] = Math.tanh(x*4); } ws.curve = curva;
+  og2.gain.setValueAtTime(.5, t); og2.gain.exponentialRampToValueAtTime(.001, t+.7);
+  o2.connect(ws).connect(og2).connect(saida); o2.start(t); o2.stop(t+.8);
+  // estalo de pedra/madeira (ruído curto filtrado)
+  const r = ruido(a, .35), bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = .8;
+  const rg = a.createGain(); rg.gain.setValueAtTime(.9, t); rg.gain.exponentialRampToValueAtTime(.001, t+.3);
+  r.connect(bp).connect(rg).connect(saida); r.start(t); r.stop(t+.35);
+}
+
+let timers = [];
+function limpar(){ timers.forEach(clearTimeout); timers = []; }
+function depois(ms, f){ timers.push(setTimeout(f, ms)); }
 function entrada(rapida){
+  limpar();
   const [cmd, quem, cor] = document.getElementById('qual').value.split('|');
   const ent = document.getElementById('ent');
-  clearTimeout(timer); ent.className = ''; void ent.offsetWidth;
-  const tIn = rapida ? .35 : .6, fica = rapida ? 800 : 1500;
+  ent.className = ''; void ent.offsetWidth;
+  // tempos: chegada, flutuando, queda
+  const tIn = rapida ? .4 : .7, flutua = rapida ? 450 : 1150, queda = 420;
   ent.style.setProperty('--cor', cor); ent.style.setProperty('--tIn', tIn + 's');
-  ent.innerHTML = `<div class="veu"></div><div class="onda"></div><div class="carta" style="background-image:url('${img(cmd)}')"></div>
+  // onde fica o tabuleiro do dono (aqui: a área de baixo à direita)
+  const alvo = document.getElementById('a3').getBoundingClientRect();
+  const cx = innerWidth/2, cy = innerHeight*.4, tx = alvo.left + alvo.width/2, ty = alvo.top + alvo.height/2;
+  ent.style.setProperty('--dx', (tx-cx) + 'px'); ent.style.setProperty('--dy', (ty-cy) + 'px');
+  ent.innerHTML = `<div class="veu"></div><div class="carta" style="background-image:url('${img(cmd)}')"></div>
+    <div class="clarao" style="left:${tx}px;top:${ty}px"></div><div class="onda" style="left:${tx}px;top:${ty}px"></div>
     <div class="txt"><small>${quem} invocou</small><b>${cmd}</b></div>`;
   ent.classList.add('on');
-  setTimeout(()=>somEntrada(.35, rapida), tIn*1000 - 60);
-  timer = setTimeout(()=>{ ent.classList.add('sai'); timer = setTimeout(()=>{ ent.className = ''; ent.innerHTML = ''; }, 500); }, fica);
+  somChegada(.35);
+  depois(tIn*1000 + flutua, ()=>{ ent.classList.add('cai'); });
+  // impacto
+  depois(tIn*1000 + flutua + queda, ()=>{
+    somImpacto(.6);
+    ent.querySelector('.carta').classList.add('assenta');
+    ent.querySelector('.clarao').classList.add('vai'); ent.querySelector('.onda').classList.add('vai');
+    for (let i=0;i<26;i++){ const p = document.createElement('div'); p.className = 'poeira'; const g = Math.random()*Math.PI*2, r = 60 + Math.random()*200;
+      p.style.left = tx+'px'; p.style.top = ty+'px'; p.style.setProperty('--x', Math.cos(g)*r+'px'); p.style.setProperty('--y', Math.sin(g)*r*.6+'px'); ent.appendChild(p); }
+    const app = document.getElementById('app'); app.classList.remove('treme'); void app.offsetWidth; app.classList.add('treme');
+    // as cartas pulam: mais forte perto do impacto
+    document.querySelectorAll('.cf').forEach(c=>{
+      const r = c.getBoundingClientRect(), dx = r.left + r.width/2 - tx, dy = r.top + r.height/2 - ty, dist = Math.hypot(dx, dy), forca = Math.max(.15, 1 - dist/900);
+      c.style.setProperty('--x', (dx/dist||0) * 14 * forca + 'px'); c.style.setProperty('--y', (-10 - 18*forca) + 'px');
+      c.style.setProperty('--r', ((Math.random()*2-1) * 10 * forca) + 'deg'); c.style.setProperty('--d', (dist/2500) + 's');
+      c.classList.remove('pula'); void c.offsetWidth; c.classList.add('pula');
+    });
+  });
+  depois(tIn*1000 + flutua + queda + 700, ()=>{ ent.classList.add('sai'); });
+  depois(tIn*1000 + flutua + queda + 1250, ()=>{ ent.className = ''; ent.innerHTML = ''; });
 }
 document.getElementById('b1').onclick = ()=>entrada(false);
 document.getElementById('b2').onclick = ()=>entrada(true);
