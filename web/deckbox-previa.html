@@ -6,7 +6,12 @@
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#2a1d12 0%,#120c08 70%);font-family:'EB Garamond',serif;color:#eee;padding:30px 24px 60px}
 h2{font-family:var(--ff);color:var(--ouro);margin:0 0 10px;letter-spacing:.06em}
-.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px 20px}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:30px 20px}
+.item{position:relative}
+.item::before{content:'';position:absolute;left:-11px;right:-11px;top:336px;height:18px;z-index:0;
+  background:linear-gradient(180deg,#6a4626 0%,#4a2e18 35%,#2a190c 100%);box-shadow:0 10px 18px #000a,inset 0 2px 0 #9a6a3e88,inset 0 -2px 0 #0008}
+.item::after{content:'';position:absolute;left:-11px;right:-11px;top:336px;height:6px;z-index:0;background:repeating-linear-gradient(90deg,#0000 0 30px,#00000018 30px 34px)}
+.item .cena{position:relative;z-index:1}
 
 /* ---------- commander box 3D: caixa fechada, tampa, janela com o comandante ---------- */
 .cena{--L:150px;--A:180px;--P:96px;height:370px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:34px;perspective:1100px;cursor:pointer}
@@ -35,6 +40,12 @@ h2{font-family:var(--ff);color:var(--ouro);margin:0 0 10px;letter-spacing:.06em}
 .tampa .aba{width:var(--L);height:26px;top:var(--P);transform-origin:50% 0;transform:rotateX(90deg);filter:brightness(.9)}
 .cena:hover .tampa{transform:translateZ(calc(var(--P)/-2)) rotateX(168deg)}
 /* símbolo na tampa */
+.tampa .forro{width:calc(var(--L) + 4px);height:calc(var(--P) + 4px);left:-2px;top:-2px;border-radius:4px;transform:rotateX(180deg) translateZ(1px);
+  background:linear-gradient(160deg,#2a1d12,#140d08);box-shadow:inset 0 0 0 2px #0008,inset 0 0 14px #000a}
+.tampa .forro::after{content:'';position:absolute;inset:8px;border:1.5px dashed #c9a24a44;border-radius:4px}
+.tampa .topo .marca{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(180deg);font-family:var(--ff);font-weight:800;font-size:34px;line-height:1;
+  color:transparent;background:linear-gradient(180deg,#fff2c0,#c9962e 55%,#7a5418);-webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 1px 0 #0009) drop-shadow(0 -1px 0 #ffffff33)}
 .tampa .topo .selo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;gap:3px;opacity:.85}
 .tampa .topo .selo img{width:14px;height:14px;filter:drop-shadow(0 1px 1px #000)}
 /* janela transparente com o comandante */
@@ -44,6 +55,7 @@ h2{font-family:var(--ff);color:var(--ouro);margin:0 0 10px;letter-spacing:.06em}
 .janelaMoldura{position:absolute;left:19px;right:19px;top:17px;bottom:39px;border-radius:15px;border:1.5px dashed #ffffff40;pointer-events:none}
 .gemas{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:4px}
 .gemas img{width:17px;height:17px;filter:drop-shadow(0 2px 2px #000)}
+.gemas.muitas{gap:2px;bottom:14px}.gemas.muitas img{width:13px;height:13px}
 .lombada{position:absolute;inset:16px 6px;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;transform:rotate(180deg);
   font-family:var(--ff);font-size:12px;letter-spacing:.16em;color:#ffffffb0;text-shadow:0 1px 2px #0008;white-space:nowrap;overflow:hidden}
 /* as 3 criaturas que saem por cima em leque */
@@ -53,7 +65,7 @@ h2{font-family:var(--ff);color:var(--ouro);margin:0 0 10px;letter-spacing:.06em}
 .cena:hover .cs{opacity:1;transform:translate(var(--x),-150px) rotate(var(--r));transition-delay:calc(.15s + var(--dl))}
 .cena:hover .cs:nth-child(2){transform:translate(var(--x),-170px) rotate(var(--r))}
 .sombra{position:absolute;left:50%;bottom:-26px;width:calc(var(--L) * 1.4);height:34px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(#000c,transparent 70%);filter:blur(4px)}
-.rotulo{text-align:center;margin-top:-18px}
+.rotulo{text-align:center;margin-top:-14px}
 .rotulo b{display:block;font-family:var(--ff);font-size:13.5px;color:#f3e2c0}
 .rotulo small{display:block;font-size:12.5px;color:#a8957d}
 .rotulo small.aviso{color:#ff9a7a}
@@ -86,7 +98,7 @@ document.getElementById('grade').innerHTML = DECKS.map(d=>{
   const [c1, c2] = cores(d.cores), n = d.cartas || 100;
   const gemas = [...d.cores].map(x=>`<img src="https://svgs.scryfall.io/card-symbols/${x}.svg" alt="${x}">`).join('');
   const saem = d.cri.map((c,i)=>`<div class="cs" style="background-image:url('${img(c)}');--x:${(i-1)*62}px;--r:${(i-1)*14}deg;--dl:${i*.05}s"></div>`).join('');
-  return `<div><div class="cena" style="--c1:${c1};--c2:${c2}">
+  return `<div class="item"><div class="cena" style="--c1:${c1};--c2:${c2}">
     <div class="caixa">
       <div class="sombra"></div>
       <div class="face fundo couro"></div>
@@ -95,8 +107,8 @@ document.getElementById('grade').innerHTML = DECKS.map(d=>{
       <div class="face tras couro"></div>
       <div class="face esq couro costura"><div class="lombada">${d.nome}</div></div>
       <div class="face dir couro"></div>
-      <div class="face frente couro costura"><div class="janela" style="background-image:url('${art(d.cmd)}')"></div><div class="janelaMoldura"></div><div class="gemas">${gemas}</div></div>
-      <div class="tampa"><div class="face topo couro costura"><div class="selo">${gemas}</div></div></div>
+      <div class="face frente couro costura"><div class="janela" style="background-image:url('${art(d.cmd)}')"></div><div class="janelaMoldura"></div><div class="gemas ${d.cores.length >= 4 ? 'muitas' : ''}">${gemas}</div></div>
+      <div class="tampa"><div class="face topo couro costura"><div class="marca">M</div></div><div class="face forro"></div></div>
     </div>
   </div><div class="rotulo"><b>${d.nome}</b><small class="${n !== 100 ? 'aviso' : ''}">${d.cmd} · ${n} cartas</small></div></div>`;
 }).join('');
