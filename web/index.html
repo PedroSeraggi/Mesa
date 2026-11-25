@@ -1171,6 +1171,67 @@ html.fundoParado #cena .slide.ativo{animation:none}
 .esperando{animation:pulsar 1.6s infinite}
 .cabDecks{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .acoesDecks{display:flex;gap:8px}
+/* ---------- tela Decks: commander boxes 3D ---------- */
+.dbxGrade{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))!important;gap:20px!important;padding-top:56px}
+.secChefesLista.dbxGrade{padding-top:56px}
+.dbxItem{position:relative}
+/* ---------- commander box 3D: caixa fechada, tampa, janela com o comandante ---------- */
+.dbx-cena{--L:150px;--A:180px;--P:96px;height:370px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:34px;perspective:1100px;cursor:pointer}
+.dbx-caixa{position:relative;width:var(--L);height:var(--A);transform-style:preserve-3d;transform:rotateX(-16deg) rotateY(-28deg);transition:transform .6s cubic-bezier(.2,.9,.3,1)}
+.dbx-cena:hover .dbx-caixa{transform:rotateX(-20deg) rotateY(-14deg) translateY(-6px)}
+.dbx-face{position:absolute;left:0;top:0;backface-visibility:hidden}
+/* couro sintético com costura */
+.dbx-couro{background:
+   radial-gradient(ellipse at 25% 5%,#ffffff22,transparent 55%),
+   repeating-linear-gradient(45deg,#0000 0 2px,#ffffff07 2px 3px),
+   repeating-linear-gradient(-45deg,#0000 0 2px,#00000010 2px 3px),
+   linear-gradient(170deg,var(--c1),var(--c2));
+  box-shadow:inset 0 0 0 1px #0006}
+.dbx-costura::after{content:'';position:absolute;inset:7px;border:1.5px dashed #ffffff40;border-radius:4px;pointer-events:none}
+.dbx-frente{width:var(--L);height:var(--A);transform:translateZ(calc(var(--P)/2))}
+.dbx-tras{width:var(--L);height:var(--A);transform:rotateY(180deg) translateZ(calc(var(--P)/2))}
+.dbx-dir{width:var(--P);height:var(--A);left:calc((var(--L) - var(--P))/2);transform:rotateY(90deg) translateZ(calc(var(--L)/2));filter:brightness(.6)}
+.dbx-esq{width:var(--P);height:var(--A);left:calc((var(--L) - var(--P))/2);transform:rotateY(-90deg) translateZ(calc(var(--L)/2));filter:brightness(.85)}
+.dbx-fundo{width:var(--L);height:var(--P);transform:translateY(calc(var(--A) - var(--P)/2)) rotateX(-90deg);filter:brightness(.35)}
+/* interior (aparece quando a tampa abre) */
+.dbx-dentro{width:calc(var(--L) - 6px);height:calc(var(--P) - 6px);left:3px;top:3px;transform-origin:50% 0;transform:translateY(8px) translateZ(calc(var(--P)/-2 + 3px)) rotateX(90deg);background:#0a0604;box-shadow:inset 0 0 20px #000}
+/* tampa: dobradiça na parte de trás, abre para cima */
+.dbx-tampa{position:absolute;left:0;top:0;width:var(--L);height:var(--P);transform-style:preserve-3d;transform-origin:50% 0;
+  transform:translateZ(calc(var(--P)/-2)) rotateX(90deg);transition:transform .55s cubic-bezier(.3,1.3,.5,1)}
+.dbx-tampa .dbx-topo{width:calc(var(--L) + 4px);height:calc(var(--P) + 4px);left:-2px;top:-2px;transform:translateZ(1px);border-radius:4px}
+.dbx-tampa .dbx-aba{width:var(--L);height:26px;top:var(--P);transform-origin:50% 0;transform:rotateX(90deg);filter:brightness(.9)}
+.dbx-cena:hover .dbx-tampa{transform:translateZ(calc(var(--P)/-2)) rotateX(168deg)}
+/* símbolo na tampa */
+.dbx-tampa .dbx-forro{width:calc(var(--L) + 4px);height:calc(var(--P) + 4px);left:-2px;top:-2px;border-radius:4px;transform:rotateX(180deg) translateZ(1px);
+  background:linear-gradient(160deg,#2a1d12,#140d08);box-shadow:inset 0 0 0 2px #0008,inset 0 0 14px #000a}
+.dbx-tampa .dbx-forro::after{content:'';position:absolute;inset:8px;border:1.5px dashed #c9a24a44;border-radius:4px}
+.dbx-tampa .dbx-topo .dbx-marca{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(180deg);font-family:var(--ff-titulo);font-weight:800;font-size:34px;line-height:1;
+  color:transparent;background:linear-gradient(180deg,#fff2c0,#c9962e 55%,#7a5418);-webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 1px 0 #0009) drop-shadow(0 -1px 0 #ffffff33)}
+.dbx-tampa .dbx-topo .dbx-selo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;gap:3px;opacity:.85}
+.dbx-tampa .dbx-topo .dbx-selo img{width:14px;height:14px;filter:drop-shadow(0 1px 1px #000)}
+/* janela transparente com o comandante */
+.dbx-janela{position:absolute;left:24px;right:24px;top:22px;bottom:44px;border-radius:12px;overflow:hidden;background:#000 center 18%/cover;
+  box-shadow:inset 0 0 0 2px #0009,0 0 0 3px #ffffff1a,inset 0 0 14px #000a}
+.dbx-janela::after{content:'';position:absolute;inset:0;background:linear-gradient(120deg,#ffffff38 0%,#ffffff08 30%,transparent 45%,transparent 70%,#ffffff12 85%,transparent);pointer-events:none}
+.dbx-janelaMoldura{position:absolute;left:19px;right:19px;top:17px;bottom:39px;border-radius:15px;border:1.5px dashed #ffffff40;pointer-events:none}
+.dbx-gemas{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:4px}
+.dbx-gemas img{width:17px;height:17px;filter:drop-shadow(0 2px 2px #000)}
+.dbx-gemas.dbx-muitas{gap:2px;bottom:14px}.dbx-gemas.dbx-muitas img{width:13px;height:13px}
+.dbx-lombada{position:absolute;inset:16px 6px;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;transform:rotate(180deg);
+  font-family:var(--ff-titulo);font-size:12px;letter-spacing:.16em;color:#ffffffb0;text-shadow:0 1px 2px #0008;white-space:nowrap;overflow:hidden}
+/* as 3 criaturas que saem por cima em leque */
+.dbx-cartasSaem{position:absolute;left:50%;top:0;width:0;height:0;transform:translateZ(0)}
+.dbx-cs{position:absolute;width:104px;aspect-ratio:63/88;left:-52px;top:-10px;border-radius:6px;background:#000 center/cover;box-shadow:0 8px 18px #000c;
+  transform:translateY(40px) scale(.7);opacity:0;transition:transform .55s cubic-bezier(.2,1.3,.4,1),opacity .25s;transition-delay:var(--dl)}
+.dbx-cena:hover .dbx-cs{opacity:1;transform:translate(var(--x),-150px) rotate(var(--r));transition-delay:calc(.15s + var(--dl))}
+.dbx-cena:hover .dbx-cs:nth-child(2){transform:translate(var(--x),-170px) rotate(var(--r))}
+.dbx-sombra{position:absolute;left:50%;bottom:-26px;width:calc(var(--L) * 1.4);height:34px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(#000c,transparent 70%);filter:blur(4px)}
+.dbx-rotulo{text-align:center;margin-top:-14px}
+.dbx-rotulo b{display:block;font-family:var(--ff-titulo);font-size:13.5px;color:var(--ouro);text-shadow:0 0 10px #c9a24a44,0 1px 2px #000}
+.dbx-rotulo small{display:block;font-size:12.5px;color:#a8957d}
+.dbx-rotulo small.dbx-aviso{color:#ff9a7a}
+
 .listaDecks{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
 .deckCard{border:1px solid var(--borda2);border-radius:8px;overflow:hidden;background:var(--bg2);display:flex;flex-direction:column;cursor:pointer;transition:border-color .15s,transform .15s}
 .deckCard:hover{border-color:var(--ouro);transform:translateY(-2px)}
@@ -2211,6 +2272,47 @@ function opcoesDeck(render){
   if (!chefes.length) return meus.map(render).join('');
   return `<optgroup label="Meus decks">${meus.map(render).join('')}</optgroup><optgroup label="Decks de chefe">${chefes.map(render).join('')}</optgroup>`;
 }
+
+// ---------------- tela Decks: commander box (caixa 3D com janela; ao passar o mouse a tampa abre e 3 criaturas saem) ----------------
+const DBX_TONS = {W:['#d6c8a4','#7e6e50'], U:['#3f6c98','#162e4a'], B:['#4a4048','#16121a'], R:['#9a4a34','#46180e'], G:['#4a7a4a','#183a20'], C:['#8a857c','#3a3630']};
+const DBX_ORDEM = ['W','U','B','R','G'];
+function dbxCores(d){
+  const ci = new Set(); (d.comandantes||[]).forEach(c=>((tiposCartas[c.nome]||{}).ci||[]).forEach(k=>ci.add(k)));
+  return DBX_ORDEM.filter(k=>ci.has(k));
+}
+function dbxTons(cs){
+  if (cs.length >= 4) return ['#a88a4a','#4a3616'];
+  if (!cs.length) return DBX_TONS.C;
+  return [DBX_TONS[cs[0]][0], DBX_TONS[cs[cs.length-1]][1]];
+}
+function dbxSorteio(d){   // 3 criaturas do deck, sempre as mesmas para o mesmo deck (não pula a cada redesenho)
+  const lista = d.amostra || [];
+  let cri = lista.filter(c=>/Creature|Criatura/.test((tiposCartas[c.nome]||{}).t || ''));
+  if (cri.length < 3) cri = cri.concat(lista.filter(c=>!cri.includes(c) && !/Land|Terreno/.test((tiposCartas[c.nome]||{}).t || ''))).slice(0, Math.max(3, cri.length));
+  let h = 0; for (const ch of d.arquivo) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const pool = [...cri], esc3 = [];
+  while (pool.length && esc3.length < 3){ h = (h * 1103515245 + 12345) >>> 0; esc3.push(pool.splice(h % pool.length, 1)[0]); }
+  return esc3;
+}
+function deckboxHtml(d){
+  const cmd = (d.comandantes||[])[0], cs = dbxCores(d), [c1, c2] = dbxTons(cs), n = d.cartas || 0;
+  const gemas = (cs.length ? cs : (cmd && tiposCartas[cmd.nome] ? ['C'] : [])).map(x=>`<img src="https://svgs.scryfall.io/card-symbols/${x}.svg" alt="${x}">`).join('');
+  const saem = dbxSorteio(d).map((c,i)=>`<div class="dbx-cs" style="background-image:url('${imgCarta(c)}');--x:${(i-1)*62}px;--r:${(i-1)*14}deg;--dl:${i*.05}s"></div>`).join('');
+  return `<div class="dbxItem deckCard" data-arq="${esc(d.arquivo)}" style="border:none;background:none;overflow:visible"><div class="dbx-cena" style="--c1:${c1};--c2:${c2}">
+    <div class="dbx-caixa">
+      <div class="dbx-sombra"></div>
+      <div class="dbx-face dbx-fundo dbx-couro"></div>
+      <div class="dbx-face dbx-dentro"></div>
+      <div class="dbx-cartasSaem">${saem}</div>
+      <div class="dbx-face dbx-tras dbx-couro"></div>
+      <div class="dbx-face dbx-esq dbx-couro dbx-costura"><div class="dbx-lombada">${esc(nomeDeckCurto(d))}</div></div>
+      <div class="dbx-face dbx-dir dbx-couro"></div>
+      <div class="dbx-face dbx-frente dbx-couro dbx-costura"><div class="dbx-janela" ${cmd ? `style="background-image:url('${imgCarta(cmd,'art')}')"` : ''}></div><div class="dbx-janelaMoldura"></div><div class="dbx-gemas ${cs.length >= 4 ? 'dbx-muitas' : ''}">${gemas}</div></div>
+      <div class="dbx-tampa"><div class="dbx-face dbx-topo dbx-couro dbx-costura"><div class="dbx-marca">M</div></div><div class="dbx-face dbx-forro"></div></div>
+    </div>
+  </div><div class="dbx-rotulo"><b>${esc(nomeDeckCurto(d))}</b><small class="${n !== 100 ? 'dbx-aviso' : ''}">${cmd ? esc((d.comandantes||[]).map(c=>c.nome).join(' + ')) : 'sem comandante'} · ${n} cartas${n !== 100 ? ' (Commander pede 100)' : ''}</small></div></div>`;
+}
+let dbxBuscouTipos = false;
 async function desenharDecks(){
   fetch('/api/config').then(r=>r.json()).then(c=>{ $('#btnImportar').classList.toggle('oculto', !c.temGrimorio); }).catch(()=>{});
   const box = $('#listaDecks');
@@ -2227,9 +2329,13 @@ async function desenharDecks(){
   };
   const meus = decks.filter(d=>!d.chefe), chefes = decks.filter(d=>d.chefe);
   const aberto = localGet('decksChefeAbertos') === '1';
-  box.innerHTML = (meus.length ? meus.map(cartaoDeck).join('') : '<div class="dicaMenu">Nenhum deck seu ainda.</div>')
-    + (chefes.length ? `<div class="secChefes"><button class="secChefesTit" id="secChefesTit"><span class="seta ${aberto?'aberta':''}">▸</span> Decks de chefe <small>${chefes.length} ganho(s) derrotando o Chefe do dia</small></button>
-        <div class="secChefesLista ${aberto?'':'oculto'}">${chefes.map(cartaoDeck).join('')}</div></div>` : '');
+  box.classList.add('dbxGrade');
+  box.innerHTML = (meus.length ? meus.map(deckboxHtml).join('') : '<div class="dicaMenu">Nenhum deck seu ainda.</div>')
+    + (chefes.length ? `<div class="secChefes" style="grid-column:1/-1"><button class="secChefesTit" id="secChefesTit"><span class="seta ${aberto?'aberta':''}">▸</span> Decks de chefe <small>${chefes.length} ganho(s) derrotando o Chefe do dia</small></button>
+        <div class="secChefesLista listaDecks dbxGrade ${aberto?'':'oculto'}">${chefes.map(deckboxHtml).join('')}</div></div>` : '');
+  // cores dos comandantes e tipos das cartas (para sortear criaturas): busca uma vez no Scryfall e redesenha
+  const faltam = decks.flatMap(d=>[...(d.comandantes||[]), ...(d.amostra||[])].map(c=>c.nome)).filter(n=>!tiposCartas[n]);
+  if (faltam.length && !dbxBuscouTipos){ dbxBuscouTipos = true; buscarTipos(faltam).then(()=>{ if (vista === 'decks') desenharDecks(); }); }
   box.querySelectorAll('.deckCard').forEach(el=>el.onclick=()=>verDeck(el.dataset.arq));
   if ($('#secChefesTit')) $('#secChefesTit').onclick = ()=>{ localSet('decksChefeAbertos', aberto ? '0' : '1'); desenharDecks(); };
 }

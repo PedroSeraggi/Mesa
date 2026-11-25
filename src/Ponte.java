@@ -468,15 +468,15 @@ public class Ponte implements MageClient {
             try {
                 List<Object[]> cs = lerCartas(DECKS.resolve(a));
                 int total = 0;
-                List<Map<String, Object>> cmd = new ArrayList<>();
+                List<Map<String, Object>> cmd = new ArrayList<>(), amostra = new ArrayList<>();
                 for (Object[] c : cs) {
                     total += (Integer) c[0];
-                    if ((Boolean) c[4]) {
-                        Map<String, Object> x = new LinkedHashMap<>();
-                        x.put("nome", c[1]); x.put("set", c[2]); x.put("num", c[3]);
-                        cmd.add(x);
-                    }
+                    Map<String, Object> x = new LinkedHashMap<>();
+                    x.put("nome", c[1]); x.put("set", c[2]); x.put("num", c[3]);
+                    if ((Boolean) c[4]) cmd.add(x);
+                    else if (!String.valueOf(c[1]).matches("(Snow-Covered )?(Plains|Island|Swamp|Mountain|Forest|Wastes)")) amostra.add(x);   // deckbox: cartas que saem da caixa
                 }
+                d.put("amostra", amostra);
                 d.put("cartas", total);
                 d.put("comandantes", cmd);
             } catch (Exception e) {
