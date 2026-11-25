@@ -516,7 +516,21 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 #entSala.sai .titulo,#entSala.sai .vs,#entSala.sai .txt{transition:opacity .3s;opacity:0}
 #entSala .faisca{position:absolute;left:50%;width:6px;height:6px;border-radius:50%;background:#ffe08a;box-shadow:0 0 10px #ff9a3a;animation:esFaisca .9s ease-out forwards}
 @keyframes esFaisca{from{opacity:1;transform:translate(0,0)}to{opacity:0;transform:translate(var(--x),var(--y))}}
-/* 2v2: mão do parceiro */
+/* 2v2: abas da mão (sua / do parceiro) */
+/* as abas saem da borda de cima da barra da mão, no meio (como abas de pasta) */
+#maoInfo.abas{left:50%;top:-27px;transform:translateX(-50%);display:flex;gap:3px;z-index:3;pointer-events:auto}
+#maoInfo .abaMao{background:var(--bg2);border:1px solid var(--borda);border-bottom:none;border-radius:8px 8px 0 0;padding:5px 14px 6px;font:inherit;letter-spacing:inherit;text-transform:inherit;color:var(--txt3);cursor:pointer;white-space:nowrap}
+#maoInfo .abaMao:hover{color:var(--txt)}
+#maoInfo .abaMao.sel{color:var(--ouro);border-color:#e0a04088;box-shadow:inset 0 2px 0 #e0a040}
+.maoParcCartas{display:flex;gap:6px;align-items:flex-end;justify-content:center;padding-top:22px;overflow-x:auto}
+.maoParcCartas img{width:var(--mao-w,120px);border-radius:6px;flex:none;cursor:zoom-in;box-shadow:0 4px 12px #000a}
+.maoParcCartas .mpVazio{color:var(--txt3);font-size:13px;padding:30px 10px}
+/* 2v2: espaço entre as duplas e cor de cada lado */
+#mesa.dupla2v2:not(.livre){row-gap:22px}
+#mesa.livre.dupla2v2 .palco{row-gap:180px}
+#mesa.dupla2v2 .tab.ladoTime{box-shadow:inset 0 0 0 1px #e0a04055}
+#mesa.dupla2v2 .tab.ladoBot{box-shadow:inset 0 0 0 1px #a07ad055}
+/* 2v2: mão do parceiro (antigo, flutuante: não usado) */
 #maoParc{position:fixed;left:12px;bottom:calc(var(--mao-h,190px) + 10px);z-index:45;display:flex;flex-direction:column;align-items:flex-start;gap:6px;max-width:min(760px,70vw)}
 #maoParc.oculto{display:none}
 #maoParc .mpBtn{font-family:var(--ff-titulo);font-size:12px;letter-spacing:.04em;background:#1a120ce6;border:1px solid #e0a04099;color:#f3e2c0;border-radius:999px;padding:5px 12px;cursor:pointer;box-shadow:0 4px 12px #0009}
@@ -528,7 +542,12 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 #maoParc .mpCartas img:hover{transform:translateY(-4px)}
 #maoParc .mpVazio{color:#bfa88f;font-size:12.5px;padding:4px 6px}
 /* 2v2: barras de vida do time (cada jogador carrega metade; se uma zera, o time perde) */
-#vidaTime{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:40;display:flex;flex-direction:column;gap:6px;pointer-events:none;width:min(460px,60vw)}
+#vidaTime{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:40;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;width:min(460px,60vw)}
+#vidaTime .vtLinha{width:100%;box-sizing:border-box}
+#vidaTime .vtSeta{pointer-events:auto;background:#0c0805cc;border:1px solid #c9a24a55;border-top:none;border-radius:0 0 8px 8px;color:var(--ouro);font-size:11px;line-height:1;padding:2px 14px 4px;margin-top:-6px;cursor:pointer}
+#vidaTime .vtSeta:hover{filter:brightness(1.3)}
+#vidaTime.recolhido .vtLinha{display:none}
+#vidaTime.recolhido .vtSeta{margin-top:0;border-top:1px solid #c9a24a55;border-radius:8px;padding:3px 12px}
 #vidaTime.oculto{display:none}
 .vtLinha{display:flex;align-items:center;gap:8px;background:#0c0805cc;border:1px solid #c9a24a55;border-radius:10px;padding:4px 10px;box-shadow:0 4px 14px #0009}
 .vtTit{font-family:var(--ff-titulo);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ouro);width:62px;flex:none}
@@ -3921,6 +3940,7 @@ let maoParcInfo = null, maoParcTimer = null, maoParcAberta = false, maoParcAssin
 try { maoParcAberta = localGet('maoParcAberta') === '1'; } catch(e){}
 function controlarMaoParceiro(){
   const on = !!(E && E.modo2v2 && E.fase === 'jogo' && !E.assistindo);
+  if (!on) abaMao = 'eu';
   if (on && !maoParcTimer){ buscarMaoParceiro(); maoParcTimer = setInterval(buscarMaoParceiro, 2000); }
   if (!on && maoParcTimer){ clearInterval(maoParcTimer); maoParcTimer = null; maoParcInfo = null; }
   desenharMaoParceiro();
@@ -3929,7 +3949,15 @@ async function buscarMaoParceiro(){
   try { maoParcInfo = await (await fetch('/api/maoParceiro')).json(); } catch(e){ maoParcInfo = null; }
   desenharMaoParceiro();
 }
+function nomeParceiro(){ const p = maoParcInfo && (maoParcInfo.parceiros||[])[0]; return p ? p.nome : ''; }
+let abaMao = 'eu', maoParcAssinMao = '';
 function desenharMaoParceiro(){
+  // agora a mão do parceiro é uma aba na barra da mão: só redesenha a mão quando as cartas dele mudam
+  const p = maoParcInfo && (maoParcInfo.parceiros||[])[0];
+  const a = JSON.stringify(p ? [p.nome, p.cartas] : null);
+  if (a !== maoParcAssinMao){ maoParcAssinMao = a; if (E && E.jogo && E.fase === 'jogo') { desenharMao(); desenharVidaTime(); } }
+}
+function desenharMaoParceiroAntigo(){
   let box = $('#maoParc');
   if (!box){ box = document.createElement('div'); box.id = 'maoParc'; document.body.appendChild(box); }
   const p = maoParcInfo && (maoParcInfo.parceiros||[])[0];
@@ -3961,13 +3989,17 @@ function desenharVidaTime(){
   const metade = (j, lado, cor)=>{
     if (!(j.id in vidaInicial)) vidaInicial[j.id] = Math.max(1, j.vida);
     const pct = Math.max(0, Math.min(100, j.vida / vidaInicial[j.id] * 100));
-    const nome = j.eu ? 'Você' : ehBotJ(j) ? j.nome.replace(/^(Bot|IA) (\d+) · .*/, 'Bot $2') : j.nome;
+    const nome = j.eu ? 'Você' : ehBotJ(j) ? j.nome.replace(/^(Bot|IA) (\d+) · .*/, 'Bot $2') : (nomeParceiro() || j.nome);
     return `<div class="vtMetade ${lado} ${pct <= 25 ? 'baixa' : ''}" title="${esc(j.nome)}: ${j.vida} de vida"><i style="width:${pct}%;background:${cor}"></i><b>${esc(nome)}</b></div>`;
   };
   const linha = (cls, tit, a, b, corA, corB)=>`<div class="vtLinha ${cls}"><span class="vtTit">${tit}</span><span class="vtNum">${Math.max(0,a.vida)}</span>
     <div class="vtBarra">${metade(a,'esq',corA)}${metade(b,'dir',corB)}</div><span class="vtNum">${Math.max(0,b.vida)}</span></div>`;
+  let recolhido = false; try { recolhido = localGet('vidaTimeRecolhida') === '1'; } catch(e){}
+  box.classList.toggle('recolhido', recolhido);
   box.innerHTML = (humanos.length === 2 ? linha('time', 'Seu time', humanos[0], humanos[1], 'linear-gradient(90deg,#7a1a14,#d8402e)', 'linear-gradient(90deg,#c9a46a,#8a6a3a)') : '')
-    + (bots.length === 2 ? linha('bots', 'Bots', bots[0], bots[1], 'linear-gradient(90deg,#3a2a4a,#7a5a9a)', 'linear-gradient(90deg,#9a7ab8,#4a3a5a)') : '');
+    + (bots.length === 2 ? linha('bots', 'Bots', bots[0], bots[1], 'linear-gradient(90deg,#3a2a4a,#7a5a9a)', 'linear-gradient(90deg,#9a7ab8,#4a3a5a)') : '')
+    + `<button class="vtSeta" title="${recolhido ? 'Mostrar as barras de vida' : 'Esconder as barras de vida'}">${recolhido ? '▾ Vida dos times' : '▴'}</button>`;
+  box.querySelector('.vtSeta').onclick = ()=>{ try { localSet('vidaTimeRecolhida', recolhido ? '0' : '1'); } catch(e){} desenharVidaTime(); };
 }
 
 let partidaSalvaIgnorada = false;
@@ -4139,6 +4171,10 @@ function jogadoresVisiveis(){
     const outro = ativo && !ativo.eu ? ativo : js.find(p=>p.id===focoId) || ops[0];
     return [outro, meu].filter(Boolean);
   }
+  if (E.modo2v2 && js.length === 4){   // 2v2: bots em cima, o time embaixo (você no canto direito)
+    const ehB = p => /^(IA|Bot) \d+ /.test(p.nome||'');
+    return [...js.filter(ehB), ...ops.filter(p=>!ehB(p)), meu].filter(Boolean);
+  }
   return [...ops, meu].filter(Boolean);
 }
 
@@ -4286,6 +4322,8 @@ function desenharMesa(){
   let cw = 92;
   const R = n => `repeat(${n},minmax(0,1fr))`;
   mesa.classList.toggle('livre', visao==='livre');
+  const dupla2v2 = !!(E.modo2v2 && vis.length === 4);
+  mesa.classList.toggle('dupla2v2', dupla2v2);
   let ordem = vis, spanEu = '';
   if (visao==='livre'){
     cw = 110;
@@ -4298,6 +4336,9 @@ function desenharMesa(){
       const cols = total>=5 ? 3 : Math.min(2,total);   // 5 ou 6 jogadores: 3 colunas x 2 linhas
       mesa.style.gridTemplateColumns = R(cols); mesa.style.gridTemplateRows = R(Math.ceil(total/cols));
       cw = total>=5 ? 62 : total>2 ? 74 : 92;
+    } else if (dupla2v2){                    // 2v2: as duas duplas em linhas, com espaço entre elas
+      mesa.style.gridTemplateColumns = R(2); mesa.style.gridTemplateRows = R(2);
+      cw = 74;
     } else {                                 // oponentes em cima, você embaixo
       mesa.style.gridTemplateColumns = R(n);
       mesa.style.gridTemplateRows = meu && ops.length ? 'minmax(0,1fr) minmax(0,1.15fr)' : R(1);
@@ -4319,6 +4360,7 @@ function desenharMesa(){
   }
   const efeitosPendentes = capturarEfeitos();
   mesa.innerHTML = h;
+  if (dupla2v2) mesa.querySelectorAll('.tab').forEach((t,i)=>t.classList.add(/^(IA|Bot) \d+ /.test((ordem[i]||{}).nome||'') ? 'ladoBot' : 'ladoTime'));
   dispararEfeitos(efeitosPendentes);
   if (visao==='livre' && !cam.ajustada){ cam.ajustada = true; centralizarCamera(); }
   ligarCartas(mesa);
@@ -4840,6 +4882,23 @@ function desenharMao(){
   const larg = $('#mao').clientWidth - 280;   // desconta a região dos botões
   let w = Math.min(165, Math.max(100, larg / Math.max(n,1) + 12));
   document.documentElement.style.setProperty('--mao-w', w+'px');
+  const dupla = !!(E.modo2v2 && !E.assistindo);
+  const parc = dupla && maoParcInfo ? (maoParcInfo.parceiros||[])[0] : null;
+  if (!dupla) abaMao = 'eu';
+  if (dupla){
+    const nomeP = parc ? parc.nome : 'parceiro', cartasP = parc ? (parc.cartas||[]) : [];
+    const abas = `<button class="abaMao ${abaMao==='eu'?'sel':''}" data-aba="eu">Sua mão · ${n}</button><button class="abaMao ${abaMao==='parc'?'sel':''}" data-aba="parc">Mão de ${esc(nomeP)}${parc?` · ${cartasP.length}`:''}</button>`;
+    if (abaMao === 'parc'){
+      $('#mao').innerHTML = `<div id="maoInfo" class="abas">${abas}</div><div class="maoParcCartas">${!parc ? '<span class="mpVazio">A mão do seu parceiro ainda não chegou. Ele precisa estar na Mesa 1.3.</span>'
+        : cartasP.length ? cartasP.map(c=>`<img src="${imgCarta(c)}" alt="${esc(c.nome)}" data-img="${esc(imgCarta(c))}">`).join('') : '<span class="mpVazio">Sem cartas na mão.</span>'}</div>`;
+      $('#mao').classList.remove('aberta');
+      $('#mao').querySelectorAll('[data-img]').forEach(el=>{ el.onmouseenter = ev=>{ const h = $('#hover'); h.innerHTML = `<img src="${el.dataset.img}" style="width:250px;border-radius:12px">`; h.classList.remove('oculto'); posicionarHover(ev); }; el.onmouseleave = esconderHover; });
+      $('#mao').querySelectorAll('.abaMao').forEach(b=>b.onclick = ev=>{ ev.stopPropagation(); abaMao = b.dataset.aba; desenharMao(); });
+      return;
+    }
+    $('#mao').innerHTML = `<div id="maoInfo" class="abas">${abas}</div><div class="maoCartas">${mao.map(c=>cartaHtml(c)).join('')}</div>`;
+    $('#mao').querySelectorAll('.abaMao').forEach(b=>b.onclick = ev=>{ ev.stopPropagation(); abaMao = b.dataset.aba; desenharMao(); });
+  } else
   $('#mao').innerHTML = `<div id="maoInfo">Sua mão · ${n}</div><div class="maoCartas">${mao.map(c=>cartaHtml(c)).join('')}</div>`;
   // fica aberta quando o jogo pede para escolher uma carta da mão (ex.: descartar)
   const alvosMao = alvosAtivos();

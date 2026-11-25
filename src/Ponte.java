@@ -151,15 +151,7 @@ public class Ponte implements MageClient {
                 UUID g = gameId;
                 if (!modo2v2 || assistindo || g == null) { json(ex, 200, Collections.singletonMap("parceiros", new ArrayList<>())); return; }
                 JsonObject c = new JsonObject(); c.addProperty("id", idMesa()); c.addProperty("jogo", g.toString());
-                com.google.gson.JsonArray cs = new com.google.gson.JsonArray();
-                Map<String, Object> j = jogo;
-                Object mao = j == null ? null : j.get("mao");
-                if (mao instanceof List) for (Object o : (List<?>) mao) if (o instanceof Map) {
-                    Map<?, ?> m = (Map<?, ?>) o; JsonObject x = new JsonObject();
-                    for (String k : new String[]{"nome", "set", "num"}) if (m.get(k) != null) x.addProperty(k, String.valueOf(m.get(k)));
-                    cs.add(x);
-                }
-                c.add("cartas", cs);
+                c.add("cartas", minhaMaoJson());
                 json(ex, 200, postAmigos("mao", c));
             } catch (Exception e) {
                 json(ex, 200, Collections.singletonMap("erro", "sem conexão com o servidor do grupo"));
@@ -1566,6 +1558,7 @@ public class Ponte implements MageClient {
             o.addProperty("tableId", tableId == null ? "" : tableId.toString());
             o.addProperty("gameId", gameId == null ? "" : gameId.toString());
             o.addProperty("quando", System.currentTimeMillis());
+            o.addProperty("dupla", modo2v2);   // 2v2: ao voltar, a Mesa precisa saber (vitória do time, barras, mão do parceiro)
             Files.write(arqPartida(), GSON.toJson(o).getBytes(StandardCharsets.UTF_8));
         } catch (Exception ignored) { }
     }
@@ -1609,6 +1602,7 @@ public class Ponte implements MageClient {
                     if (session != null) { try { session.connectStop(false, false); } catch (Exception ignored) { } session = null; }
                     usarPcLocal = "localhost".equals(o.get("servidor").getAsString());   // partida contra bot que caiu para o PC
                     usuarioForcado = o.get("usuario").getAsString();
+                    modo2v2 = o.has("dupla") && o.get("dupla").getAsBoolean(); vitoriaTime = false; maoEnviada = "";
                     tableId = mesa; gameId = null; int fotosAntes = fotos;
                     synchronized (trava) { if (!"jogo".equals(fase)) fase = "iniciando"; }
                     status("Voltando para a partida...");
@@ -2568,7 +2562,10 @@ public class Ponte implements MageClient {
             // só aceita o início da partida da mesa que esta ponte criou
             if (tableId == null && !abandonados.contains(m.getGameId())) {   // Mesa reaberta: o servidor devolveu a partida anotada
                 JsonObject sv = lerPartida();
-                if (sv != null && sv.get("tableId").getAsString().equals(String.valueOf(m.getCurrentTableId()))) tableId = m.getCurrentTableId();
+                if (sv != null && sv.get("tableId").getAsString().equals(String.valueOf(m.getCurrentTableId()))) {
+                    tableId = m.getCurrentTableId();
+                    modo2v2 = sv.has("dupla") && sv.get("dupla").getAsBoolean(); vitoriaTime = false;
+                }
             }
             if (abandonados.contains(m.getGameId()) || tableId == null || !tableId.equals(m.getCurrentTableId())) return;
             if (reconectando && gameId != null) return;   // já voltou
@@ -2873,7 +2870,33 @@ public class Ponte implements MageClient {
         Estatisticas st = stats;
         if (st != null) try { st.foto(jogo); } catch (Exception ignored) { }
         if (modo2v2 && !assistindo && !vitoriaTime) verificarVitoriaTime(g);
+        if (modo2v2 && !assistindo) enviarMaoSeMudou();
         mudou();
+    }
+
+    /** 2v2: manda a minha mão ao Zera sempre que ela muda (o parceiro vê mesmo com a minha janela minimizada). */
+    volatile String maoEnviada = "";
+    com.google.gson.JsonArray minhaMaoJson() {
+        com.google.gson.JsonArray cs = new com.google.gson.JsonArray();
+        Map<String, Object> j = jogo;
+        Object mao = j == null ? null : j.get("mao");
+        if (mao instanceof List) for (Object o : (List<?>) mao) if (o instanceof Map) {
+            Map<?, ?> m = (Map<?, ?>) o; JsonObject x = new JsonObject();
+            for (String k : new String[]{"nome", "set", "num"}) if (m.get(k) != null) x.addProperty(k, String.valueOf(m.get(k)));
+            cs.add(x);
+        }
+        return cs;
+    }
+    void enviarMaoSeMudou() {
+        UUID g = gameId; if (g == null) return;
+        com.google.gson.JsonArray cs = minhaMaoJson();
+        String assin = g + "|" + cs;
+        if (assin.equals(maoEnviada)) return;
+        maoEnviada = assin;
+        new Thread(() -> {
+            try { JsonObject c = new JsonObject(); c.addProperty("id", idMesa()); c.addProperty("jogo", g.toString()); c.add("cartas", cs); postAmigos("mao", c); }
+            catch (Exception e) { maoEnviada = ""; }   // tenta de novo na próxima atualização
+        }).start();
     }
 
     // ---------------- 2 contra 2 (beta): jogadores x bots ----------------
