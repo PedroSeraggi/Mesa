@@ -195,6 +195,11 @@ img.sym{height:1em;vertical-align:-.12em;margin:0 1px}
 .hMot{display:block;color:var(--txt3);font-size:12px;margin-left:28px;text-decoration:none}
 .vidaBox{position:relative;display:flex;align-items:center;gap:4px}
 .dcBtn{font-size:11px;padding:1px 6px;border-radius:6px;border:1px solid var(--borda2);background:var(--bg2);color:var(--txt2);display:flex;gap:3px;align-items:center}
+/* veneno: ao lado do dano de comandante (10 = derrota) */
+.venBox{font-size:11px;padding:1px 6px;border-radius:6px;border:1px solid #7fb04a88;background:var(--bg2);color:#a8d878;display:flex;gap:3px;align-items:center;white-space:nowrap;cursor:default}
+.venBox svg{width:11px;height:11px;fill:currentColor}
+.venBox.alerta{color:#ffb84a;border-color:#ffb84a}.venBox.perigo{color:#ff7a6a;border-color:#ff7a6a;box-shadow:0 0 8px #ff4a2a88;animation:venPisca 1s ease-in-out infinite}
+@keyframes venPisca{50%{box-shadow:0 0 14px #ff4a2acc}}
 .dcBtn.alerta{color:#ffcf4a;border-color:#ffcf4a88}.dcBtn.perigo{color:#ff7a6a;border-color:#ff7a6a;box-shadow:0 0 8px #ff4a2a66}
 .dcLista{position:absolute;top:calc(100% + 6px);right:0;z-index:30;min-width:220px;background:var(--painel2);border:1px solid var(--ouro);border-radius:8px;padding:8px 10px;box-shadow:0 10px 30px #000c}
 .dcTit{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ouro);margin-bottom:6px}
@@ -246,6 +251,30 @@ html.modoDesenho #mesa,html.modoDesenho #mesa *{cursor:crosshair!important}
 /* playmat de cada jogador: fica atrás do campo e da zona de comando, com um véu escuro para as cartas aparecerem */
 .tab.comPlaymat .corpoTab{background:linear-gradient(#0b0705aa,#0b0705aa),var(--pm);background-size:auto,cover;background-position:center}
 .tab.comPlaymat .corpoTab.pmPadrao{background:var(--pm)}
+/* seções que abrem com a setinha (Playmat, Conquistas) */
+.secAbre{display:flex;align-items:center;gap:8px;width:100%;background:none!important;border:none!important;border-bottom:1px solid var(--borda)!important;border-radius:0!important;padding:8px 0!important;cursor:pointer;color:var(--ouro);font-family:var(--ff-titulo);font-size:14px;letter-spacing:.08em;text-transform:uppercase;text-align:left}
+.secAbre .seta{display:inline-block;transition:transform .15s;color:var(--txt2)}.secAbre.aberta .seta{transform:rotate(90deg)}
+.secAbre small{margin-left:auto;font-family:inherit;text-transform:none;letter-spacing:0;font-size:12.5px;color:var(--txt3)}
+.secCorpo{padding:10px 0 4px}.secCorpo.oculto{display:none}
+/* conquistas: brasão redondo com ícone; moldura bronze/prata/ouro/lendária */
+.cqGrade{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.cq{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:var(--bg2);border:1px solid var(--borda)}
+.cq .cqTxt{min-width:0}.cq b{display:block;font-family:var(--ff-titulo);font-size:13px;color:var(--txt)}.cq span{display:block;font-size:12px;color:var(--txt3)}
+.cq .cqProg{height:4px;border-radius:2px;background:#0006;margin-top:5px;overflow:hidden}.cq .cqProg i{display:block;height:100%;background:var(--ouro)}
+.cq.bloq{opacity:.55}.cq.bloq .brasao{filter:grayscale(1) brightness(.7)}
+.brasao{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;position:relative;
+  background:radial-gradient(circle at 35% 30%,#ffffff40,transparent 55%),var(--bm);box-shadow:inset 0 0 0 2px #0005,0 0 0 2px var(--bb),0 3px 8px #000a}
+.brasao svg{width:24px;height:24px;fill:#1a120b;filter:drop-shadow(0 1px 0 #ffffff55)}
+.brasao.bronze{--bm:linear-gradient(145deg,#d9a06a,#8a5a32);--bb:#6a4426}
+.brasao.prata{--bm:linear-gradient(145deg,#eef2f6,#8c98a4);--bb:#5e6a76}
+.brasao.ouro{--bm:linear-gradient(145deg,#ffe48a,#b8862a);--bb:#8a6418}
+.brasao.lendaria{--bm:conic-gradient(from 0deg,#ff9a3a,#c45ad8,#5aa0ff,#ffd04a,#ff9a3a);--bb:#7a3a9a;animation:cqGira 6s linear infinite}
+.brasao.lendaria svg{fill:#fff;filter:drop-shadow(0 1px 2px #000)}
+@keyframes cqGira{to{filter:hue-rotate(360deg)}}
+.cq.bloq .brasao.lendaria{animation:none;filter:grayscale(1) brightness(.7)}
+.cqNovas{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.cqNovas .cq{border-color:var(--ouro);box-shadow:0 0 14px #E4C87444;animation:cqSurge .6s ease-out both}
+@keyframes cqSurge{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
 .pmGrade{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .pmOp{position:relative;aspect-ratio:16/9;border-radius:9px;border:2px solid var(--borda);cursor:pointer;background-size:cover;background-position:center;overflow:hidden;transition:transform .12s,border-color .12s}
 .pmOp:hover{transform:translateY(-2px);border-color:var(--borda2)}
@@ -1435,16 +1464,17 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
         <h3 class="subt">Editar perfil</h3>
         <label>Seu nome<input id="pfNome" maxlength="20" placeholder="Como os amigos vão te ver"></label>
         <label>Frase<input id="pfFrase" maxlength="60" placeholder="Ex.: Anjos não perdoam."></label>
-        <label>Cor (usada quando não há foto)</label>
-        <div id="pfCores" class="cores"></div>
+        <div id="pfCores" class="cores oculto"></div>
         <div class="linhaBts"><button class="pri" id="pfSalvar">Salvar perfil</button><button class="peq oculto" id="pfTirarFoto">Remover foto</button></div>
         <div class="dicaMenu" id="pfServidor"></div>
       </div>
       <div class="pfFavWrap"><h3 class="subt">Deck mais usado</h3><div id="pfFavorito"></div></div>
     </div>
 
-    <h3 class="subt">Playmat</h3>
-    <div id="pfPlaymat"></div>
+    <button class="secAbre" id="secPlaymat"><span class="seta">▸</span>Playmat<small id="pmAtualTxt"></small></button>
+    <div id="pfPlaymat" class="secCorpo oculto"></div>
+    <button class="secAbre" id="secConquistas"><span class="seta">▸</span>Conquistas<small id="cqContagem"></small></button>
+    <div id="pfConquistas" class="secCorpo oculto"></div>
     <input type="file" id="pfArqPlaymat" accept="image/*" class="oculto">
 
     <h3 class="subt">Estatísticas</h3>
@@ -3605,6 +3635,7 @@ async function desenharPlaymatPerfil(){
   if (meuPlaymat.erro){ box.innerHTML = `<div class="pmDica">${esc(meuPlaymat.erro)}</div>`; return; }
   const atual = meuPlaymat.playmat || '';
   const foto = atual === 'foto' ? fundoPlaymat(meuPlaymat) : '';
+  $('#pmAtualTxt').textContent = 'atual: ' + (atual === 'foto' ? 'sua imagem' : atual ? (PLAYMATS[atual]||{}).nome || atual : 'padrão da Mesa');
   box.innerHTML = `<div class="pmGrade">
       <div class="pmOp ${!atual?'sel':''}" data-pm="" style="background:linear-gradient(180deg,var(--painel),var(--bg2))"><span>Padrão da Mesa</span></div>
       ${Object.entries(PLAYMATS).map(([id, m])=>`<div class="pmOp ${atual===id?'sel':''}" data-pm="${id}" style="background:${m.bg}"><span>${esc(m.nome)}</span></div>`).join('')}
@@ -3647,10 +3678,46 @@ function playmatsDaPartida(){
     if (novo !== JSON.stringify(playmatsJogo)){ playmatsJogo = m || {}; if (E && E.jogo) desenharMesa(); }
   }).catch(()=>{});
 }
+
+// ---------------- Conquistas ----------------
+const ICONES_CQ = {
+  cartas: 'M5 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm4-2h10a2 2 0 0 1 2 2v12h-2V4H9z',
+  coroa: 'M3 7l4 4 5-7 5 7 4-4-2 12H5zm2 14h14v2H5z',
+  espada: 'M20 2l2 2-11 11 2 2-2 2-2-2-3 3-2-2 3-3-2-2 2-2 2 2z',
+  escudo: 'M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z',
+  coracao: 'M12 21l-1.5-1.3C5 15 2 12.2 2 8.5 2 5.5 4.4 3 7.4 3c1.8 0 3.5.9 4.6 2.2C13.1 3.9 14.8 3 16.6 3 19.6 3 22 5.5 22 8.5c0 3.7-3 6.5-8.5 11.2z',
+  ampulheta: 'M6 2h12v4l-4 6 4 6v4H6v-4l4-6-4-6zm2 2v1.4L12 11l4-5.6V4z',
+  caveira: 'M12 2a8 8 0 0 0-8 8c0 3 1.6 5 3 6v3h2v-2h2v2h2v-2h2v2h2v-3c1.4-1 3-3 3-6a8 8 0 0 0-8-8zm-3 9a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm6 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4z',
+  chifres: 'M4 3c0 5 2 8 5 9l-1 9h8l-1-9c3-1 5-4 5-9-2 3-4 4-6 4h-4C8 7 6 6 4 3z',
+  livro: 'M4 4c2-1 5-1 8 1 3-2 6-2 8-1v16c-2-1-5-1-8 1-3-2-6-2-8-1zm8 1v15',
+  escudos: 'M8 3l6 2v5c0 4-2.6 7-6 8.5C4.6 17 2 14 2 10V5zm8 2l6 2v5c0 4-2.6 7-6 8.5-.8-.4-1.6-.8-2.3-1.4 2.6-2 4.3-5 4.3-8.1V6.2z'
+};
+function brasaoHtml(c){ return `<div class="brasao ${c.moldura}"><svg viewBox="0 0 24 24"><path d="${ICONES_CQ[c.icone] || ICONES_CQ.escudo}"/></svg></div>`; }
+function conquistaHtml(c){
+  const feita = !!c.quando, pct = c.meta ? Math.round(Math.min(1, (c.progresso||0) / c.meta) * 100) : 0;
+  return `<div class="cq ${feita?'':'bloq'}" title="${feita ? 'Desbloqueada em ' + new Date(c.quando).toLocaleDateString('pt-BR') : esc(c.desc)}">${brasaoHtml(c)}
+    <div class="cqTxt"><b>${esc(c.nome)}</b><span>${esc(c.desc)}</span>${!feita && c.meta > 1 ? `<span>${c.progresso||0}/${c.meta}</span><div class="cqProg"><i style="width:${pct}%"></i></div>` : ''}</div></div>`;
+}
+function desenharConquistasPerfil(lista){
+  if (!lista) return;
+  const feitas = lista.filter(c=>c.quando), faltam = lista.filter(c=>!c.quando);
+  $('#cqContagem').textContent = `${feitas.length} de ${lista.length} · faltam ${faltam.length}`;
+  $('#pfConquistas').innerHTML = (feitas.length ? `<div class="cqGrade">${feitas.map(conquistaHtml).join('')}</div>` : '<div class="dicaMenu">Nenhuma conquista ainda. Jogue uma partida!</div>')
+    + (faltam.length ? `<h3 class="subt" style="margin-top:14px">Para desbloquear</h3><div class="cqGrade">${faltam.map(conquistaHtml).join('')}</div>` : '');
+}
+function ligarSecao(bt, corpo, chave){
+  let aberta = false; try { aberta = localGet(chave) === '1'; } catch(e){}
+  const aplicar = ()=>{ bt.classList.toggle('aberta', aberta); corpo.classList.toggle('oculto', !aberta); };
+  bt.onclick = ()=>{ aberta = !aberta; try { localSet(chave, aberta ? '1' : '0'); } catch(e){} aplicar(); };
+  aplicar();
+}
+ligarSecao($('#secPlaymat'), $('#pfPlaymat'), 'secPlaymatAberta');
+ligarSecao($('#secConquistas'), $('#pfConquistas'), 'secConquistasAberta');
 async function desenharPerfil(){
   desenharPlaymatPerfil();
   const p = await carregarPerfil();
   fetch('/api/amigos').then(r=>r.json()).then(async a=>{ const n = a && a.foto && a.foto.nivel; $('#pfNivel').innerHTML = n ? `<div class="pfNivelLinha">${barraNivel(n)}</div>` : '';
+    desenharConquistasPerfil(a && a.foto && a.foto.conquistas);
     if (a && a.foto && a.foto.codigo){ const eu = await post('/api/amigos', {acao:'perfil', codigo:a.foto.codigo}); $('#pfChefes').innerHTML = galeriaChefesHtml(eu.trofeus, true); } }).catch(()=>{});
   corEscolhida = p.cor;
   $('#pfNome').value = p.nome || ''; $('#pfFrase').value = p.frase || '';
@@ -3988,6 +4055,7 @@ function desenharXpFim(r){
     ${(x.ganhos||[]).length ? `<table class="xpTab">${x.ganhos.map(g=>`<tr><td>${esc(g.motivo)}${g.bot && x.multiplicador < 1 ? ` <small class="xpPct">${Math.round(x.multiplicador*100)}%</small>` : ''}</td><td class="q">${g.qtd!=null?`${g.qtd}x`:''}</td><td class="v">+${g.xp} XP</td><td class="m">${g.max?'MAX':''}</td></tr>`).join('')}
       <tr class="tot"><td>Total</td><td></td><td class="v">+${x.total} XP</td><td></td></tr></table>
       ${x.xpCheioChefe ? `<div class="xpNota">Primeira vitória contra este chefe: XP cheio (100%).</div>` : ''}
+      ${(x.conquistasNovas||[]).length ? `<div class="cqNovas"><div class="xpNota" style="color:var(--ouro)">Conquista desbloqueada!</div>${x.conquistasNovas.map(c=>conquistaHtml(Object.assign({quando:Date.now()}, c))).join('')}</div>` : ''}
       ${x.deckGanhoNome ? `<div class="deckGanho">Você ganhou o deck do chefe: <b>${esc(x.deckGanhoNome)}</b>. Ele está em Decks, na seção "Decks de chefe".</div>` : ''}
       ${x.multiplicador && x.multiplicador < 1 ? `<div class="xpNota">Partida com bots: os itens com % valem ${Math.round(x.multiplicador*100)}% (fácil 30%, normal 40%, difícil 50%, Chefe do dia 70%).</div>` : ''}`
       : '<div class="xpNota">Partida curta demais (menos de 3 turnos): sem XP.</div>'}
@@ -4589,6 +4657,12 @@ function danoComandante(){
   }
   return tot;
 }
+function venenoHtml(p){
+  const m = (p.marcadores||[]).find(([n])=>/poison|veneno/i.test(n||'')); const q = m ? m[1] : 0;
+  if (!q) return '';
+  const cls = q>=9 ? 'perigo' : q>=7 ? 'alerta' : '';
+  return `<span class="venBox ${cls}" title="Marcadores de veneno: com 10 o jogador perde"><svg viewBox="0 0 16 16"><path d="M8 1C5 5 3 7.5 3 10a5 5 0 0 0 10 0c0-2.5-2-5-5-9z"/></svg>${q}/10</span>`;
+}
 function danoCmdHtml(p){
   const tot = (danoComandante()[p.nome]) || {};
   const outros = [...nomesComandantes.entries()].filter(([n,dono])=>dono!==p.nome && !(p.comando||[]).some(c=>c.nome===n)).map(([n])=>n);
@@ -4649,12 +4723,12 @@ function tabuleiro(p, estilo){
   const alvos = alvosAtivos();
   const pool = Object.entries(p.mana||{}).filter(([k,v])=>v>0);
   const simb = {WHITE:'W',BLUE:'U',BLACK:'B',RED:'R',GREEN:'G',COLORLESS:'C'};
-  const marc = (p.marcadores||[]).map(([n,q])=>`<span class="tag">${esc(n)} ${q}</span>`).join('');
+  const marc = (p.marcadores||[]).filter(([n])=>!/poison|veneno/i.test(n||'')).map(([n,q])=>`<span class="tag">${esc(n)} ${q}</span>`).join('');
   const cab = `<div class="cab ${alvos.has(p.id)?'alvoJog':''}" data-jog="${p.id}">
       ${avatarJogador(p)}
       <div class="nomeBloco"><div class="nomeJ">${esc(p.nome)}${p.eu?' <span style="color:var(--txt3);font-weight:500">(você)</span>':''}</div>
         <div class="tags">${p.ativo?'<span class="tag vez">Vez</span>':''}${p.prioridade?'<span class="tag prio">Prioridade</span>':''}${p.monarca?'<span class="tag">Monarca</span>':''}${p.iniciativa?'<span class="tag">Iniciativa</span>':''}${nivelAnel(p)?`<span class="tag anelTagJ" title="O Anel tentou este jogador ${nivelAnel(p)} vez(es)">💍 Anel nível ${nivelAnel(p)}</span>`:''}${marc}</div></div>
-      <div class="vidaBox"><div class="vida ${p.vida<=10?'baixa':''}">${p.vida}</div>${danoCmdHtml(p)}</div>
+      <div class="vidaBox"><div class="vida ${p.vida<=10?'baixa':''}">${p.vida}</div>${danoCmdHtml(p)}${venenoHtml(p)}</div>
       <div class="linha2">
       <div class="cmd">${(p.comando||[]).filter(c=>!ehComandante(c) && !c.emblema).map(c=>cartaHtml(c,{w:'46px'})).join('')}${p.topo?`<div class="topoGrim" title="Topo do grimório (revelado)">${cartaHtml(p.topo,{w:'46px'})}<span>topo</span></div>`:''}${p.eu?jogaveisOcultos():''}</div>
       <div class="stats">

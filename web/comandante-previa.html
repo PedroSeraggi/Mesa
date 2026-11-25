@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia: entrada do comandante</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=EB+Garamond&display=swap" rel="stylesheet">
+<style>
+:root{--ff:'Cinzel',serif}
+body{margin:0;height:100vh;overflow:hidden;background:#15100b;font-family:'EB Garamond',serif;color:#eee}
+/* um "tabuleiro" falso só para ver o efeito por cima */
+.mesaFake{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:12px;padding:60px 14px 140px}
+.mesaFake div{background:linear-gradient(180deg,#2a1f16,#1a130d);border:1px solid #4a3a28;border-radius:6px}
+.maoFake{position:absolute;left:0;right:0;bottom:0;height:120px;background:#1a130d;border-top:1px solid #4a3a28}
+#ctrl{position:fixed;left:16px;top:12px;z-index:50;display:flex;gap:8px;flex-wrap:wrap}
+#ctrl button{font-family:var(--ff);background:#3a2a18;border:1px solid #E4C874;color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer}
+#ctrl button:hover{filter:brightness(1.2)}
+#ctrl select{background:#1a130d;color:#fff;border:1px solid #E4C874;border-radius:8px;padding:6px}
+
+/* ---------- entrada do comandante ---------- */
+#ent{position:fixed;inset:0;z-index:20;pointer-events:none;display:none}
+#ent.on{display:block}
+#ent .veu{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,#0000 0%,#000a 60%,#000c 100%);opacity:0;animation:veuIn .35s forwards}
+#ent.sai .veu{animation:veuOut .45s forwards}
+@keyframes veuIn{to{opacity:1}}@keyframes veuOut{from{opacity:1}to{opacity:0}}
+#ent .carta{position:absolute;left:50%;top:40%;width:min(15vw,190px);aspect-ratio:63/88;border-radius:4.5%/3.3%;background:#000 center/cover;
+  transform:translate(-50%,-160%) scale(.7) rotate(-6deg);opacity:0;box-shadow:0 0 0 2px color-mix(in srgb,var(--cor) 70%,#fff),0 0 40px 10px color-mix(in srgb,var(--cor) 70%,transparent),0 24px 50px #000c;
+  animation:desce var(--tIn) cubic-bezier(.2,.9,.3,1.15) forwards, flut 2.4s ease-in-out var(--tIn) infinite}
+@keyframes desce{to{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0)}}
+@keyframes flut{0%,100%{transform:translate(-50%,-50%) scale(1) rotate(0)}50%{transform:translate(-50%,-53%) scale(1.01) rotate(.6deg)}}
+#ent.sai .carta{animation:somePraBaixo .45s ease-in forwards}
+@keyframes somePraBaixo{from{opacity:1;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(-50%,-20%) scale(.6)}}
+/* anel de luz que expande quando a carta chega */
+#ent .onda{position:absolute;left:50%;top:40%;width:20vmin;height:20vmin;border-radius:50%;border:3px solid color-mix(in srgb,var(--cor) 80%,#fff);transform:translate(-50%,-50%) scale(.4);opacity:0;animation:onda .8s ease-out var(--tIn) forwards}
+@keyframes onda{0%{opacity:.9}100%{opacity:0;transform:translate(-50%,-50%) scale(3.2)}}
+#ent .txt{position:absolute;left:0;right:0;top:calc(40% + min(11vw,140px));text-align:center;opacity:0;transform:translateY(8px);animation:txtIn .4s ease-out calc(var(--tIn) - .1s) forwards}
+#ent.sai .txt{animation:veuOut .3s forwards}
+@keyframes txtIn{to{opacity:1;transform:none}}
+#ent .txt small{display:block;font-family:var(--ff);font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:color-mix(in srgb,var(--cor) 60%,#fff)}
+#ent .txt b{display:block;font-family:var(--ff);font-weight:800;font-size:clamp(20px,2.4vw,34px);color:#fff;text-shadow:0 2px 12px #000,0 0 24px var(--cor);margin-top:4px}
+</style></head><body>
+<div class="mesaFake"><div></div><div></div><div></div><div></div></div><div class="maoFake"></div>
+<div id="ctrl">
+  <select id="qual">
+    <option value="Edgar Markov|Kaldrax|#c0392b">Edgar Markov (Kaldrax)</option>
+    <option value="Baba Lysaga, Night Witch|Twelvez|#3f9a5a">Baba Lysaga (Twelvez)</option>
+    <option value="Krenko, Mob Boss|HUSHANICK|#e07a2a">Krenko (HUSHANICK)</option>
+    <option value="Atraxa, Praetors' Voice|Lucas|#7a5ad0">Atraxa (Lucas)</option>
+  </select>
+  <button id="b1">Primeira vez (1,5 s)</button>
+  <button id="b2">Vezes seguintes (0,8 s)</button>
+</div>
+<div id="ent"></div>
+<script>
+const img = n => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n).replace(/'/g,'%27')}&format=image&version=normal`;
+// som curto: um "tambor" grave e um brilho (gerado aqui, sem arquivo)
+function somEntrada(vol=.35, curto=false){
+  const a = new (window.AudioContext||window.webkitAudioContext)(), t = a.currentTime;
+  const o = a.createOscillator(), g = a.createGain(); o.type = 'sine';
+  o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(48, t+.5);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t+.02); g.gain.exponentialRampToValueAtTime(.001, t+.7);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t+.75);
+  if (curto) return;
+  [523, 659, 784, 1046].forEach((hz,k)=>{ const s = a.createOscillator(), sg = a.createGain(); s.type = 'triangle'; s.frequency.value = hz;
+    const t0 = t + .05 + k*.05; sg.gain.setValueAtTime(0, t0); sg.gain.linearRampToValueAtTime(vol*.12, t0+.03); sg.gain.exponentialRampToValueAtTime(.001, t0+1.1);
+    s.connect(sg).connect(a.destination); s.start(t0); s.stop(t0+1.2); });
+}
+let timer = null;
+function entrada(rapida){
+  const [cmd, quem, cor] = document.getElementById('qual').value.split('|');
+  const ent = document.getElementById('ent');
+  clearTimeout(timer); ent.className = ''; void ent.offsetWidth;
+  const tIn = rapida ? .35 : .6, fica = rapida ? 800 : 1500;
+  ent.style.setProperty('--cor', cor); ent.style.setProperty('--tIn', tIn + 's');
+  ent.innerHTML = `<div class="veu"></div><div class="onda"></div><div class="carta" style="background-image:url('${img(cmd)}')"></div>
+    <div class="txt"><small>${quem} invocou</small><b>${cmd}</b></div>`;
+  ent.classList.add('on');
+  setTimeout(()=>somEntrada(.35, rapida), tIn*1000 - 60);
+  timer = setTimeout(()=>{ ent.classList.add('sai'); timer = setTimeout(()=>{ ent.className = ''; ent.innerHTML = ''; }, 500); }, fica);
+}
+document.getElementById('b1').onclick = ()=>entrada(false);
+document.getElementById('b2').onclick = ()=>entrada(true);
+</script>
+</body></html>

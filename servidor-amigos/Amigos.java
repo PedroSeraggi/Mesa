@@ -34,7 +34,8 @@ public class Amigos {
     // ---- dados (tudo em memória; gravado no arquivo quando muda) ----
     static class Usuario {
         String id, codigo, nome = "?", avatar = "", status = "", xmage = ""; JsonObject sala, perfil; long visto;
-        String playmat = ""; long playmatVer = 0;   // playmat: "" (padrão), nome de um modelo pronto ou "foto" (imagem em playmats/<código>.jpg)
+        String playmat = ""; long playmatVer = 0;
+        Map<String, Long> conquistas = new LinkedHashMap<>();   // id -> quando desbloqueou   // playmat: "" (padrão), nome de um modelo pronto ou "foto" (imagem em playmats/<código>.jpg)
         long xp = 0; String diaVitoria = ""; String diaMissoes = ""; Map<String, Integer> progresso = new HashMap<>(); Set<String> missoesFeitas = new HashSet<>();
         JsonObject recordes = new JsonObject(); List<JsonObject> historico = new ArrayList<>();
     }
@@ -141,6 +142,8 @@ public class Amigos {
         r.put("perfil", o.perfil);
         r.put("nivel", nivelInfo(o));
         r.put("recordes", o.recordes);
+        if (o.conquistas == null) o.conquistas = new LinkedHashMap<>();
+        r.put("conquistas", conquistasJson(o));
         // confronto direto: partidas que os dois registraram (mesmo id de partida)
         Map<String, JsonObject> minhas = new HashMap<>();
         for (JsonObject h : eu.historico) minhas.put(h.get("gameId").getAsString(), h);
@@ -314,6 +317,11 @@ public class Amigos {
         else rc.addProperty("sequencia", 0);
         if (venceu && turnos >= 3 && (num(rc, "vitoriaMaisRapida") == 0 || turnos < num(rc, "vitoriaMaisRapida"))) rc.addProperty("vitoriaMaisRapida", turnos);
         if (turnos > num(rc, "partidaMaisLonga")) rc.addProperty("partidaMaisLonga", turnos);
+        for (String k : new String[]{"maxDanoTurno", "maxCriaturas", "maxVida", "maxElimTurno"})
+            if (p.has(k) && p.get(k).getAsInt() > num(rc, k)) rc.addProperty(k, p.get(k).getAsInt());
+        if (venceu && p.has("time") && p.get("time").getAsBoolean()) soma(rc, "vitoriasTime", 1);
+        if (u.conquistas == null) u.conquistas = new LinkedHashMap<>();
+        List<Map<String, Object>> conqNovas = conferirConquistas(u);
         if (p.has("maiorGolpe") && p.get("maiorGolpe").isJsonObject()) {
             JsonObject g = p.getAsJsonObject("maiorGolpe");
             if (!rc.has("maiorGolpe") || g.get("n").getAsInt() > rc.getAsJsonObject("maiorGolpe").get("n").getAsInt()) {
@@ -336,6 +344,7 @@ public class Amigos {
         Map<String, Object> ni = nivelInfo(u);
         r.put("nivel", ni); r.put("subiu", (Integer) ni.get("nivel") > antes);
         r.put("missoes", missoesJson(u));
+        if (!conqNovas.isEmpty()) r.put("conquistasNovas", conqNovas);
         return r;
     }
     // ---------------- Chefe do dia ----------------
@@ -468,6 +477,57 @@ public class Amigos {
         }
         r.put("ranking", rk);
         return r;
+    }
+
+    // ---------------- Conquistas ----------------
+    // {id, nome, descrição, ícone, moldura (bronze/prata/ouro/lendaria), recorde que conta, meta, "max" (recorde máximo) ou "min" (menor é melhor)}
+    static final Object[][] CONQ = {
+        {"p1", "A primeira de muitas", "Jogue a sua primeira partida", "cartas", "bronze", "partidas", 1, "max"},
+        {"p10", "Pegando o jeito", "Jogue 10 partidas", "cartas", "bronze", "partidas", 10, "max"},
+        {"p25", "Jogador experiente", "Jogue 25 partidas", "cartas", "prata", "partidas", 25, "max"},
+        {"p50", "Veterano da mesa", "Jogue 50 partidas", "cartas", "ouro", "partidas", 50, "max"},
+        {"p100", "Magic: The Gathering", "Jogue 100 partidas", "cartas", "lendaria", "partidas", 100, "max"},
+        {"v1", "Primeira vitória", "Vença uma partida", "coroa", "bronze", "vitorias", 1, "max"},
+        {"v10", "Vencedor nato", "Vença 10 partidas", "coroa", "prata", "vitorias", 10, "max"},
+        {"v50", "Lenda da mesa", "Vença 50 partidas", "coroa", "ouro", "vitorias", 50, "max"},
+        {"d50", "Golpe certeiro", "Cause 50 de dano num só turno", "espada", "prata", "maxDanoTurno", 50, "max"},
+        {"d100", "Devastador", "Cause 100 de dano num só turno", "espada", "ouro", "maxDanoTurno", 100, "max"},
+        {"d1000", "Mil de uma vez", "Cause 1000 de dano num só turno", "espada", "lendaria", "maxDanoTurno", 1000, "max"},
+        {"c20", "Exército", "Tenha 20 criaturas em campo ao mesmo tempo", "escudo", "ouro", "maxCriaturas", 20, "max"},
+        {"vida100", "Imortal", "Chegue a 100 de vida numa partida", "coracao", "ouro", "maxVida", 100, "max"},
+        {"rapida", "Blitz", "Vença uma partida antes do turno 10", "ampulheta", "ouro", "vitoriaMaisRapida", 9, "min"},
+        {"elim2", "Dois de uma vez", "Elimine dois jogadores no mesmo turno", "caveira", "ouro", "maxElimTurno", 2, "max"},
+        {"chefe", "Caçador de chefes", "Derrote o Chefe do dia", "chifres", "prata", "chefesDerrotados", 1, "max"},
+        {"deckdia", "Explorador", "Vença com o Deck do dia", "livro", "prata", "decksDoDia", 1, "max"},
+        {"time", "Dupla dinâmica", "Vença uma partida 2 contra 2", "escudos", "prata", "vitoriasTime", 1, "max"},
+    };
+    static List<Map<String, Object>> conquistasJson(Usuario u) {
+        List<Map<String, Object>> l = new ArrayList<>();
+        for (Object[] c : CONQ) {
+            Map<String, Object> x = new LinkedHashMap<>();
+            x.put("id", c[0]); x.put("nome", c[1]); x.put("desc", c[2]); x.put("icone", c[3]); x.put("moldura", c[4]); x.put("meta", c[6]);
+            int v = num(u.recordes, (String) c[5]);
+            x.put("progresso", "min".equals(c[7]) ? (v > 0 && v <= (Integer) c[6] ? 1 : 0) : Math.min(v, (Integer) c[6]));
+            if ("min".equals(c[7])) x.put("meta", 1);
+            Long q = u.conquistas.get((String) c[0]);
+            if (q != null) x.put("quando", q);
+            l.add(x);
+        }
+        return l;
+    }
+    /** Confere os recordes e desbloqueia o que faltava; devolve as novas. */
+    static List<Map<String, Object>> conferirConquistas(Usuario u) {
+        List<Map<String, Object>> novas = new ArrayList<>();
+        for (Object[] c : CONQ) {
+            if (u.conquistas.containsKey((String) c[0])) continue;
+            int v = num(u.recordes, (String) c[5]), meta = (Integer) c[6];
+            boolean ok = "min".equals(c[7]) ? (v > 0 && v <= meta) : v >= meta;
+            if (!ok) continue;
+            u.conquistas.put((String) c[0], System.currentTimeMillis());
+            Map<String, Object> x = new LinkedHashMap<>(); x.put("id", c[0]); x.put("nome", c[1]); x.put("desc", c[2]); x.put("icone", c[3]); x.put("moldura", c[4]);
+            novas.add(x);
+        }
+        return novas;
     }
 
     // ---------------- Playmat: cada jogador escolhe um modelo ou sobe a própria imagem ----------------
@@ -714,6 +774,9 @@ public class Amigos {
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("codigo", u.codigo);
         r.put("nivel", nivelInfo(u));
+        if (u.conquistas == null) u.conquistas = new LinkedHashMap<>();
+        if (conferirConquistas(u).size() > 0) sujo = true;   // quem já tinha os recordes antes das conquistas existirem
+        r.put("conquistas", conquistasJson(u));
         r.put("missoes", missoesJson(u));
         if (b.liderChefe != null && cicloAtual().equals(b.liderChefe.get("ciclo"))) r.put("liderChefe", b.liderChefe);   // aviso de novo 1º lugar
         List<Map<String, Object>> amigos = new ArrayList<>(), pedidos = new ArrayList<>(), online = new ArrayList<>(), convites = new ArrayList<>();

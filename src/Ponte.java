@@ -720,6 +720,8 @@ public class Ponte implements MageClient {
         Map<String, Set<String>> cmdsDe = new HashMap<>();       // jogador -> nomes dos comandantes dele
         Map<String, Integer> taxa = new java.util.concurrent.ConcurrentHashMap<>();   // "jogador|comandante" -> vezes conjurado
         Map<String, Integer> criaturasDerrotadas = new HashMap<>();
+        // recordes da partida (para as conquistas): dano num turno, criaturas em campo, vida
+        Map<String, Integer> danoNoTurno = new HashMap<>(), maxDanoTurno = new HashMap<>(), maxCriaturas = new HashMap<>(), maxVida = new HashMap<>();
         Map<String, String> criaturaDono = new HashMap<>(), criaturaAtacando = new HashMap<>();
         String atacante = null; int turno = 0;
 
@@ -738,7 +740,7 @@ public class Ponte implements MageClient {
             String t = bruta.replaceAll("<[^>]+>", "").trim();
             java.util.regex.Matcher m;
             if ((m = TURNO.matcher(t)).find()) {
-                turno = Integer.parseInt(m.group(1)); atacante = null;
+                turno = Integer.parseInt(m.group(1)); atacante = null; danoNoTurno.clear();
                 String[] v = m.group(3).trim().split("\\s*-\\s*");
                 // quem já foi eliminado some da linha "TURN": usa só os que continuam vivos, na mesma ordem
                 List<String> vivos = new ArrayList<>(ordem);
@@ -758,6 +760,7 @@ public class Ponte implements MageClient {
                 if (quem == null && m.group(3) != null) quem = atacante;
                 if (quem == null || quem.equals(vitima)) return;
                 soma2(dano, quem, vitima, n);
+                int nt = danoNoTurno.merge(quem, n, Integer::sum); maxDanoTurno.merge(quem, nt, Math::max);
                 if (m.group(3) != null && comandantes.contains(carta)) soma2(danoCmd, quem, vitima, n);
                 ultimoAgressor.put(vitima, quem);
                 soma(danoPorCarta, quem + "|" + carta, n);
@@ -810,6 +813,9 @@ public class Ponte implements MageClient {
                         if (!Boolean.TRUE.equals(((Map<String, Object>) c).get("emblema"))) cmdsDe.computeIfAbsent(nome, k -> new HashSet<>()).add(String.valueOf(((Map<String, Object>) c).get("nome")));
                     }
                 int vida = p.get("vida") instanceof Number ? ((Number) p.get("vida")).intValue() : 1;
+                maxVida.merge(nome, vida, Math::max);
+                int nCri = 0; for (Object c : (List<Object>) p.getOrDefault("campo", Collections.emptyList())) if (c instanceof Map && Boolean.TRUE.equals(((Map<String, Object>) c).get("criatura"))) nCri++;
+                maxCriaturas.merge(nome, nCri, Math::max);
                 boolean saiu = Boolean.TRUE.equals(p.get("saiu"));
                 if ((vida <= 0 || saiu) && eliminacoes.stream().noneMatch(e -> nome.equals(e.get("nome")))) {
                     Map<String, Object> e = new LinkedHashMap<>();
@@ -841,6 +847,10 @@ public class Ponte implements MageClient {
                 x.put("magias", magias.getOrDefault(nome, 0)); x.put("compras", compras.getOrDefault(nome, 0));
                 x.put("vidaGanha", vidaGanha.getOrDefault(nome, 0)); x.put("ataques", ataques.getOrDefault(nome, 0));
                 x.put("criaturas", criaturasDerrotadas.getOrDefault(nome, 0));
+                x.put("maxDanoTurno", maxDanoTurno.getOrDefault(nome, 0)); x.put("maxCriaturas", maxCriaturas.getOrDefault(nome, 0)); x.put("maxVida", maxVida.getOrDefault(nome, 0));
+                Map<Object, Integer> elimTurno = new HashMap<>(); int maxElim = 0;
+                for (Map<String, Object> e : eliminacoes) if (nome.equals(e.get("por"))) maxElim = Math.max(maxElim, elimTurno.merge(e.get("turno"), 1, Integer::sum));
+                x.put("maxElimTurno", maxElim);
                 Object[] g = maiorGolpe.get(nome);
                 if (g != null) { Map<String, Object> gm = new LinkedHashMap<>(); gm.put("n", g[0]); gm.put("carta", g[1]); gm.put("em", g[2]); gm.put("turno", g[3]); x.put("maiorGolpe", gm); }
                 String mvp = null; int mvpN = 0;
@@ -1071,6 +1081,8 @@ public class Ponte implements MageClient {
                 if (eu.get("vidaFinal") instanceof Number) p.addProperty("vida", ((Number) eu.get("vidaFinal")).intValue());
                 p.addProperty("danoCmd", ((Number) eu.getOrDefault("danoCmd", 0)).intValue());
                 if (eu.get("maiorGolpe") != null) p.add("maiorGolpe", GSON.toJsonTree(eu.get("maiorGolpe")));
+                for (String k : new String[]{"maxDanoTurno", "maxCriaturas", "maxVida", "maxElimTurno"}) if (eu.get(k) instanceof Number) p.addProperty(k, ((Number) eu.get(k)).intValue());
+                if (resultado != null && Boolean.TRUE.equals(resultado.get("time"))) p.addProperty("time", true);
                 p.add("jogadores", GSON.toJsonTree(nomes));
                 if (chefeCiclo != null && ultimaCriacao != null && "chefe".equals(ultimaCriacao.get("tipo"))) p.addProperty("chefe", chefeCiclo);
                 if (deckDiaCiclo != null && ultimaCriacao != null && "deckDia".equals(ultimaCriacao.get("tipo"))) p.addProperty("deckDia", deckDiaCiclo);
