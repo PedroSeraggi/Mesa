@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia: momentos épicos</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=EB+Garamond&display=swap" rel="stylesheet">
+<style>
+:root{--ff:'Cinzel',serif}
+body{margin:0;height:100vh;overflow:hidden;background:#15100b;font-family:'EB Garamond',serif;color:#eee}
+#app{position:absolute;inset:0}
+#app.treme{animation:treme var(--td,.45s) cubic-bezier(.36,.07,.19,.97)}
+@keyframes treme{10%{transform:translate(calc(var(--tf,6px)*-1),calc(var(--tf,6px)*.6))}20%{transform:translate(var(--tf,6px),calc(var(--tf,6px)*-.8))}35%{transform:translate(calc(var(--tf,6px)*-.8),calc(var(--tf,6px)*-.5))}50%{transform:translate(calc(var(--tf,6px)*.6),calc(var(--tf,6px)*.8))}65%{transform:translate(calc(var(--tf,6px)*-.4),calc(var(--tf,6px)*.3))}80%{transform:translate(calc(var(--tf,6px)*.3),calc(var(--tf,6px)*-.3))}}
+.mesaFake{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:12px;padding:60px 14px 140px}
+.area{position:relative;background:linear-gradient(180deg,#2a1f16,#1a130d);border:1px solid #4a3a28;border-radius:6px;padding:34px 12px 12px;overflow:hidden;transition:filter .6s}
+.area .nome{position:absolute;top:8px;left:12px;font-family:var(--ff);font-size:13px;color:#e8d8c0}
+.area .vida{position:absolute;top:6px;right:12px;font-family:var(--ff);font-size:18px;color:#ffe08a}
+.cartas{display:flex;flex-wrap:wrap;gap:8px}
+.cf{width:62px;aspect-ratio:63/88;border-radius:5px;background:#000 center/cover;box-shadow:0 3px 8px #000a;transition:transform .5s,opacity .5s}
+.maoFake{position:absolute;left:0;right:0;bottom:0;height:120px;background:#1a130d;border-top:1px solid #4a3a28}
+#ctrl{position:fixed;left:16px;top:12px;z-index:50;display:flex;gap:8px;flex-wrap:wrap}
+#ctrl button{font-family:var(--ff);background:#3a2a18;border:1px solid #E4C874;color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer}
+#ctrl button:hover{filter:brightness(1.2)}
+#fx{position:fixed;inset:0;z-index:20;pointer-events:none}
+
+/* ---------- 1. eliminação: racha, escurece e cai em pedaços ---------- */
+.area.eliminada{filter:grayscale(1) brightness(.45)}
+.rachas{position:absolute;inset:0;z-index:3;pointer-events:none}
+.rachas path{fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;filter:drop-shadow(0 0 4px #ff6a3a);stroke-dasharray:var(--l);stroke-dashoffset:var(--l);animation:racha .35s ease-out forwards;animation-delay:var(--d)}
+@keyframes racha{to{stroke-dashoffset:0}}
+.caco{position:absolute;background-size:var(--bw) var(--bh);background-position:var(--bx) var(--by);z-index:4;animation:caco 1s cubic-bezier(.5,0,.9,.6) forwards;animation-delay:var(--d)}
+@keyframes caco{to{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:0}}
+.faixaElim{position:fixed;left:50%;top:44%;transform:translate(-50%,-50%) scale(.6);opacity:0;z-index:25;display:flex;align-items:center;gap:16px;background:linear-gradient(90deg,#0000,#120a06f2 15%,#120a06f2 85%,#0000);padding:14px 60px;animation:faixaIn .45s cubic-bezier(.3,1.5,.5,1) forwards}
+.faixaElim.sai{animation:faixaOut .5s forwards}
+@keyframes faixaIn{to{opacity:1;transform:translate(-50%,-50%) scale(1)}}@keyframes faixaOut{to{opacity:0;transform:translate(-50%,-50%) scale(1.05)}}
+.faixaElim .golpe{width:84px;aspect-ratio:63/88;border-radius:5px;background:#000 center/cover;box-shadow:0 0 0 2px #ff7a5a,0 0 24px #ff4a2a88}
+.faixaElim small{display:block;font-family:var(--ff);font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:#ff9a7a}
+.faixaElim b{display:block;font-family:var(--ff);font-weight:800;font-size:28px;color:#fff;text-shadow:0 2px 12px #000}
+.faixaElim span{display:block;font-size:15px;color:#e8d2b8}
+
+/* ---------- 2. golpe grande: número enorme voa do atacante para a vítima ---------- */
+.numGolpe{position:fixed;z-index:26;font-family:var(--ff);font-weight:800;color:#ffe08a;text-shadow:0 0 18px #ff6a2a,0 4px 0 #7a2a0a,0 8px 20px #000;transform:translate(-50%,-50%) scale(.4);opacity:0;white-space:nowrap}
+.numGolpe.vai{transition:left .5s cubic-bezier(.5,0,.9,.4),top .5s cubic-bezier(.5,0,.9,.4),transform .5s,opacity .15s;opacity:1;transform:translate(-50%,-50%) scale(1)}
+.numGolpe.bate{animation:bate .7s ease-out forwards}
+@keyframes bate{0%{transform:translate(-50%,-50%) scale(1.35)}20%{transform:translate(-50%,-50%) scale(1.15)}100%{transform:translate(-50%,-75%) scale(1.1);opacity:0}}
+.flashVit{position:absolute;inset:0;z-index:3;background:radial-gradient(circle,#ff4a2a66,transparent 70%);animation:flash .6s ease-out forwards;pointer-events:none}
+@keyframes flash{from{opacity:1}to{opacity:0}}
+
+/* ---------- 3. varredura: onda de choque atravessa o campo e as cartas se desfazem ---------- */
+.ondaVarre{position:fixed;top:0;bottom:0;width:180px;left:-200px;z-index:22;background:linear-gradient(90deg,transparent,#fff3c0aa 45%,#ffffff 50%,#fff3c0aa 55%,transparent);filter:blur(2px);mix-blend-mode:screen;animation:varre .9s cubic-bezier(.4,0,.6,1) forwards}
+@keyframes varre{to{left:calc(100% + 40px)}}
+.rachaMesa{position:fixed;inset:0;z-index:21}
+.rachaMesa path{fill:none;stroke:#ffe8b0;stroke-width:3;filter:drop-shadow(0 0 6px #ff9a3a);stroke-dasharray:var(--l);stroke-dashoffset:var(--l);animation:racha .5s ease-out forwards;animation-delay:var(--d)}
+.cf.desfaz{animation:desfaz .7s ease-in forwards;animation-delay:var(--d)}
+@keyframes desfaz{30%{transform:scale(1.08) rotate(var(--r));filter:brightness(2)}100%{transform:scale(.3) rotate(calc(var(--r)*4)) translateY(30px);opacity:0;filter:brightness(3) blur(2px)}}
+.tituloVarre{position:fixed;left:0;right:0;top:40%;text-align:center;z-index:25;opacity:0;animation:tvIn 1.6s ease-out .5s forwards}
+@keyframes tvIn{15%{opacity:1;transform:scale(1)}80%{opacity:1}100%{opacity:0}}
+.tituloVarre small{display:block;font-family:var(--ff);font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:#ffcf8a}
+.tituloVarre b{display:block;font-family:var(--ff);font-weight:800;font-size:36px;color:#fff;text-shadow:0 2px 14px #000,0 0 30px #ff9a3a}
+
+/* ---------- 4. mágica gigante: versão menor da entrada do comandante, vai para a pilha ---------- */
+.gig{position:fixed;left:50%;top:42%;width:min(13vw,170px);aspect-ratio:63/88;border-radius:4.5%/3.3%;background:#000 center/cover;z-index:24;
+  transform:translate(-50%,-50%) scale(.3);opacity:0;box-shadow:0 0 0 2px #d8c0ff,0 0 50px 14px #7a4ad0aa,0 20px 40px #000c;animation:gigIn .45s cubic-bezier(.3,1.5,.5,1) forwards}
+@keyframes gigIn{to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.gig.sai{animation:gigOut .5s cubic-bezier(.5,0,.8,.4) forwards}
+@keyframes gigOut{to{opacity:0;transform:translate(calc(-50% + 34vw),-50%) scale(.35)}}
+.gigAura{position:fixed;left:50%;top:42%;width:60vmin;height:60vmin;z-index:23;border-radius:50%;background:radial-gradient(circle,#7a4ad055 0%,transparent 65%);transform:translate(-50%,-50%) scale(.5);animation:gigAura 1.4s ease-out forwards}
+@keyframes gigAura{30%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}
+.gigTxt{position:fixed;left:0;right:0;top:calc(42% + min(9.5vw,125px) + 18px);text-align:center;z-index:24;opacity:0;animation:tvIn 1.3s ease-out .15s forwards}
+.gigTxt small{display:block;font-family:var(--ff);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#d8c0ff}
+.gigTxt b{display:block;font-family:var(--ff);font-weight:800;font-size:24px;color:#fff;text-shadow:0 2px 10px #000,0 0 20px #7a4ad0}
+</style></head><body>
+<div id="app">
+  <div class="mesaFake">
+    <div class="area" id="a0"><span class="nome">Kaldrax</span><span class="vida">40</span><div class="cartas"></div></div>
+    <div class="area" id="a1"><span class="nome">HUSHANICK</span><span class="vida">12</span><div class="cartas"></div></div>
+    <div class="area" id="a2"><span class="nome">Lucas</span><span class="vida">33</span><div class="cartas"></div></div>
+    <div class="area" id="a3"><span class="nome">Twelvez (você)</span><span class="vida">27</span><div class="cartas"></div></div>
+  </div>
+  <div class="maoFake"></div>
+</div>
+<div id="ctrl">
+  <button id="b1">1. Eliminação</button><button id="b2">2. Golpe grande (24)</button><button id="b3">3. Varredura (Farewell)</button><button id="b4">4. Mágica gigante</button><button id="b0">Restaurar mesa</button>
+</div>
+<div id="fx"></div>
+<script>
+const img = n => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n).replace(/'/g,'%27')}&format=image&version=normal`;
+const art = n => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n).replace(/'/g,'%27')}&format=image&version=art_crop`;
+const FAKE = ['Sol Ring','Arcane Signet','Command Tower','Llanowar Elves','Lightning Greaves','Cultivate','Rhystic Study','Beast Within','Swiftfoot Boots','Counterspell','Elvish Mystic','Craterhoof Behemoth','Avenger of Zendikar','Smothering Tithe','Esper Sentinel','Birds of Paradise'];
+function montar(){ ['a0','a1','a2','a3'].forEach((id,k)=>{ const a = document.getElementById(id); a.classList.remove('eliminada'); a.querySelectorAll('.rachas,.caco,.flashVit').forEach(x=>x.remove());
+  a.querySelector('.cartas').innerHTML = FAKE.slice(k*3, k*3+6).map(n=>`<div class="cf" style="background-image:url('${img(n)}')"></div>`).join(''); }); document.getElementById('fx').innerHTML = ''; }
+montar();
+const fx = document.getElementById('fx'), app = document.getElementById('app');
+function tremer(forca, dur){ app.style.setProperty('--tf', forca+'px'); app.style.setProperty('--td', dur+'s'); app.classList.remove('treme'); void app.offsetWidth; app.classList.add('treme'); }
+const centro = el => { const r = el.getBoundingClientRect(); return [r.left + r.width/2, r.top + r.height/2, r]; };
+
+// ---------- sons (gerados no navegador) ----------
+let AC = null; const ac = ()=> AC || (AC = new (window.AudioContext||window.webkitAudioContext)());
+function ruido(a, seg){ const n = a.sampleRate*seg, b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0); for (let i=0;i<n;i++) d[i] = Math.random()*2-1; const s = a.createBufferSource(); s.buffer = b; return s; }
+function bum(vol, grave=90, dur=1.2){ const a = ac(), t = a.currentTime; const o = a.createOscillator(), g = a.createGain(); o.type='sine'; o.frequency.setValueAtTime(grave, t); o.frequency.exponentialRampToValueAtTime(30, t+dur*.7);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t+dur); o.connect(g).connect(a.destination); o.start(t); o.stop(t+dur); }
+function estalo(vol, freq=1200, dur=.4){ const a = ac(), t = a.currentTime, r = ruido(a, dur), f = a.createBiquadFilter(); f.type='bandpass'; f.frequency.value = freq; f.Q.value = .7;
+  const g = a.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t+dur); r.connect(f).connect(g).connect(a.destination); r.start(t); r.stop(t+dur); }
+function vento(vol, dur=1){ const a = ac(), t = a.currentTime, r = ruido(a, dur), f = a.createBiquadFilter(); f.type='lowpass'; f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(3000, t+dur*.5); f.frequency.exponentialRampToValueAtTime(300, t+dur);
+  const g = a.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t+dur*.4); g.gain.exponentialRampToValueAtTime(.001, t+dur); r.connect(f).connect(g).connect(a.destination); r.start(t); r.stop(t+dur); }
+
+// ---------- 1. eliminação ----------
+function eliminacao(){
+  const a = document.getElementById('a1'), [cx, cy, r] = centro(a);
+  // rachaduras saindo de um ponto
+  const w = r.width, h = r.height, ox = w*.45, oy = h*.5; let paths = '';
+  for (let i=0;i<7;i++){ let x = ox, y = oy, d = `M${x},${y}`, ang = i/7*Math.PI*2 + Math.random()*.4; for (let k=0;k<5;k++){ x += Math.cos(ang)*w*.11; y += Math.sin(ang)*h*.13; ang += (Math.random()-.5)*.9; d += ` L${x.toFixed(0)},${y.toFixed(0)}`; }
+    paths += `<path d="${d}" style="--l:${w};--d:${i*.04}s"/>`; }
+  a.insertAdjacentHTML('beforeend', `<svg class="rachas" viewBox="0 0 ${w} ${h}">${paths}</svg>`);
+  estalo(.6, 2200, .5); tremer(5, .4);
+  setTimeout(()=>{   // escurece e desmorona em pedaços
+    a.classList.add('eliminada'); bum(.7, 70, 1.4); estalo(.5, 500, .8);
+    const n = 6, m = 4; let cacos = '';
+    for (let i=0;i<n;i++) for (let j=0;j<m;j++){
+      cacos += `<div class="caco" style="left:${i*w/n}px;top:${j*h/m}px;width:${w/n+1}px;height:${h/m+1}px;background:linear-gradient(180deg,#2a1f16,#1a130d);border:1px solid #0006;--x:${(Math.random()-.5)*80}px;--y:${h*.8 + Math.random()*120}px;--r:${(Math.random()-.5)*80}deg;--d:${(j*.06 + Math.random()*.1).toFixed(2)}s"></div>`;
+    }
+    a.insertAdjacentHTML('beforeend', cacos);
+    a.querySelectorAll('.cf').forEach((c,k)=>{ c.style.transform = `translateY(${120+Math.random()*80}px) rotate(${(Math.random()-.5)*60}deg)`; c.style.opacity = 0; });
+    fx.insertAdjacentHTML('beforeend', `<div class="faixaElim"><div class="golpe" style="background-image:url('${img('Craterhoof Behemoth')}')"></div><div><small>Eliminado</small><b>HUSHANICK</b><span>por Kaldrax, com Craterhoof Behemoth</span></div></div>`);
+    setTimeout(()=>fx.querySelector('.faixaElim')?.classList.add('sai'), 2200);
+  }, 700);
+}
+// ---------- 2. golpe grande ----------
+function golpe(n){
+  const [x0, y0] = centro(document.getElementById('a0')), alvo = document.getElementById('a3'), [x1, y1] = centro(alvo);
+  const el = document.createElement('div'); el.className = 'numGolpe'; el.textContent = '−' + n;
+  el.style.fontSize = Math.min(140, 40 + n*3) + 'px'; el.style.left = x0+'px'; el.style.top = y0+'px'; fx.appendChild(el);
+  vento(.3, .6);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ el.classList.add('vai'); el.style.left = x1+'px'; el.style.top = y1+'px'; }));
+  setTimeout(()=>{
+    el.classList.remove('vai'); el.classList.add('bate');
+    const forca = Math.min(16, 3 + n*.4); tremer(forca, .5); bum(Math.min(.9, .3 + n/40), 80, 1); estalo(.5, 900, .3);
+    alvo.insertAdjacentHTML('beforeend', '<div class="flashVit"></div>');
+    const v = alvo.querySelector('.vida'); v.textContent = Math.max(0, +v.textContent - n);
+    setTimeout(()=>el.remove(), 800);
+  }, 520);
+}
+// ---------- 3. varredura ----------
+function varredura(){
+  vento(.45, 1.1); setTimeout(()=>{ bum(.8, 60, 1.6); estalo(.6, 700, .9); }, 350);
+  // rachaduras atravessando a mesa
+  const W = innerWidth, H = innerHeight; let paths = '';
+  for (let i=0;i<4;i++){ let x = 0, y = H*(.2 + i*.2) + (Math.random()-.5)*60, d = `M0,${y.toFixed(0)}`; while (x < W){ x += 60 + Math.random()*80; y += (Math.random()-.5)*70; d += ` L${x.toFixed(0)},${y.toFixed(0)}`; } paths += `<path d="${d}" style="--l:${W*1.3};--d:${(.15+i*.05).toFixed(2)}s"/>`; }
+  fx.insertAdjacentHTML('beforeend', `<svg class="rachaMesa" viewBox="0 0 ${W} ${H}">${paths}</svg><div class="ondaVarre"></div>
+    <div class="tituloVarre"><small>Kaldrax conjurou</small><b>Farewell</b></div>`);
+  tremer(9, .7);
+  // as cartas se desfazem quando a onda passa por elas
+  document.querySelectorAll('.cf').forEach(c=>{ const r = c.getBoundingClientRect(); c.style.setProperty('--d', (r.left / W * .8).toFixed(2) + 's'); c.style.setProperty('--r', ((Math.random()-.5)*8)+'deg'); c.classList.add('desfaz'); });
+  setTimeout(()=>{ fx.querySelectorAll('.rachaMesa,.ondaVarre').forEach(x=>x.style.transition='opacity .6s'); fx.querySelectorAll('.rachaMesa,.ondaVarre').forEach(x=>x.style.opacity=0); }, 1600);
+}
+// ---------- 4. mágica gigante ----------
+function gigante(){
+  const nome = 'Emrakul, the Aeons Torn';
+  fx.insertAdjacentHTML('beforeend', `<div class="gigAura"></div><div class="gig" style="background-image:url('${img(nome)}')"></div><div class="gigTxt"><small>Lucas conjurou · custo 15</small><b>${nome}</b></div>`);
+  vento(.35, .5); setTimeout(()=>{ bum(.6, 55, 1.3); }, 380);
+  setTimeout(()=>{ fx.querySelector('.gig')?.classList.add('sai'); }, 1250);   // vai para a pilha (à direita)
+  setTimeout(()=>{ fx.querySelectorAll('.gig,.gigAura,.gigTxt').forEach(x=>x.remove()); }, 1900);
+}
+document.getElementById('b1').onclick = eliminacao;
+document.getElementById('b2').onclick = ()=>golpe(24);
+document.getElementById('b3').onclick = varredura;
+document.getElementById('b4').onclick = gigante;
+document.getElementById('b0').onclick = montar;
+</script>
+</body></html>
