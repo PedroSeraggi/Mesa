@@ -1400,7 +1400,7 @@ async function atualizarSalasRede(){
     b.disabled = true; $('#jgErro').textContent = ''; localSet('meuDeck', $('#jgDeck').value);
     await post('/api/config', {servidor: b.dataset.ip});
     const res = await post('/api/mesa/entrar', {mesa: b.dataset.rede, deck: $('#jgDeck').value});
-    if (res.erro){ $('#jgErro').textContent = res.erro; b.disabled = false; }
+    if (res.erro){ erroMesa(res.erro); b.disabled = false; }
   });
 }
 
@@ -1464,7 +1464,7 @@ async function atualizarMesas(){
   box.querySelectorAll('[data-entrar]').forEach(b=>b.onclick=async ()=>{
     b.disabled = true; localSet('meuDeck', $('#jgDeck').value);
     const res = await post('/api/mesa/entrar', {mesa: b.dataset.entrar, deck: $('#jgDeck').value});
-    if (res.erro){ $('#jgErro').textContent = res.erro; b.disabled = false; }
+    if (res.erro){ erroMesa(res.erro); b.disabled = false; }
   });
 }
 $('#jgCriar').onclick = async ()=>{
@@ -1473,8 +1473,34 @@ $('#jgCriar').onclick = async ()=>{
   const res = await post('/api/mesa/criar', {deck: $('#jgDeckCriar').value, lugares: +$('#jgLugares').value,
     bots: [...document.querySelectorAll('.jgBotDeck')].map(s=>s.value), nivel: +$('#jgNivel').value, nome: $('#jgNome').value});
   $('#jgCriar').disabled = false;
-  if (res.erro) $('#jgErro').textContent = res.erro;
+  if (res.erro) erroMesa(res.erro);
 };
+// erro ao criar/entrar: se o servidor explicou (deck recusado), mostra numa janela que fica até fechar
+function traduzirRecusa(t){
+  return String(t||'')
+    .replace(/^Join Table\s*$/m, '')
+    .replace(/You \((.+?)\) have an invalid deck for the selected (.+?) Format\.?/g, '$1, o seu deck não vale no formato $2:')
+    .replace(/Select a deck that is appropriate for the selected format and try again!?/g, 'Escolha (ou corrija) um deck válido e tente de novo.')
+    .replace(/Deck: Must contain (\d+) cards: has (\d+) cards?/g, 'Deck: precisa ter $1 cartas, tem $2')
+    .replace(/^(.+?): Commander invalid.*$/gm, '$1: não pode ser comandante')
+    .replace(/^(.+?): Too many: (\d+)/gm, '$1: cópias demais ($2), em Commander só pode 1')
+    .replace(/^(.+?): Banned.*$/gm, '$1: carta banida no Commander')
+    .replace(/^(.+?): Invalid color.*$/gim, '$1: fora das cores do comandante')
+    .replace(/^(.+?): (?:Invalid )?(?:color identity|Color Identity).*$/gm, '$1: fora das cores do comandante')
+    .replace(/Sideboard: Must contain .*$/gm, 'Comandante: marque o comandante com a estrela no editor')
+    .replace(/\n{3,}/g, '\n\n').trim();
+}
+function erroMesa(msg){
+  msg = traduzirRecusa(msg);
+  const curto = String(msg||'').split('\n')[0];
+  if ($('#jgErro')) $('#jgErro').textContent = curto;
+  if (!/\n/.test(msg||'')) { avisoLocal(curto); return; }
+  const cx = abrirModal(`<h3 class="subt" style="margin:0">Não deu para entrar</h3>
+    <div style="white-space:pre-wrap;max-height:60vh;overflow:auto;line-height:1.45">${esc(msg)}</div>
+    <div class="dicaMenu">Corrija o deck no editor (Decks) e tente de novo. Em Commander o deck precisa ter exatamente 100 cartas, com o comandante marcado com a estrela, e todas as cartas nas cores do comandante.</div>
+    <div class="linhaBts"><button class="pri" id="emFechar">Entendi</button></div>`);
+  $('#emFechar').onclick = ()=>fecharModal(true);
+}
 
 // sala de espera: aparece quando você criou ou entrou numa mesa
 let timerSala = null;
@@ -2864,7 +2890,7 @@ async function entrarSalaAmigo(sala, deck){
   avisoLocal('Entrando na sala...');
   await post('/api/config', {servidor: sala.servidor});
   const r = await post('/api/mesa/entrar', {mesa: sala.mesa, deck});
-  if (r.erro){ avisoLocal(r.erro); return; }
+  if (r.erro){ erroMesa(r.erro); return; }
   localSet('meuDeck', deck);
   painelAmigosAberto = false; $('#painelAmigos').classList.add('oculto');
   irPara('entrar');

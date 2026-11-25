@@ -1730,6 +1730,15 @@ public class Ponte implements MageClient {
         return op;
     }
 
+    // O servidor explica por que recusou um deck numa mensagem separada (SHOW_USERMESSAGE), que pode chegar logo depois.
+    volatile String ultimaMsgServidor = null; volatile long ultimaMsgQuando = 0;
+    String motivoRecusa(long desde) {
+        for (int i = 0; i < 25 && ultimaMsgQuando < desde; i++) { try { Thread.sleep(100); } catch (InterruptedException e) { break; } }
+        if (ultimaMsgQuando < desde || ultimaMsgServidor == null) return "";
+        String t = ultimaMsgServidor.replaceAll("(?i)<br\\s*/?>", "\n").replaceAll("<[^>]+>", "").trim();
+        return "\n\nO servidor disse:\n" + t;
+    }
+
     void criarMesaAmigos(String meuDeck, int lugares, List<String> decksBots, int skill, String nomeMesa) throws Exception {
         sairDoJogoAtual();
         sairDaSala();
@@ -1743,10 +1752,12 @@ public class Ponte implements MageClient {
         if (t == null) throw new IllegalStateException("O servidor recusou criar a mesa");
         tableId = t.getTableId();
         donoDaMesa = true;
-        if (!session.joinTable(roomId, tableId, meuNome, PlayerType.HUMAN, 1, meu, "")) throw new IllegalStateException("Seu deck foi recusado (confira se tem 100 cartas).");
+        long antesJoin = System.currentTimeMillis();
+        if (!session.joinTable(roomId, tableId, meuNome, PlayerType.HUMAN, 1, meu, "")) throw new IllegalStateException("Seu deck foi recusado." + motivoRecusa(antesJoin));
         for (int i = 0; i < bots; i++) {
+            long antesBot = System.currentTimeMillis();
             if (!session.joinTable(roomId, tableId, "Bot " + (i + 1) + " · " + nomeDeck(decksBots.get(i)), PlayerType.COMPUTER_MAD, skill, carregarDeck(decksBots.get(i)), "")) {
-                throw new IllegalStateException("Deck do bot recusado: " + decksBots.get(i));
+                throw new IllegalStateException("Deck do bot recusado: " + nomeDeck(decksBots.get(i)) + motivoRecusa(antesBot));
             }
         }
         deckAtual = meuDeck;
@@ -1763,9 +1774,11 @@ public class Ponte implements MageClient {
         DeckCardLists meu = carregarDeck(meuDeck);
         tableId = mesa;
         donoDaMesa = false;
+        long antesJoin = System.currentTimeMillis();
         if (!session.joinTable(roomId, mesa, meuNome, PlayerType.HUMAN, 1, meu, "")) {
             tableId = null;
-            throw new IllegalStateException("Não consegui entrar: a mesa pode estar cheia ou o deck foi recusado (100 cartas).");
+            String motivo = motivoRecusa(antesJoin);
+            throw new IllegalStateException((motivo.isEmpty() ? "Não consegui entrar: a mesa pode estar cheia ou o deck foi recusado." : "Seu deck foi recusado ao entrar na mesa.") + motivo);
         }
         deckAtual = meuDeck;
         oponentesAtuais = new ArrayList<>();
@@ -2136,6 +2149,7 @@ public class Ponte implements MageClient {
             }
             case SHOW_USERMESSAGE: {
                 @SuppressWarnings("unchecked") List<String> m = (List<String>) d;
+                ultimaMsgServidor = String.join("\n", m); ultimaMsgQuando = System.currentTimeMillis();
                 aviso(String.join(": ", m));
                 break;
             }
