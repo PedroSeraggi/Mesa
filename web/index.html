@@ -518,13 +518,14 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 @keyframes esFaisca{from{opacity:1;transform:translate(0,0)}to{opacity:0;transform:translate(var(--x),var(--y))}}
 /* 2v2: abas da mão (sua / do parceiro) */
 /* as abas saem da borda de cima da barra da mão, no meio (como abas de pasta) */
-#maoInfo.abas{left:50%;top:-27px;transform:translateX(-50%);display:flex;gap:3px;z-index:3;pointer-events:auto}
+#maoInfo.abas{left:50%;top:-27px;transform:translateX(-50%);display:flex;gap:3px;z-index:3;pointer-events:auto;transition:transform .22s ease}
+#mao:hover #maoInfo.abas,#mao.aberta #maoInfo.abas{transform:translateX(-50%) translateY(calc(var(--alt)*-.7 - 16px))}
 #maoInfo .abaMao{background:var(--bg2);border:1px solid var(--borda);border-bottom:none;border-radius:8px 8px 0 0;padding:5px 14px 6px;font:inherit;letter-spacing:inherit;text-transform:inherit;color:var(--txt3);cursor:pointer;white-space:nowrap}
 #maoInfo .abaMao:hover{color:var(--txt)}
 #maoInfo .abaMao.sel{color:var(--ouro);border-color:#e0a04088;box-shadow:inset 0 2px 0 #e0a040}
-.maoParcCartas{display:flex;gap:6px;align-items:flex-end;justify-content:center;padding-top:22px;overflow-x:auto}
-.maoParcCartas img{width:var(--mao-w,120px);border-radius:6px;flex:none;cursor:zoom-in;box-shadow:0 4px 12px #000a}
-.maoParcCartas .mpVazio{color:var(--txt3);font-size:13px;padding:30px 10px}
+#mao .maoCartas .mpVazio{pointer-events:auto;color:var(--txt3);font-size:13px;padding:0 10px calc(var(--alt)*.7 + 14px)}
+#mao .maoCartas.parc .carta{cursor:zoom-in}
+#mao .carta.reordenando{opacity:.25}
 /* 2v2: espaço entre as duplas e cor de cada lado */
 #mesa.dupla2v2:not(.livre){row-gap:22px}
 #mesa.livre.dupla2v2 .palco{row-gap:180px}
@@ -4832,6 +4833,12 @@ function soltarArraste(ev){
   document.querySelectorAll('.soltarAqui').forEach(t=>t.classList.remove('soltarAqui'));
   $('#mao').classList.remove('aberta');
   const mesa = minhaMesaSob(ev.clientX, ev.clientY);
+  const rm = $('#mao').getBoundingClientRect(), alt = parseFloat(getComputedStyle($('#mao')).getPropertyValue('--alt')) || 150;
+  if (!mesa && ev.clientY > rm.top - alt*.8 && document.querySelector(`#mao .carta[data-id="${a.id}"]`)){   // soltou de volta na mão: reorganiza
+    a.copia.remove(); a.el.style.opacity = '';
+    reordenarMao(a.id, ev.clientX);
+    return;
+  }
   const p = E.prompt;
   const pode = mesa && p && !respondido && ['select','mana','xmana','target'].includes(p.tipo) && (p.tipo !== 'select' || E.jogo.jogaveis.includes(a.id));
   const x = ev.clientX - a.dx, y = ev.clientY - a.dy;
@@ -4876,8 +4883,25 @@ function clicarCarta(id){
   if (['select','mana','xmana','target'].includes(p.tipo)) responder('uuid', id);
 }
 
+// ordem da mão escolhida pelo jogador (arrastando para o lado); cartas novas entram no fim
+let ordemMao = [];
+try { ordemMao = JSON.parse(sessionStorage.getItem('ordemMao') || '[]'); } catch(e){}
+function ordenarMao(mao){
+  const pos = new Map(ordemMao.map((id,i)=>[id,i]));
+  return mao.map((c,i)=>[c,i]).sort((a,b)=>{ const pa = pos.has(a[0].id) ? pos.get(a[0].id) : 1e6 + a[1], pb = pos.has(b[0].id) ? pos.get(b[0].id) : 1e6 + b[1]; return pa - pb; }).map(x=>x[0]);
+}
+function reordenarMao(id, x){
+  const els = [...document.querySelectorAll('#mao .maoCartas:not(.parc) .carta[data-id]')].filter(el=>el.dataset.id !== id);
+  const ids = els.map(el=>el.dataset.id);
+  let k = els.findIndex(el=>{ const r = el.getBoundingClientRect(); return x < r.left + r.width/2; });
+  if (k < 0) k = ids.length;
+  ids.splice(k, 0, id);
+  ordemMao = ids;
+  try { sessionStorage.setItem('ordemMao', JSON.stringify(ordemMao)); } catch(e){}
+  desenharMao();
+}
 function desenharMao(){
-  const mao = E.jogo.mao||[];
+  const mao = ordenarMao(E.jogo.mao||[]);
   const n = mao.length;
   const larg = $('#mao').clientWidth - 280;   // desconta a região dos botões
   let w = Math.min(165, Math.max(100, larg / Math.max(n,1) + 12));
@@ -4889,8 +4913,8 @@ function desenharMao(){
     const nomeP = parc ? parc.nome : 'parceiro', cartasP = parc ? (parc.cartas||[]) : [];
     const abas = `<button class="abaMao ${abaMao==='eu'?'sel':''}" data-aba="eu">Sua mão · ${n}</button><button class="abaMao ${abaMao==='parc'?'sel':''}" data-aba="parc">Mão de ${esc(nomeP)}${parc?` · ${cartasP.length}`:''}</button>`;
     if (abaMao === 'parc'){
-      $('#mao').innerHTML = `<div id="maoInfo" class="abas">${abas}</div><div class="maoParcCartas">${!parc ? '<span class="mpVazio">A mão do seu parceiro ainda não chegou. Ele precisa estar na Mesa 1.3.</span>'
-        : cartasP.length ? cartasP.map(c=>`<img src="${imgCarta(c)}" alt="${esc(c.nome)}" data-img="${esc(imgCarta(c))}">`).join('') : '<span class="mpVazio">Sem cartas na mão.</span>'}</div>`;
+      $('#mao').innerHTML = `<div id="maoInfo" class="abas">${abas}</div><div class="maoCartas parc">${!parc ? '<span class="mpVazio">A mão do seu parceiro ainda não chegou. Ele precisa estar na Mesa 1.3.</span>'
+        : cartasP.length ? cartasP.map((c,i)=>`<div class="carta" data-img="${esc(imgCarta(c))}" title="${esc(c.nome)}" style="background-image:url('${imgCarta(c)}');background-size:cover;width:var(--mao-w);aspect-ratio:63/88;border-radius:5%"></div>`).join('') : '<span class="mpVazio">Sem cartas na mão.</span>'}</div>`;
       $('#mao').classList.remove('aberta');
       $('#mao').querySelectorAll('[data-img]').forEach(el=>{ el.onmouseenter = ev=>{ const h = $('#hover'); h.innerHTML = `<img src="${el.dataset.img}" style="width:250px;border-radius:12px">`; h.classList.remove('oculto'); posicionarHover(ev); }; el.onmouseleave = esconderHover; });
       $('#mao').querySelectorAll('.abaMao').forEach(b=>b.onclick = ev=>{ ev.stopPropagation(); abaMao = b.dataset.aba; desenharMao(); });
