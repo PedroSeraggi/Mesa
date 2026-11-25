@@ -38,6 +38,14 @@ Lista combinada para não esquecer. Nada disto está feito ainda.
 
 8. **Ajustar a dificuldade dos chefes** (depois de jogar mais alguns): a fábrica já mistura uns 4 "brutais" (agressivos, que a IA joga bem) para 3 "estratégicos" (variados, para a coleção). Se ficar fácil, aumentar a proporção de brutais ou endurecer a "nota de força bruta" (mais criaturas, curva baixa, voar/atropelar, comandante simples).
 
+## Para a 1.3.1
+
+- **Reserva do deck (ideia do Kaldrax, como o sideboard/side deck):**
+  - O XMage usa o sideboard do Commander para o comandante, então a reserva fica só na Mesa: uma seção "Reserva" no editor de decks, guardada no arquivo do deck, mas que não vai para o servidor.
+  - Na Revanche, um passo opcional "Fazer trocas": as 99 de um lado, a reserva do outro, clica numa de cada para trocar. A Mesa confere as 100 cartas antes de entrar.
+  - Ao começar qualquer partida: aviso discreto "você tem N cartas na reserva" com o mesmo botão de trocar.
+  - Limite: efeitos que pegam carta "de fora do jogo" (desejos, Karn, Spawnsire) não enxergam a reserva.
+
 ## Outras
 
 - **Aplicativo de verdade (sair do navegador):** casca com WebView2, abrindo como programa normal, sem depender das configurações do Chrome.
