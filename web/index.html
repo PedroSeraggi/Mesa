@@ -474,9 +474,11 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .lbLug .quem small{display:block;font-size:11.5px;color:#a8957d;overflow:hidden;text-overflow:ellipsis}
 .lbLug.vazio{background:repeating-linear-gradient(45deg,#1a120c,#1a120c 10px,#20160e 10px,#20160e 20px);border-style:dashed;border-color:#e0a04055;box-shadow:none;display:grid;place-items:center;color:#bfa88f;font-size:14px;text-align:center;animation:none}
 .lbLug.vazio.bot{border-color:#a07ad055}
+.lbLug.vazio{margin:0}
 .lbLug.vazio::after{display:none}
 .lbLug.vazio span{animation:lbPisca 1.6s ease-in-out infinite}
 @keyframes lbPisca{50%{opacity:.4}}
+.lb2v2{width:100%}
 .lb2v2 .lbLug{flex-basis:260px;aspect-ratio:260/150;background-position:center 30%}
 .lb2v2 .lbLug .cmd{bottom:30px}
 .lbRot{font-family:var(--ff-titulo);font-size:11px;letter-spacing:.3em;text-transform:uppercase;text-align:center;color:#e0a040}
@@ -596,6 +598,8 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .chEstr{font-size:12px;color:#d9c2a8;background:#00000055;border-radius:8px;padding:4px 8px}.chEstr summary{cursor:pointer;color:#ffb09a}.chEstr div{margin-top:4px;max-height:110px;overflow:auto;line-height:1.35}
 .chErro{font-size:12.5px;color:#e8a28f}
 .emblemaTile{position:relative;width:calc(var(--carta-w,92px)*1.35);aspect-ratio:4/3;border-radius:9px;overflow:hidden;background:#2a1b0e center/cover no-repeat;border:1px solid #c9a24a;box-shadow:0 0 14px #c9a24a44,0 4px 12px #000a;display:flex;flex-direction:column;justify-content:flex-end;padding:6px 8px;box-sizing:border-box;cursor:default}
+.taxaCmd{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);z-index:3;background:#120d09ee;border:1px solid var(--ouro);border-radius:999px;color:var(--ouro);font-family:var(--ff-titulo);font-weight:700;font-size:max(10px,calc(var(--w,92px)*.11));padding:1px 8px;white-space:nowrap;pointer-events:none;box-shadow:0 2px 6px #000a}
+.cmdComTaxa{position:relative}
 .emblemaTile::before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#0c0805ee 0%,#0c080566 45%,transparent 75%)}
 .emblemaTile span,.emblemaTile b{position:relative}
 .embQtd{position:absolute;top:5px;right:5px;z-index:1;font-style:normal;font-family:var(--ff-titulo);font-size:12px;font-weight:700;color:#1a1008;background:linear-gradient(#ffe08a,#c9a24a);border-radius:999px;padding:1px 8px;box-shadow:0 1px 4px #000a}
@@ -3865,15 +3869,17 @@ function desenharResumo(R){
   if (resumoAtual === R) return; resumoAtual = R;
   const cor = n => CORES_RES[Math.max(0, R.ordem.indexOf(n)) % CORES_RES.length];
   const elimTurno = n => { const e = (R.eliminacoes||[]).find(x=>x.nome===n); return e ? e.turno : 9999; };
-  const classif = [...R.jogadores].sort((a,b)=>elimTurno(b.nome)-elimTurno(a.nome) || (b.vidaFinal||0)-(a.vidaFinal||0));
+  const venc = new Set(R.timeVencedor || []);
+  const classif = [...R.jogadores].sort((a,b)=>(venc.has(b.nome)?1:0)-(venc.has(a.nome)?1:0) || elimTurno(b.nome)-elimTurno(a.nome) || (b.vidaFinal||0)-(a.vidaFinal||0));
+  const posDe = i => venc.size && i < venc.size ? 1 : venc.size ? i - venc.size + 2 : i + 1;
   const avDe = n => { const c = ((E && E.cartoes)||[]).find(x=>x.jogador===n); return c && c.avatar ? `<span class="rsAv" style="background-image:url('${c.avatar}')"></span>` : `<span class="rsAv" style="background:${cor(n)}">${esc((n||'?')[0])}</span>`; };
 
   // classificação
   let h = `<div class="rsInfo">${R.turnos} turnos · ${R.minutos} min</div><div class="rsPodio">${classif.map((j,i)=>{
     const e = j.eliminado;
-    const sit = !e ? (i===0 ? 'Vencedor' : `${j.vidaFinal ?? '?'} de vida`)
+    const sit = venc.has(j.nome) ? `Time vencedor · ${j.vidaFinal ?? '?'} de vida` : !e ? (i===0 && !venc.size ? 'Vencedor' : `${j.vidaFinal ?? '?'} de vida`)
       : e.como === 'saiu' ? `Saiu no turno ${e.turno}` : `Eliminado no turno ${e.turno}${e.por?` por <b>${esc(e.por)}</b>`:''}`;
-    return `<div class="rsLugar ${i===0?'primeiro':''}" style="--c:${cor(j.nome)}"><div class="rsPos">${i+1}º</div>${avDe(j.nome)}<div><b>${esc(j.nome)}</b><span>${sit}</span></div></div>`; }).join('')}</div>`;
+    return `<div class="rsLugar ${posDe(i)===1?'primeiro':''}" style="--c:${cor(j.nome)}"><div class="rsPos">${posDe(i)}º</div>${avDe(j.nome)}<div><b>${esc(j.nome)}</b><span>${sit}</span></div></div>`; }).join('')}</div>`;
 
   // tabela de dano: linha = quem causou, coluna = quem recebeu
   const ns = R.ordem;
@@ -4526,7 +4532,8 @@ function tabuleiro(p, estilo){
   if (!campo.length) corpo = `<div class="vazio">Sem permanentes</div>`;
   const cmds = (p.comando||[]).filter(ehComandante);
   const embl = (p.comando||[]).filter(c=>!ehComandante(c) && c.emblema);
-  const ladoCmd = (cmds.length || embl.length) ? `<div class="ladoCmd">${cmds.length?`<div class="rotCmdLado">Comandante</div>${cmds.map(c=>cartaHtml(c)).join('')}`:''}
+  const ladoCmd = (cmds.length || embl.length) ? `<div class="ladoCmd">${cmds.length?`<div class="rotCmdLado">Comandante</div>${cmds.map(c=>{ const n = (p.taxaCmd||{})[c.nome] || 0;
+      return n ? `<div class="cmdComTaxa" title="Conjurado ${n} vez(es): custa ${2*n} a mais">${cartaHtml(c)}<span class="taxaCmd">Taxa +${2*n}</span></div>` : cartaHtml(c); }).join('')}`:''}
     ${emblemasAgrupados(embl).map(([e, qtd])=>{ cacheCartas.set(e.id, e); const nm = String(e.nome||'').replace(/^emblem\s*/i,''); const anel = /^the ring$/i.test(e.nome||'');
       return `<div class="emblemaTile" data-cid="${e.id}" style="background-image:url('${imgCarta(e,'art')}')">${qtd>1?`<em class="embQtd" title="${qtd} emblemas iguais: o efeito acontece ${qtd} vezes">×${qtd}</em>`:''}${anel && nivelAnel(p)?`<em class="embQtd">nível ${nivelAnel(p)}/4</em>`:''}<span>${anel?'O Anel':'Emblema'}</span><b>${esc(nm)}</b></div>`; }).join('')}</div>` : '';
   const alvoJ = alvos.has(p.id) ? `<div class="faixaAlvoJog" data-jog="${p.id}">🎯 Clique aqui para escolher <b>${esc(p.nome)}</b> como alvo</div>` : '';

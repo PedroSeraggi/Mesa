@@ -666,6 +666,8 @@ public class Ponte implements MageClient {
         List<Map<String, Object>> eliminacoes = new ArrayList<>();
         List<Map<String, Object>> vidaPorTurno = new ArrayList<>();
         Set<String> comandantes = new HashSet<>();
+        Map<String, Set<String>> cmdsDe = new HashMap<>();       // jogador -> nomes dos comandantes dele
+        Map<String, Integer> taxa = new java.util.concurrent.ConcurrentHashMap<>();   // "jogador|comandante" -> vezes conjurado
         Map<String, Integer> criaturasDerrotadas = new HashMap<>();
         Map<String, String> criaturaDono = new HashMap<>(), criaturaAtacando = new HashMap<>();
         String atacante = null; int turno = 0;
@@ -712,6 +714,7 @@ public class Ponte implements MageClient {
                 if (g == null || (Integer) g[0] < n) maiorGolpe.put(quem, new Object[]{n, carta, vitima, turno});
             } else if ((m = LANCA.matcher(t)).find()) {
                 soma(magias, m.group(1), 1); donoCarta.put(m.group(3), m.group(1));
+                if (cmdsDe.getOrDefault(m.group(1), Collections.emptySet()).contains(m.group(2))) taxa.merge(m.group(1) + "|" + m.group(2), 1, Integer::sum);
             } else if ((m = POE.matcher(t)).find()) {
                 donoCarta.put(m.group(3), m.group(1));
             } else if ((m = COMPRA.matcher(t)).find()) {
@@ -751,7 +754,10 @@ public class Ponte implements MageClient {
             for (Map<String, Object> p : js) {
                 String nome = (String) p.get("nome");
                 for (Object c : (List<Object>) p.getOrDefault("comando", Collections.emptyList()))
-                    if (c instanceof Map) comandantes.add(String.valueOf(((Map<String, Object>) c).get("nome")));
+                    if (c instanceof Map) {
+                        comandantes.add(String.valueOf(((Map<String, Object>) c).get("nome")));
+                        if (!Boolean.TRUE.equals(((Map<String, Object>) c).get("emblema"))) cmdsDe.computeIfAbsent(nome, k -> new HashSet<>()).add(String.valueOf(((Map<String, Object>) c).get("nome")));
+                    }
                 int vida = p.get("vida") instanceof Number ? ((Number) p.get("vida")).intValue() : 1;
                 boolean saiu = Boolean.TRUE.equals(p.get("saiu"));
                 if ((vida <= 0 || saiu) && eliminacoes.stream().noneMatch(e -> nome.equals(e.get("nome")))) {
@@ -2926,7 +2932,13 @@ public class Ponte implements MageClient {
             resultado.put("time", true);
             String txt = venceu ? "Vitória do time! Um dos bots caiu e levou o outro junto." : "Derrota do time. Um de vocês caiu e levou o parceiro junto.";
             resultado.put("texto", txt);
-            if (stats != null) try { resultado.put("resumo", stats.resumo(jogo, txt)); } catch (Exception ignored) { }
+            if (stats != null) try {
+                Map<String, Object> rs = stats.resumo(jogo, txt);
+                List<String> vencedores = new ArrayList<>();
+                for (PlayerView pv : g.getPlayers()) if (ehBot(pv.getName()) != venceu) vencedores.add(pv.getName());
+                rs.put("timeVencedor", vencedores);
+                resultado.put("resumo", rs);
+            } catch (Exception ignored) { }
             resultado.put("revanche", ultimaCriacao != null);
         }
         registrarPartida(venceu, turnos);
@@ -3010,6 +3022,12 @@ public class Ponte implements MageClient {
                 }
             }
             j.put("comando", cmd);
+            Estatisticas stTaxa = stats;   // taxa de comandante: vezes que conjurou cada comandante (cada vez = +2)
+            if (stTaxa != null) {
+                Map<String, Integer> tx = new LinkedHashMap<>();
+                for (Map.Entry<String, Integer> e : stTaxa.taxa.entrySet()) if (e.getKey().startsWith(p.getName() + "|")) tx.put(e.getKey().substring(p.getName().length() + 1), e.getValue());
+                j.put("taxaCmd", tx);
+            }
             jogadores.add(j);
         }
         m.put("jogadores", jogadores);
