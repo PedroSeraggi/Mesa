@@ -1145,7 +1145,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
     <div id="jgSala" class="oculto"></div>
     <div id="jgPrincipal">
       <div class="cabDecks"><h2 id="jgTitulo">Jogar com amigos</h2><div class="dicaMenu" id="jgConectado"></div></div>
-      <div class="blocoJogar">
+      <div class="blocoJogar" style="display:none">
         <div class="tituloBloco">1 · Conexão</div>
         <label class="radioLinha"><input type="radio" name="jgModo" value="grupo"> <b>Servidor do grupo (Zera)</b> <span class="dicaMenu">sempre ligado: ninguém precisa ser anfitrião e quem cair consegue voltar (precisa do Tailscale)</span></label>
         <label class="radioLinha"><input type="radio" name="jgModo" value="anfitriao"> <b>Sou o anfitrião</b> <span class="dicaMenu">o servidor de regras roda no meu PC</span></label>
@@ -1155,13 +1155,13 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
       </div>
       <div class="duasColunas">
         <div class="blocoJogar" id="jgBlocoEntrar">
-          <div class="tituloBloco">2 · Escolha a sala</div>
+          <div class="tituloBloco">Escolha a sala</div>
           <label>Seu deck<select id="jgDeck"></select></label>
-          <div id="jgRede" class="listaMesas"></div>
+          <div id="jgRede" class="listaMesas" style="display:none"></div>
           <div id="jgMesas" class="listaMesas"><div class="dicaMenu">Carregando mesas...</div></div>
         </div>
         <div class="blocoJogar" id="jgBlocoCriar">
-          <div class="tituloBloco">2 · Monte a sala</div>
+          <div class="tituloBloco">Monte a sala</div>
           <label>Seu deck<select id="jgDeckCriar"></select></label>
           <label>Nome da sala<input id="jgNome" placeholder="Ex.: Sexta do Commander"></label>
           <label>Lugares<select id="jgLugares"><option value="2">2 jogadores</option><option value="3">3 jogadores</option><option value="4" selected>4 jogadores</option><option value="5">5 jogadores</option><option value="6">6 jogadores</option></select></label>
@@ -1598,9 +1598,9 @@ async function iniciarJogar(){
     : '';
   $('#jgIps').querySelectorAll('.ipChip').forEach(c=>c.onclick=()=>{ try{ navigator.clipboard.writeText(c.querySelector('b').textContent); avisoLocal('IP copiado.'); }catch(e){} });
   desenharBotsJogar();
-  atualizarMesas(); atualizarSalasRede();
+  atualizarMesas();
   clearInterval(timerMesas);
-  timerMesas = setInterval(()=>{ if (vista==='jogar' && !document.hidden){ atualizarMesas(); atualizarSalasRede(); } else clearInterval(timerMesas); }, 3000);
+  timerMesas = setInterval(()=>{ if (vista==='jogar' && !document.hidden){ atualizarMesas(); } else clearInterval(timerMesas); }, 3000);
 }
 function desenharBotsJogar(){
   const lug = +$('#jgLugares').value;

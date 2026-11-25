@@ -807,6 +807,7 @@ public class Ponte implements MageClient {
     volatile boolean assistindo = false;
     /** Assistir a uma partida (sem ver mãos, sem jogar). O servidor responde com WATCHGAME. */
     void assistir(UUID mesa) throws Exception {
+        usarPcLocal = false;
         sairDoJogoAtual();
         sairDaSala();
         conectar();
@@ -992,16 +993,11 @@ public class Ponte implements MageClient {
     }
 
     /** Servidor do XMage: "localhost" (você é o anfitrião) ou o IP do anfitrião na VPN (Radmin/Tailscale). */
-    String servidor() {
-        String h = servidorBruto();
-        return "zera".equalsIgnoreCase(h) ? enderecoZera() : h;
-    }
-    /** O que está gravado: "localhost", um IP, ou "zera" (servidor do grupo, sempre ligado). */
-    String servidorBruto() {
-        JsonObject c = config();
-        String h = c.has("servidor") ? c.get("servidor").getAsString().trim() : "";
-        return h.isEmpty() ? "localhost" : h;
-    }
+    // Tudo roda no servidor do grupo (Zera). Só partidas contra bots e o Chefe do dia caem para o PC
+    // da pessoa se o Zera não responder (usarPcLocal). Salas com amigos são sempre no Zera.
+    volatile boolean usarPcLocal = false;
+    String servidor() { return usarPcLocal ? "localhost" : enderecoZera(); }
+    String servidorBruto() { return usarPcLocal ? "localhost" : "zera"; }
     // Servidor do grupo (o Zera, ligado 24h): pelo Tailscale (amigos de fora) ou pela rede de casa
     static final String[] ENDERECOS_ZERA = {"100.109.159.116", "192.168.15.13"};
     volatile String zeraEscolhido = null; volatile long zeraQuando = 0;
@@ -1532,7 +1528,7 @@ public class Ponte implements MageClient {
                 reconexao = r; mudou();
                 try {
                     if (session != null) { try { session.connectStop(false, false); } catch (Exception ignored) { } session = null; }
-                    synchronized (this) { config().addProperty("servidor", o.get("servidor").getAsString()); }
+                    usarPcLocal = "localhost".equals(o.get("servidor").getAsString());   // partida contra bot que caiu para o PC
                     usuarioForcado = o.get("usuario").getAsString();
                     tableId = mesa; gameId = null; int fotosAntes = fotos;
                     synchronized (trava) { if (!"jogo".equals(fase)) fase = "iniciando"; }
@@ -2094,6 +2090,7 @@ public class Ponte implements MageClient {
     }
 
     void criarMesaAmigos(String meuDeck, int lugares, List<String> decksBots, int skill, String nomeMesa) throws Exception {
+        usarPcLocal = false;   // sala com amigos: sempre no servidor do grupo
         sairDoJogoAtual();
         sairDaSala();
         conectar();
@@ -2125,6 +2122,7 @@ public class Ponte implements MageClient {
     }
 
     void entrarMesa(UUID mesa, String meuDeck) throws Exception {
+        usarPcLocal = false;
         sairDoJogoAtual();
         sairDaSala();
         conectar();
@@ -2181,6 +2179,9 @@ public class Ponte implements MageClient {
     }
 
     void criarPartida(String meuDeck, List<String> oponentes, int skill) throws Exception {
+        // bots e chefe: no Zera; se ele não responder, no próprio PC
+        usarPcLocal = false;
+        if (!portaAberta(enderecoZera(), PORTA_XMAGE)) { usarPcLocal = true; aviso("O servidor do grupo não respondeu: esta partida contra bots vai rodar no seu PC."); }
         synchronized (trava) {
             fase = "conectando";
             erro = null;
