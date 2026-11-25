@@ -55,7 +55,7 @@ public class Ponte implements MageClient {
     final Object trava = new Object();
     String fase = "lobby";               // lobby | conectando | iniciando | jogo | fim
     String erro = null;
-    Map<String, Object> jogo = null;     // última foto da mesa
+    volatile Map<String, Object> jogo = null;     // última foto da mesa
     Map<String, Object> prompt = null;   // pergunta pendente
     int promptSeq = 0;
     final LinkedList<Map<String, Object>> log = new LinkedList<>();
@@ -116,6 +116,14 @@ public class Ponte implements MageClient {
             json(ex, 200, Collections.singletonMap("versao", v));
         });
         srv.createContext("/api/atualizar", this::rotaAtualizar);
+        srv.createContext("/api/reconectar", ex -> {   // voltar para a partida em andamento (caiu, fechou ou travou)
+            try {
+                if ("POST".equals(ex.getRequestMethod())) {
+                    new Thread(() -> reconectar(false)).start();
+                    json(ex, 200, Collections.singletonMap("ok", true));
+                } else json(ex, 200, partidaSalvaInfo());
+            } catch (Throwable t) { json(ex, 200, Collections.singletonMap("erro", String.valueOf(t.getMessage()))); }
+        });
         srv.createContext("/api/chat", ex -> {   // manda mensagem no chat da partida (todos os jogadores recebem)
             try {
                 JsonObject b = corpo(ex);
@@ -283,6 +291,8 @@ public class Ponte implements MageClient {
             m.put("avisos", new ArrayList<>(avisos));
             m.put("resultado", resultado);
             m.put("pedido", pedido);
+            m.put("reconexao", reconexao);
+            if ("lobby".equals(fase)) m.put("partidaSalva", partidaSalvaInfo());
             m.put("cartoes", "jogo".equals(fase) || "fim".equals(fase) ? cartoesPartida : null);
             return m;
         }
@@ -737,7 +747,7 @@ public class Ponte implements MageClient {
             c.setHost(servidor());
             c.setPort(PORTA_XMAGE);
             String base = nomeServidor();
-            c.setUsername(t == 0 ? base : base + (t + 1));
+            c.setUsername(usuarioForcado != null ? usuarioForcado : (t == 0 ? base : base + (t + 1)));
             c.setProxyType(Connection.ProxyType.NONE);
             c.setUserData(montarUserData());   // em quais fases o jogo para pra você agir
             if (session.connectStart(c)) {
@@ -911,6 +921,85 @@ public class Ponte implements MageClient {
     }
 
     boolean donoDaMesa = false;
+
+    // =====================================================================
+    // Reconectar: a Mesa anota a partida em andamento (partida-atual.json). Se a conexão cair, ou se a Mesa
+    // for reaberta, ela entra de novo no servidor com o MESMO nome: o XMage devolve o lugar (reenvia START_GAME)
+    // enquanto o jogador não expirar (uns 3 minutos).
+    volatile Map<String, Object> reconexao = null;   // {segundos, tentativa} enquanto tenta voltar
+    volatile boolean reconectando = false;
+    volatile int fotos = 0;   // quantas vezes o servidor mandou a mesa inteira (GAME_INIT)
+    volatile String usuarioForcado = null;
+    Path arqPartida() { return MESA.resolve("partida-atual.json"); }
+    void salvarPartida() {
+        try {
+            JsonObject o = new JsonObject();
+            o.addProperty("servidor", servidor());
+            o.addProperty("usuario", meuNome);
+            o.addProperty("tableId", tableId == null ? "" : tableId.toString());
+            o.addProperty("gameId", gameId == null ? "" : gameId.toString());
+            o.addProperty("quando", System.currentTimeMillis());
+            Files.write(arqPartida(), GSON.toJson(o).getBytes(StandardCharsets.UTF_8));
+        } catch (Exception ignored) { }
+    }
+    void apagarPartida() { try { Files.deleteIfExists(arqPartida()); } catch (Exception ignored) { } }
+    JsonObject lerPartida() {
+        try {
+            if (!Files.exists(arqPartida())) return null;
+            JsonObject o = JsonParser.parseString(new String(Files.readAllBytes(arqPartida()), StandardCharsets.UTF_8)).getAsJsonObject();
+            if (System.currentTimeMillis() - o.get("quando").getAsLong() > 6 * 3600_000L) { apagarPartida(); return null; }   // velha demais
+            return o;
+        } catch (Exception e) { return null; }
+    }
+    Map<String, Object> partidaSalvaInfo() {
+        JsonObject o = lerPartida();
+        if (o == null) return null;
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("servidor", o.get("servidor").getAsString());
+        r.put("minutos", (System.currentTimeMillis() - o.get("quando").getAsLong()) / 60000);
+        return r;
+    }
+    /** automatico=true: a conexão caiu com a Mesa aberta (tenta por ~3 min); false: a pessoa clicou em "Voltar". */
+    synchronized void reconectar(boolean automatico) {
+        JsonObject o = lerPartida();
+        if (o == null || reconectando || (gameId != null && "jogo".equals(fase) && jogo != null && !automatico)) return;
+        reconectando = true;
+        try {
+            UUID mesa = UUID.fromString(o.get("tableId").getAsString());
+            long fim = System.currentTimeMillis() + (automatico ? 180_000 : 60_000);
+            int tentativa = 0;
+            while (System.currentTimeMillis() < fim) {
+                tentativa++;
+                Map<String, Object> r = new LinkedHashMap<>();
+                r.put("segundos", Math.max(0, (fim - System.currentTimeMillis()) / 1000)); r.put("tentativa", tentativa); r.put("fim", fim);
+                reconexao = r; mudou();
+                try {
+                    if (session != null) { try { session.connectStop(false, false); } catch (Exception ignored) { } session = null; }
+                    synchronized (this) { config().addProperty("servidor", o.get("servidor").getAsString()); }
+                    usuarioForcado = o.get("usuario").getAsString();
+                    tableId = mesa; gameId = null; int fotosAntes = fotos;
+                    synchronized (trava) { if (!"jogo".equals(fase)) fase = "iniciando"; }
+                    status("Voltando para a partida...");
+                    conectar();
+                    // o servidor reenvia START_GAME se o lugar ainda existe
+                    for (int i = 0; i < 24 && gameId == null; i++) Thread.sleep(500);
+                    if (gameId != null) {
+                        for (int i = 0; i < 20 && fotos == fotosAntes; i++) Thread.sleep(500);
+                        reconexao = null; status("De volta à partida!"); aviso("Você voltou para a partida."); mudou(); return;
+                    }
+                } catch (Exception e) { /* servidor fora do ar ainda: tenta de novo */ }
+                Thread.sleep(4000);
+            }
+            reconexao = null; tableId = null;
+            apagarPartida();
+            synchronized (trava) { fase = "lobby"; jogo = null; prompt = null; erro = "Não deu para voltar: a partida terminou ou o seu lugar expirou."; }
+            mudou();
+        } catch (Exception e) {
+            reconexao = null;
+        } finally {
+            reconectando = false; usuarioForcado = null;
+        }
+    }
 
     // Baixa o instalador da versão nova (só do GitHub da Mesa), abre ele e fecha a Mesa
     void rotaAtualizar(HttpExchange ex) throws IOException {
@@ -1587,6 +1676,7 @@ public class Ponte implements MageClient {
     final Set<UUID> abandonados = ConcurrentHashMap.newKeySet();
 
     void sairDoJogoAtual() {
+        apagarPartida();
         UUID g = gameId, t = tableId;
         if (g != null) abandonados.add(g);
         if (g != null && "jogo".equals(fase)) {   // saiu no meio: conta como derrota (no XMage, sair é desistir)
@@ -1710,6 +1800,7 @@ public class Ponte implements MageClient {
     @Override public void connected(String message) { }
     @Override public void disconnected(boolean askToReconnect, boolean keepMySessionActive) {
         status("Desconectado do servidor");
+        if (!reconectando && gameId != null && "jogo".equals(fase) && lerPartida() != null) new Thread(() -> reconectar(true)).start();
     }
     @Override public void showMessage(String message) { aviso(message); }
     @Override public void showError(String message) { aviso("Erro: " + message); }
@@ -1732,7 +1823,12 @@ public class Ponte implements MageClient {
         if (met == ClientCallbackMethod.START_GAME) {
             TableClientMessage m = (TableClientMessage) d;
             // só aceita o início da partida da mesa que esta ponte criou
+            if (tableId == null && !abandonados.contains(m.getGameId())) {   // Mesa reaberta: o servidor devolveu a partida anotada
+                JsonObject sv = lerPartida();
+                if (sv != null && sv.get("tableId").getAsString().equals(String.valueOf(m.getCurrentTableId()))) tableId = m.getCurrentTableId();
+            }
             if (abandonados.contains(m.getGameId()) || tableId == null || !tableId.equals(m.getCurrentTableId())) return;
+            if (reconectando && gameId != null) return;   // já voltou
         } else if (met == ClientCallbackMethod.CHATMESSAGE) {
             if (gameChatId == null || !gameChatId.equals(cb.getObjectId())) return;   // chat de outra partida
         } else if (met.name().startsWith("GAME_") || met == ClientCallbackMethod.END_GAME_INFO) {
@@ -1746,12 +1842,18 @@ public class Ponte implements MageClient {
                 gameId = m.getGameId();
                 playerId = m.getPlayerId();
                 session.joinGame(gameId);
+                final int fotosAntes = fotos; final UUID gId = gameId;
+                new Thread(() -> {   // às vezes (reconexão) o estado da partida se perde logo depois do login: pede de novo até chegar
+                    try { for (int i = 0; i < 10 && fotos == fotosAntes && gId.equals(gameId); i++) { Thread.sleep(1500); if (fotos == fotosAntes) session.joinGame(gId); } } catch (Exception ignored) { }
+                }).start();
                 try { cartoesPartida = cartoesDaMesa(); } catch (Exception ignored) { cartoesPartida = new ArrayList<>(); }
-                synchronized (trava) { fase = "jogo"; }
+                synchronized (trava) { fase = "jogo"; erro = null; }
+                salvarPartida();
                 status("Partida começou");
                 break;
             }
             case GAME_INIT: {
+                fotos++;
                 try {
                     session.getGameChatId(gameId).ifPresent(id -> { gameChatId = id; session.joinChat(id); });
                 } catch (Exception ignored) { }
@@ -1923,6 +2025,7 @@ public class Ponte implements MageClient {
                 break;
             }
             case GAME_OVER: {
+                apagarPartida();
                 synchronized (trava) {
                     fase = "fim";
                     prompt = null;
