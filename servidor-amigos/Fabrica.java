@@ -16,6 +16,8 @@ import java.util.*;
  * Fábrica de chefes: completa a fila de chefes (pasta chefes/) até ter META decks esperando.
  * Busca decks bracket 4 de Commander no Archidekt (os mais vistos), pula combo/cEDH/stax,
  * exige ~25 criaturas, nunca repete comandante, converte para o XMage e valida como o servidor.
+ * Mistura dois tipos (uns 4 por 3): "brutal" (agressivo, que a IA joga bem: muitas criaturas,
+ * curva baixa, voar/atropelar/ímpeto/ameaçar) e "estrategico" (variado, para a coleção ter de tudo).
  *
  * Uso: java Fabrica <pastaChefes> <estado.json> <meta>   (rodar numa pasta que tenha db/cards.h2.db)
  */
@@ -23,6 +25,7 @@ public class Fabrica {
     static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     static final String[] PROIBIDO = {"combo", "cedh", "stax", "turbo", "infinite", "infinito", "storm", "lock"};
     static final int MIN_CRIATURAS = 25, MAX_PECAS_COMBO = 6, MAX_FALTANDO = 3;
+    static final String[] ESTRATEGICAS = {"group hug", "politics", "control", "spellslinger", "aristocrat", "voltron", "stax", "pillowfort"};
 
     public static void main(String[] a) throws Exception {
         Path pasta = Paths.get(a[0]), estadoArq = Paths.get(a[1]);
@@ -43,7 +46,8 @@ public class Fabrica {
                 }
             }
         int naFila = contarFila(pasta);
-        log("fila tem " + naFila + ", meta " + meta);
+        int[] tipos = contarTipos(pasta);   // [brutais, estrategicos] na fila
+        log("fila tem " + naFila + " (" + tipos[0] + " brutais, " + tipos[1] + " estratégicos), meta " + meta);
         int novos = 0, paginasSemNada = 0;
         while (naFila < meta && paginasSemNada < 6) {
             int pagina = est.get("pagina").getAsInt();
@@ -57,19 +61,26 @@ public class Fabrica {
                 JsonObject r = el.getAsJsonObject();
                 String id = r.get("id").getAsString();
                 if (tentados.contains(id)) continue;
-                tentados.add(id);
                 String texto = (r.get("name").getAsString() + " " + (r.has("description") && !r.get("description").isJsonNull() ? r.get("description").toString() : "")).toLowerCase();
                 if (r.has("tags") && r.get("tags").isJsonArray()) texto += " " + r.get("tags").toString().toLowerCase();
                 String proib = Arrays.stream(PROIBIDO).filter(texto::contains).findFirst().orElse(null);
-                if (proib != null) { log(id + " pulado (" + proib + ")"); continue; }
+                if (proib != null) { tentados.add(id); log(id + " pulado (" + proib + ")"); continue; }
+                // qual tipo a fila está precisando (uns 4 brutais para 3 estratégicos)
+                String precisa = tipos[0] * 3 <= tipos[1] * 4 ? "brutal" : "estrategico";
                 try {
-                    JsonObject chefe = montar(id, comandantes);
-                    if (chefe == null) continue;
+                    JsonObject chefe = montar(id, comandantes, texto);
+                    if (chefe == null) { tentados.add(id); continue; }
+                    String tipo = chefe.get("tipo").getAsString();
+                    if (!tipo.equals(precisa) && tipos[tipo.equals("brutal") ? 0 : 1] >= (tipo.equals("brutal") ? 5 : 4)) {
+                        log(id + " guardado para depois (é " + tipo + ", a fila precisa de " + precisa + ")"); continue;   // não marca: volta numa próxima busca
+                    }
+                    tentados.add(id);
+                    tipos[tipo.equals("brutal") ? 0 : 1]++;
                     String nomeArq = String.format("%s-%s.json", new java.text.SimpleDateFormat("yyyyMMddHHmmss").format(new Date()), id);
                     Files.write(pasta.resolve(nomeArq), GSON.toJson(chefe).getBytes(StandardCharsets.UTF_8));
                     comandantes.add(chefe.getAsJsonObject("comandante").get("nome").getAsString().toLowerCase());
                     naFila++; novos++; aproveitou = true;
-                    log("NOVO CHEFE: " + chefe.get("nome").getAsString() + " (" + id + ")");
+                    log("NOVO CHEFE (" + tipo + "): " + chefe.get("nome").getAsString() + " (" + id + ")");
                 } catch (Exception e) { log(id + " erro: " + e); }
                 salvarEstado(estadoArq, est, tentados);
             }
@@ -82,17 +93,33 @@ public class Fabrica {
         System.exit(0);
     }
 
+    static String describe(Object erro) {
+        try { Object g = erro.getClass().getMethod("getGroup").invoke(erro), m = erro.getClass().getMethod("getMessage").invoke(erro); return g + ": " + m; }
+        catch (Exception e) { return String.valueOf(erro); }
+    }
+
+    static int[] contarTipos(Path pasta) throws IOException {
+        int[] t = new int[2];
+        try (DirectoryStream<Path> ds = Files.newDirectoryStream(pasta, "*.json")) {
+            for (Path f : ds) {
+                JsonObject o = JsonParser.parseString(new String(Files.readAllBytes(f), StandardCharsets.UTF_8)).getAsJsonObject();
+                if (o.has("tipo")) t["brutal".equals(o.get("tipo").getAsString()) ? 0 : 1]++;
+            }
+        }
+        return t;
+    }
+
     static int contarFila(Path pasta) throws IOException {
         int n = 0; try (DirectoryStream<Path> ds = Files.newDirectoryStream(pasta, "*.json")) { for (Path p : ds) n++; } return n;
     }
 
     /** Baixa o deck, filtra, converte para o XMage (100 cartas) e valida. null = não serve. */
-    static JsonObject montar(String id, Set<String> comandantesUsados) throws Exception {
+    static JsonObject montar(String id, Set<String> comandantesUsados, String textoLista) throws Exception {
         JsonObject d = obter("https://archidekt.com/api/decks/" + id + "/");
         if (d == null) throw new IOException("sem resposta");
         Set<String> fora = new HashSet<>();
         for (JsonElement c : d.getAsJsonArray("categories")) { JsonObject o = c.getAsJsonObject(); if (o.has("includedInDeck") && !o.get("includedInDeck").getAsBoolean()) fora.add(o.get("name").getAsString()); }
-        int criaturas = 0, pecasCombo = 0;
+        int criaturas = 0, pecasCombo = 0, evasivas = 0, naoTerrenos = 0; double somaCusto = 0;
         List<String[]> cartas = new ArrayList<>(); List<String> cmds = new ArrayList<>();
         for (JsonElement el : d.getAsJsonArray("cards")) {
             JsonObject c = el.getAsJsonObject();
@@ -102,7 +129,12 @@ public class Fabrica {
             int q = c.get("quantity").getAsInt();
             String nome = or.get("name").getAsString().split(" // ")[0];
             boolean ehCmd = cats.contains("Commander");
-            if (or.has("types") && or.get("types").toString().contains("Creature")) criaturas += q;
+            if (or.has("types") && or.get("types").toString().contains("Creature")) {
+                criaturas += q;
+                String kw = or.has("keywords") ? or.get("keywords").toString() : "";
+                if (kw.contains("Flying") || kw.contains("Trample") || kw.contains("Haste") || kw.contains("Menace")) evasivas += q;
+            }
+            if (!(or.has("types") && or.get("types").toString().contains("Land"))) { naoTerrenos += q; if (or.has("cmc")) somaCusto += or.get("cmc").getAsDouble() * q; }
             if (or.has("twoCardComboIds") && or.get("twoCardComboIds").isJsonArray() && or.getAsJsonArray("twoCardComboIds").size() > 0) pecasCombo++;
             String set = card.has("edition") && card.get("edition").isJsonObject() ? card.getAsJsonObject("edition").get("editioncode").getAsString().toUpperCase() : "";
             String num = card.has("collectorNumber") && !card.get("collectorNumber").isJsonNull() ? card.get("collectorNumber").getAsString() : "";
@@ -152,15 +184,41 @@ public class Fabrica {
         Files.deleteIfExists(tmp);
         Deck deck = Deck.load(dl, true, true);
         mage.deck.Commander v = new mage.deck.Commander();
-        if (!v.validate(deck)) { log(id + " pulado (inválido no XMage: " + v.getErrorsListSorted() + ")"); return null; }
+        if (!v.validate(deck)) { StringBuilder er = new StringBuilder(); for (Object x : v.getErrorsListSorted()) er.append(x.toString().replaceAll("^.*@\\w+$", "")).append(describe(x)).append("; ");
+            log(id + " pulado (inválido no XMage: " + er + ")"); return null; }
+        double custoMedio = naoTerrenos == 0 ? 9 : somaCusto / naoTerrenos;
+        String textoTudo = (textoLista + " " + (d.has("deckTags") ? d.get("deckTags").toString().toLowerCase() : "")).toLowerCase();
+        boolean estrategico = Arrays.stream(ESTRATEGICAS).anyMatch(textoTudo::contains);
+        boolean brutal = !estrategico && criaturas >= 30 && custoMedio <= 3.5 && evasivas >= 8;
         JsonObject chefe = new JsonObject();
+        chefe.addProperty("tipo", brutal ? "brutal" : "estrategico");
+        String estrategia = textoDescricao(d);
+        if (!estrategia.isEmpty()) chefe.addProperty("estrategia", estrategia);
         chefe.addProperty("nome", String.join(" & ", cmds));
-        chefe.addProperty("descricao", "Deck \"" + d.get("name").getAsString() + "\" do Archidekt · " + criaturas + " criaturas");
+        chefe.addProperty("descricao", "Deck \"" + d.get("name").getAsString() + "\" do Archidekt · " + criaturas + " criaturas · custo médio " + String.format(Locale.ROOT, "%.1f", custoMedio));
         chefe.addProperty("origem", "archidekt.com/decks/" + id);
         chefe.add("comandante", cmdJson);
         chefe.addProperty("deck", txt);
         if (!faltam.isEmpty()) chefe.addProperty("trocadas", String.join(", ", faltam));
         return chefe;
+    }
+
+    /** Texto da descrição do deck (o Archidekt guarda em formato de editor: {"ops":[{"insert":"..."}]}), resumido. */
+    static String textoDescricao(JsonObject d) {
+        try {
+            if (!d.has("description") || d.get("description").isJsonNull()) return "";
+            String bruto = d.get("description").getAsString(), t = bruto;
+            if (bruto.trim().startsWith("{")) {
+                StringBuilder sb = new StringBuilder();
+                for (JsonElement e : JsonParser.parseString(bruto).getAsJsonObject().getAsJsonArray("ops")) {
+                    JsonElement ins = e.getAsJsonObject().get("insert");
+                    if (ins != null && ins.isJsonPrimitive()) sb.append(ins.getAsString());
+                }
+                t = sb.toString();
+            }
+            t = t.replaceAll("\\s+", " ").trim();
+            return t.length() > 600 ? t.substring(0, 600).replaceAll("\\s\\S*$", "") + "..." : t;
+        } catch (Exception e) { return ""; }
     }
 
     /** GET com calma: 6 s entre pedidos; se o site limitar, espera e tenta de novo. */

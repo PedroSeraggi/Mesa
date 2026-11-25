@@ -36,6 +36,8 @@ Lista combinada para não esquecer. Nada disto está feito ainda.
    - Todos ganham o mesmo XP e a **medalha dourada**. O **MVP** (quem mais causou dano aos chefes) ganha **+500 XP** e a **medalha mística roxa**, com brilho animado.
    - 1 contra 2 ou 2 contra 3 não funcionam (os chefes ficariam vizinhos e se atacariam).
 
+8. **Ajustar a dificuldade dos chefes** (depois de jogar mais alguns): a fábrica já mistura uns 4 "brutais" (agressivos, que a IA joga bem) para 3 "estratégicos" (variados, para a coleção). Se ficar fácil, aumentar a proporção de brutais ou endurecer a "nota de força bruta" (mais criaturas, curva baixa, voar/atropelar, comandante simples).
+
 ## Outras
 
 - **Aplicativo de verdade (sair do navegador):** casca com WebView2, abrindo como programa normal, sem depender das configurações do Chrome.

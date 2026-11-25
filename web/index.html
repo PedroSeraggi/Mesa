@@ -422,6 +422,9 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .edEscolha:hover{transform:translateY(-2px);border-color:var(--borda2)}
 .edEscolha.sel{border-color:var(--ouro)!important;box-shadow:0 0 0 2px var(--ouro),0 0 18px #E4C87466}
 .escDeckBts{justify-content:flex-end}
+.chTipo{display:inline-block;font-family:var(--ff-titulo);font-size:10px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:1px 8px;vertical-align:middle}
+.chTipo.brutal{background:#b8452a;color:#fff}.chTipo.estrategico{background:#2a4a6a;color:#dce9f5}
+.chEstr{font-size:12px;color:#d9c2a8;background:#00000055;border-radius:8px;padding:4px 8px}.chEstr summary{cursor:pointer;color:#ffb09a}.chEstr div{margin-top:4px;max-height:110px;overflow:auto;line-height:1.35}
 .chErro{font-size:12.5px;color:#e8a28f}
 .emblemaTile{position:relative;width:calc(var(--carta-w,92px)*1.35);aspect-ratio:4/3;border-radius:9px;overflow:hidden;background:#2a1b0e center/cover no-repeat;border:1px solid #c9a24a;box-shadow:0 0 14px #c9a24a44,0 4px 12px #000a;display:flex;flex-direction:column;justify-content:flex-end;padding:6px 8px;box-sizing:border-box;cursor:default}
 .emblemaTile::before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#0c0805ee 0%,#0c080566 45%,transparent 75%)}
@@ -3365,7 +3368,8 @@ function desenharChefe(){
   box.innerHTML = `<div class="chDentro">
     <div class="chRotulo">Chefe do dia <span class="chTempo" id="chTempo">troca em ${tempoAte(C.fim)}</span></div>
     <div class="chNome">${esc(cmd.nome || C.nome)}</div>
-    <div class="chSub">${esc(C.nome)} · 1 contra 1</div>
+    <div class="chSub">${esc(C.nome)} · 1 contra 1${C.tipo ? ` · <span class="chTipo ${C.tipo}" title="${C.tipo==='brutal' ? 'Deck agressivo, que a IA joga bem: prepare-se para apanhar' : 'Deck com estratégia própria: a IA joga pior, mas o deck é ótimo de ganhar e aprender'}">${C.tipo==='brutal' ? 'Chefe brutal' : 'Chefe estratégico'}</span>` : ''}</div>
+    ${C.estrategia ? `<details class="chEstr"><summary>Como esse deck joga</summary><div>${esc(C.estrategia)}</div></details>` : ''}
     ${C.euVenci ? '<div class="chVenci">Você já derrotou o chefe deste ciclo! Bônus de +250 XP recebido.</div>' : '<div class="chBonus">Primeira vitória: <b>+250 XP</b></div>'}
     <div class="chLinha"><button class="pri" id="chEnfrentar">${C.euVenci ? 'Enfrentar de novo' : 'Enfrentar'}</button></div>
     ${(C.ranking||[]).length ? `<div class="chRank"><div class="chRankTit">Ranking de hoje</div>${C.ranking.slice(0,3).map((a,i)=>`<div class="chRankLin ${a.eu?'eu':''}"><b>${i+1}º</b><span class="chDerAv">${avAmigo(a)}</span><span class="nm">${esc(a.nome)}</span><span class="rd">rodada ${Math.ceil((a.turnos||0)/2)} · ${a.vida} de vida</span></div>`).join('')}

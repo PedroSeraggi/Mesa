@@ -403,6 +403,8 @@ public class Amigos {
         r.put("nome", str(ch, "nome"));
         r.put("comandante", ch.get("comandante"));
         if (ch.has("descricao")) r.put("descricao", str(ch, "descricao"));
+        if (ch.has("tipo")) r.put("tipo", str(ch, "tipo"));
+        if (ch.has("estrategia")) r.put("estrategia", str(ch, "estrategia"));
         r.put("deck", str(ch, "deck"));
         r.put("lacaios", ch.has("lacaios") ? ch.get("lacaios") : new JsonArray());
         List<Map<String, Object>> der = new ArrayList<>();
