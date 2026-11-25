@@ -5605,9 +5605,11 @@ function mostrarPreview(id){
   const anexHtml = presos.length ? `<div class="presosPrev"><b>${presos.some(a=>/Equipment/i.test(a.tipo||''))?'Equipada com':'Com'}:</b><div>${presos.map(a=>`<div><img src="/img?s=${encodeURIComponent(a.set||'')}&n=${encodeURIComponent(a.num||'')}&nm=${encodeURIComponent(a.nome||'')}${a.ficha?'&f=1':''}${a.verso?'&b=1':''}${langImg(a)}" onerror="this.style.display='none'"><span>${esc(a.nome)}</span></div>`).join('')}</div></div>` : '';
   const presoHtml = presoEm ? `<div style="color:var(--txt2);font-size:13px">Presa em: <b style="color:var(--txt)">${esc(presoEm.nome)}</b></div>` : '';
   const h = $('#hover');
-  h.innerHTML = `<div class="grande ${c.dividida?'deitada':''}"><div class="txt"><b style="font-size:16px">${esc(c.nome)} ${simbolos(c.custo||'')}</b><div style="color:var(--txt2)">${esc(c.tipo||'')}</div><div>${regrasTxt(c)}</div></div><img src="${src}" onerror="this.remove()"></div>`
+  // deitada só a dividida de verdade ("Fire // Ice", Rooms); carta com Aventura (Midgar, City of Mako) é em pé
+  const deitada = c.dividida && (/ \/\/ /.test(c.nome||'') || /\bRoom\b/.test(c.tipo||''));
+  h.innerHTML = `<div class="grande ${deitada?'deitada':''}"><div class="txt"><b style="font-size:16px">${esc(c.nome)} ${simbolos(c.custo||'')}</b><div style="color:var(--txt2)">${esc(c.tipo||'')}</div><div>${regrasTxt(c)}</div></div><img src="${src}" onerror="this.remove()"></div>`
     + (chHtml||estado||anexHtml||presoHtml ? `<div class="info">${chHtml}${estado?`<div style="color:var(--txt2);font-size:13px">${estado}</div>`:''}${presoHtml}${anexHtml}</div>` : '');
-  h.style.width = c.dividida ? '370px' : '270px';
+  h.style.width = deitada ? '370px' : '270px';
   h.classList.remove('oculto');
 }
 

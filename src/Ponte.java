@@ -3357,7 +3357,10 @@ public class Ponte implements MageClient {
         }
         if (portador) m.put("portadorAnel", true);
         if (!prot.isEmpty()) m.put("protecoes", new ArrayList<>(prot));
-        m.put("dividida", c.isSplitCard() || (c.getTypeText() != null && c.getTypeText().contains("Room")));
+        // carta deitada no zoom: só as divididas de verdade ("Fire // Ice", Rooms). O XMage também diz isSplitCard
+        // para cartas com Aventura (ex.: Midgar, City of Mako), que são em pé e não têm " // " no nome
+        String nomeDiv = c.getName() != null ? c.getName() : "";
+        m.put("dividida", (c.isSplitCard() && nomeDiv.contains(" // ")) || (c.getTypeText() != null && c.getTypeText().contains("Room")));
         if (c.getTargets() != null && !c.getTargets().isEmpty()) m.put("alvos", ids(c.getTargets()));
         List<Object> cont = new ArrayList<>();
         if (c.getCounters() != null) for (CounterView k : c.getCounters()) cont.add(Arrays.asList(k.getName(), k.getCount()));
