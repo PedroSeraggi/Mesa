@@ -1054,7 +1054,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
       <select id="lbQtd"><option value="1">1 oponente</option><option value="2">2 oponentes</option><option value="3" selected>3 oponentes</option><option value="4">4 oponentes</option><option value="5">5 oponentes</option></select>
     </label>
     <div class="ops" id="lbOps"></div>
-    <label>Nível da IA <select id="lbNivel"><option value="2">Fácil (rápida)</option><option value="4" selected>Normal</option><option value="6">Difícil (mais lenta)</option></select></label>
+    <label>Nível da IA <select id="lbNivel"><option value="4">Fácil</option><option value="7" selected>Normal</option><option value="8">Difícil</option></select></label>
     <div class="lobbyStatus" id="lbStatus"></div>
     <div class="lobbyErro" id="lbErro"></div>
     <button class="pri" id="lbJogar">Começar partida</button>
@@ -1086,7 +1086,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
           <label>Lugares<select id="jgLugares"><option value="2">2 jogadores</option><option value="3">3 jogadores</option><option value="4" selected>4 jogadores</option><option value="5">5 jogadores</option><option value="6">6 jogadores</option></select></label>
           <label>Bots completando<select id="jgBots"></select></label>
           <div id="jgBotsDecks" class="ops"></div>
-          <label>Nível dos bots<select id="jgNivel"><option value="2">Fácil</option><option value="4" selected>Normal</option><option value="6">Difícil</option></select></label>
+          <label>Nível dos bots<select id="jgNivel"><option value="4">Fácil</option><option value="7" selected>Normal</option><option value="8">Difícil</option></select></label>
           <button class="pri" id="jgCriar">Criar sala</button>
         </div>
       </div>
@@ -3236,7 +3236,7 @@ function desenharChefe(){
   box.innerHTML = `<div class="chDentro">
     <div class="chRotulo">Chefe do dia <span class="chTempo" id="chTempo">troca em ${tempoAte(C.fim)}</span></div>
     <div class="chNome">${esc(cmd.nome || C.nome)}</div>
-    <div class="chSub">${esc(C.nome)} · 1 contra 1 · IA nível 10</div>
+    <div class="chSub">${esc(C.nome)} · 1 contra 1</div>
     ${C.euVenci ? '<div class="chVenci">Você já derrotou o chefe deste ciclo! Bônus de +250 XP recebido.</div>' : '<div class="chBonus">Primeira vitória: <b>+250 XP</b></div>'}
     <div class="chLinha"><select id="chDeck">${(decks||[]).map(d=>`<option value="${esc(d.arquivo)}" ${d.arquivo===salvo?'selected':''}>${esc(nomeDeckCurto(d))}</option>`).join('')}</select>
       <button class="pri" id="chEnfrentar">${C.euVenci ? 'Enfrentar de novo' : 'Enfrentar'}</button></div>

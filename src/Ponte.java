@@ -776,7 +776,7 @@ public class Ponte implements MageClient {
     }
     volatile Estatisticas stats = null;
     // ---------------- Chefe do dia (1 contra 1, deck forte vindo do Zera) ----------------
-    static final int NIVEL_CHEFE = 10;  // nível da IA do chefe (o "difícil" comum é 6); o nível só muda quantas jogadas ela testa na fase
+    static final int NIVEL_CHEFE = 10;  // nível da IA do chefe (o "difícil" comum é 8); o nível só muda quantas jogadas ela testa na fase
     volatile String chefeCiclo = null, chefeNome = null;
     volatile Object chefeCache = null; volatile long chefeCacheEm = 0;
     Object infoChefe(boolean forcar) throws IOException {
@@ -924,8 +924,8 @@ public class Ponte implements MageClient {
                 int humanos = (int) nomes.stream().filter(n -> !ehBot(n)).count();
                 double mult = 1.0;
                 if (temBot) {
-                    int nivel = ultimaCriacao != null && ultimaCriacao.get("nivel") instanceof Number ? ((Number) ultimaCriacao.get("nivel")).intValue() : 4;
-                    mult = nivel >= 6 ? 0.5 : nivel <= 2 ? 0.3 : 0.4;
+                    int nivel = ultimaCriacao != null && ultimaCriacao.get("nivel") instanceof Number ? ((Number) ultimaCriacao.get("nivel")).intValue() : 7;
+                    mult = nivel >= 8 ? 0.5 : nivel <= 4 ? 0.3 : 0.4;   // fácil 4 = 30%, normal 7 = 40%, difícil 8+ (e o chefe) = 50%
                 }
                 JsonObject p = new JsonObject();
                 p.addProperty("gameId", gid.toString());
@@ -1973,7 +1973,7 @@ public class Ponte implements MageClient {
                     List<String> bots = new ArrayList<>();
                     if (b.has("bots")) b.getAsJsonArray("bots").forEach(e -> bots.add(e.getAsString()));
                     criarMesaAmigos(b.get("deck").getAsString(), b.get("lugares").getAsInt(), bots,
-                            b.has("nivel") ? b.get("nivel").getAsInt() : 4, b.has("nome") ? b.get("nome").getAsString() : "");
+                            b.has("nivel") ? b.get("nivel").getAsInt() : 7, b.has("nome") ? b.get("nome").getAsString() : "");
                     break;
                 }
                 case "entrar":
@@ -2132,7 +2132,7 @@ public class Ponte implements MageClient {
         String meu = b.get("deck").getAsString();
         List<String> ops = new ArrayList<>();
         b.getAsJsonArray("oponentes").forEach(e -> ops.add(e.getAsString()));
-        int skill = b.has("nivel") ? b.get("nivel").getAsInt() : 4;
+        int skill = b.has("nivel") ? b.get("nivel").getAsInt() : 7;
         json(ex, 200, Collections.singletonMap("ok", true));
         new Thread(() -> {
             try {
