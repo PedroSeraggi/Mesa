@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-br"><head><meta charset="utf-8"><title>Prévia — Krenko falando</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=EB+Garamond:wght@500&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;height:100%;background:#0b0604;overflow:hidden;font-family:'EB Garamond',serif;color:#fff4e0}
+.mesa{position:absolute;inset:0;display:grid;grid-template-rows:1fr 1fr}
+/* playmat do chefe com o perfil dele ao fundo */
+.matChefe{position:relative;overflow:hidden;border-bottom:3px solid #3a1a0c;box-shadow:inset 0 -30px 60px #000c}
+.matChefe .perfil{position:absolute;inset:-4%;background:url('campanha/artes/krenko.jpg') center 30%/cover;filter:saturate(.75) brightness(.42) blur(1px);
+  -webkit-mask:radial-gradient(ellipse 70% 95% at 50% 40%,#000 35%,transparent 85%);mask:radial-gradient(ellipse 70% 95% at 50% 40%,#000 35%,transparent 85%);transition:filter .5s,transform 6s ease-out}
+.matChefe::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,#1a0804aa,transparent 30%,transparent 60%,#120604ee),
+  repeating-linear-gradient(115deg,#ff6a2a08 0 2px,transparent 2px 9px)}
+.matEu{background:radial-gradient(ellipse at 50% 60%,#1d2a1a,#0a0f08)}
+.mesa.falando .perfil{filter:saturate(1) brightness(.6) blur(0);transform:scale(1.06)}
+/* retrato do herói, estilo Hearthstone, na borda do playmat */
+.heroi{position:absolute;left:50%;top:50%;width:150px;height:180px;margin:-150px 0 0 -75px;z-index:5;transform-origin:50% 60%;
+  transition:transform .45s cubic-bezier(.2,1.4,.4,1),filter .4s}
+.heroi .ft{position:absolute;inset:12px 14px 16px;border-radius:50% 50% 46% 46%/58% 58% 42% 42%;background:url('campanha/artes/krenko.jpg') center 25%/cover;
+  box-shadow:inset 0 -20px 30px #000a}
+.heroi .moldura{position:absolute;inset:0;border-radius:50% 50% 44% 44%/58% 58% 42% 42%;
+  box-shadow:0 0 0 5px #8a5a24,0 0 0 8px #2a1408,0 0 0 10px #c9a24a,0 12px 30px #000e;pointer-events:none}
+.heroi .nome{position:absolute;left:50%;bottom:-14px;transform:translateX(-50%);padding:3px 14px;border-radius:6px;font-family:Cinzel,serif;font-size:13px;letter-spacing:.14em;
+  background:linear-gradient(#5a1a0c,#2a0a04);box-shadow:0 0 0 2px #c9a24a,0 4px 10px #000c;white-space:nowrap}
+.heroi .vida{position:absolute;right:-8px;bottom:6px;width:44px;height:44px;display:grid;place-items:center;font:700 20px Cinzel,serif;
+  background:radial-gradient(circle at 40% 35%,#e0402a,#7a0e06);border-radius:50%;box-shadow:0 0 0 3px #c9a24a,0 4px 10px #000c}
+.mesa.falando .heroi{transform:scale(1.55) translateY(14px);filter:drop-shadow(0 0 26px #ff6a2a)}
+.mesa.falando .heroi .ft{animation:fala .16s ease-in-out infinite alternate}
+@keyframes fala{to{transform:translateY(-1.5px) rotate(.6deg)}}
+/* balão */
+.bal{position:absolute;left:calc(50% + 150px);top:calc(50% - 190px);z-index:6;max-width:380px;padding:14px 20px 16px;border-radius:16px;font-size:21px;line-height:1.3;
+  background:#f6ead2;color:#2a1408;box-shadow:0 0 0 3px #8a5a24,0 12px 30px #000c;opacity:0;transform:scale(.6) translateX(-40px);transform-origin:0 70%;
+  transition:opacity .25s,transform .35s cubic-bezier(.2,1.4,.4,1)}
+.bal::before{content:'';position:absolute;left:-16px;bottom:22px;border:12px solid transparent;border-right:16px solid #f6ead2;border-left:0}
+.mesa.falando .bal{opacity:1;transform:none}
+.bts{position:absolute;left:0;right:0;bottom:18px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;z-index:9}
+.bts button{font:700 13px Cinzel,serif;letter-spacing:.08em;color:#ffe9c0;padding:9px 14px;border:0;border-radius:8px;cursor:pointer;
+  background:linear-gradient(#6a2a10,#3a1206);box-shadow:0 0 0 1px #c9a24a88,0 4px 0 #1a0804}
+.bts button:active{transform:translateY(3px);box-shadow:0 0 0 1px #c9a24a88,0 1px 0 #1a0804}
+</style></head><body>
+<div class="mesa" id="mesa">
+  <div class="matChefe"><div class="perfil"></div></div>
+  <div class="matEu"></div>
+  <div class="heroi"><div class="ft"></div><div class="moldura"></div><div class="nome">KRENKO</div><div class="vida">40</div></div>
+  <div class="bal" id="bal"></div>
+</div>
+<div class="bts" id="bts"></div>
+<script>
+const FALAS={inicio:'Mais um herói? Meus meninos ADORAM heróis. Eles quebram tão fácil!',turno3:'Tá ouvindo esse barulho? São os meus goblins. TODOS eles. E tem mais vindo!',
+perdeu:'Tudo bem, tudo bem! Eu tenho mais. Eu SEMPRE tenho mais!',ganhando:'Tá cansado, herói? Eu nem comecei! Hehehe!',
+apanhando:'Não, não, não! Guardas! GUARDAS! Alguém faz alguma coisa!',derrota:'O dragão... ele prometeu... que eu ia ser rei...',
+vitoria:'HAHA! Eu sabia! Ninguém derrota o Krenko! Volta quando tiver mais goblins!'};
+const mesa=document.getElementById('mesa'),bal=document.getElementById('bal');let au,tt,fim;
+function falar(id){
+  if(au)au.pause();clearInterval(tt);clearTimeout(fim);
+  const tx=FALAS[id];bal.textContent='';mesa.classList.add('falando');
+  let i=0;tt=setInterval(()=>{bal.textContent=tx.slice(0,++i);if(i>=tx.length)clearInterval(tt)},30);
+  au=new Audio('cutscenes/krenko/'+id+'.mp3');
+  const acabar=()=>{fim=setTimeout(()=>mesa.classList.remove('falando'),700)};
+  au.onended=acabar;au.onerror=()=>{fim=setTimeout(()=>mesa.classList.remove('falando'),Math.max(3500,tx.length*70))};
+  au.play().catch(au.onerror);
+}
+document.getElementById('bts').innerHTML=Object.keys(FALAS).map(k=>`<button onclick="falar('${k}')">${k}</button>`).join('');
+</script></body></html>
