@@ -1522,7 +1522,18 @@ public class Ponte implements MageClient {
     String statusParaAmigos() {
         String f = fase;
         try {
-            if ("jogo".equals(f)) { Map<String, Object> j = jogo; return "em partida" + (j != null && j.get("turno") != null ? ", turno " + j.get("turno") : ""); }
+            if ("jogo".equals(f)) {
+                Map<String, Object> j = jogo; String turno = j != null && j.get("turno") != null ? ", turno " + j.get("turno") : "";
+                int cb = campanhaBatalha;
+                if (cb > 0) {   // campanha: "na campanha, batalha 15 (Exército de Krenko), turno 7"
+                    String nome = "";
+                    List<String> ops = oponentesAtuais;
+                    if (ops != null && !ops.isEmpty()) nome = ops.get(0).replaceFirst("^@chefe/", "").replaceFirst("[.]dck$", "") + (ops.size() > 1 ? " e mais " + (ops.size() - 1) : "");
+                    return "na campanha, batalha " + cb + (nome.isEmpty() ? "" : " (" + nome + ")") + turno;
+                }
+                if (chefeNome != null) return "contra o Chefe do dia (" + chefeNome + ")" + turno;
+                return "em partida" + turno;
+            }
             if ("sala".equals(f)) { Map<String, Object> sl = salaParaAmigos(); return sl == null ? "numa sala" : "na sala " + sl.get("nome") + " (" + sl.get("ocupados") + "/" + sl.get("lugares") + ")"; }
             if ("conectando".equals(f) || "iniciando".equals(f)) return "entrando numa partida";
         } catch (Exception ignored) { }
@@ -1530,6 +1541,7 @@ public class Ponte implements MageClient {
     }
     /** Sala em que estou (para os amigos entrarem), só se ela estiver num servidor que eles alcançam. */
     Map<String, Object> salaParaAmigos() {
+        if ("jogo".equals(fase) && usarPcLocal) return null;   // partida no PC (campanha, ou o Zera fora do ar): os amigos não alcançam para assistir
         if ("jogo".equals(fase) && tableId != null && !souAnfitriao()) {   // em partida: os amigos podem assistir
             Map<String, Object> r = new LinkedHashMap<>();
             r.put("servidor", servidorBruto()); r.put("mesa", tableId.toString()); r.put("emJogo", true); r.put("livres", 0);
