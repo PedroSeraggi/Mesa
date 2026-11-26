@@ -673,6 +673,58 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .epVitTxt b{display:block;font-family:var(--ff-titulo);font-weight:800;font-size:clamp(34px,5vw,64px);letter-spacing:.14em;color:#ffe08a;text-shadow:0 0 20px #ff9a2a,0 4px 14px #000}
 .epVitTxt span{display:block;font-family:var(--ff-titulo);font-size:16px;letter-spacing:.2em;text-transform:uppercase;color:#f3dfb0;margin-top:2px}
 #epFx .epSai{transition:opacity .8s;opacity:0!important}
+/* ---------- economia: Ouro, loja, booster, coleção ---------- */
+.moeda{display:inline-block;width:1.05em;height:1.05em;vertical-align:-.16em;flex:none}
+.btnOuro{position:fixed;right:176px;bottom:18px;z-index:45;height:36px;border-radius:999px;display:flex;align-items:center;gap:6px;padding:0 12px 0 8px!important;border:1px solid #c9a24a88;background:var(--painel);color:#ffe08a;font-family:var(--ff-titulo);font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 6px 20px #000a}
+.btnOuro:hover{border-color:var(--ouro);filter:brightness(1.12)}
+.btnOuro .nB{min-width:18px;height:18px;border-radius:9px;background:#b8452a;color:#fff;font-size:11px;display:grid;place-items:center;padding:0 4px}
+.btnOuro.oculto{display:none}
+.lojaCx{display:flex;flex-direction:column;gap:16px}
+.lojaCab{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.lojaSaldo{font-family:var(--ff-titulo);font-size:26px;color:#ffe08a;display:flex;align-items:center;gap:8px}
+.lojaSaldo small{font-family:inherit;font-size:12px;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase}
+.lojaGrade{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.lojaItem{display:flex;gap:14px;align-items:center;padding:14px;border-radius:12px;background:var(--bg2);border:1px solid var(--borda)}
+.lojaItem .pacote{flex:none}
+.lojaItem b{display:block;font-family:var(--ff-titulo);font-size:15px;color:var(--txt)}
+.lojaItem span{display:block;font-size:13px;color:var(--txt3);margin:3px 0 8px}
+/* o pacote de booster */
+.pacote{position:relative;width:74px;height:104px;border-radius:6px;background:linear-gradient(160deg,#5a2a6a,#2a1238 55%,#160a1e);box-shadow:inset 0 0 0 2px #c9a24a99,0 6px 14px #000b;overflow:hidden}
+.pacote::before{content:'';position:absolute;left:0;right:0;top:0;height:12px;background:repeating-linear-gradient(90deg,#c9a24a 0 4px,#8a6a28 4px 8px)}
+.pacote::after{content:'M';position:absolute;inset:0;display:grid;place-items:center;font-family:var(--ff-titulo);font-weight:800;font-size:34px;color:#ffe08a;text-shadow:0 0 12px #ff9a3a}
+.pacote i{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-style:normal;font-family:var(--ff-titulo);font-size:8px;letter-spacing:.2em;color:#e8d4f0}
+/* abrir booster */
+#abrirBooster{position:fixed;inset:0;z-index:9200;background:radial-gradient(ellipse at 50% 45%,#2a1638f0,#07040af8 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+#abrirBooster .pacoteGrande{width:200px;height:280px;border-radius:10px;cursor:pointer;animation:pctFlut 2s ease-in-out infinite;transition:transform .2s}
+#abrirBooster .pacoteGrande:hover{transform:scale(1.04)}
+#abrirBooster .pacoteGrande::after{font-size:90px}
+#abrirBooster .pacoteGrande i{font-size:13px;bottom:20px}
+@keyframes pctFlut{50%{transform:translateY(-10px)}}
+#abrirBooster .pacoteGrande.rasga{animation:pctRasga .7s ease-in forwards}
+@keyframes pctRasga{20%{transform:rotate(-4deg) scale(1.05)}40%{transform:rotate(4deg) scale(1.08)}100%{transform:scale(1.4);opacity:0;filter:brightness(3)}}
+#abrirBooster .dica{color:#d9c8e8;font-size:14px}
+#abrirBooster .leque{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:min(1100px,94vw)}
+.cartaBooster{width:118px;aspect-ratio:63/88;perspective:800px;cursor:pointer;opacity:0;animation:cbEntra .4s ease-out forwards;animation-delay:var(--d)}
+@keyframes cbEntra{from{opacity:0;transform:translateY(40px) scale(.8)}to{opacity:1;transform:none}}
+.cartaBooster .gira{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s}
+.cartaBooster.virada .gira{transform:rotateY(180deg)}
+.cartaBooster .lado{position:absolute;inset:0;border-radius:6px;backface-visibility:hidden;background:#000 center/cover;box-shadow:0 6px 14px #000c}
+.cartaBooster .costas{background-image:url('https://backs.scryfall.io/large/0/a/0aeebaf5-8c7d-4636-9e82-8c27447861f7.jpg')}
+.cartaBooster .face{transform:rotateY(180deg)}
+.cartaBooster.f-rara .costas{box-shadow:0 0 0 2px #ffd04a,0 0 22px #ffb84a99}
+.cartaBooster.f-mitica .costas{box-shadow:0 0 0 2px #ff8a3a,0 0 28px #ff5a1acc}
+.cartaBooster.f-especial .costas{box-shadow:0 0 0 2px #b08ad0,0 0 20px #8a5ad099}
+.cartaBooster .nova{position:absolute;top:-8px;right:-6px;z-index:2;background:#3f9a5a;color:#fff;font-family:var(--ff-titulo);font-size:10px;letter-spacing:.1em;padding:2px 7px;border-radius:999px;opacity:0;transform:rotateY(180deg)}
+.cartaBooster.virada .nova{opacity:1;transform:none;transition:opacity .3s .4s}
+/* coleção */
+.colFiltros{display:flex;gap:6px;flex-wrap:wrap}
+.colFiltros button.sel{border-color:var(--ouro);color:var(--ouro)}
+.colGrade{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;max-height:62vh;overflow:auto;padding:4px}
+.colCarta{position:relative;aspect-ratio:63/88;border-radius:6px;background:#000 center/cover;box-shadow:0 4px 10px #000a;cursor:zoom-in}
+.colCarta b{position:absolute;right:4px;bottom:4px;background:#120d09ee;color:#ffe08a;border:1px solid #c9a24a88;border-radius:999px;font-size:11px;padding:0 6px}
+/* Ouro no fim da partida */
+.ouroFim{margin-top:10px;border-top:1px solid var(--borda);padding-top:10px}
+.ouroFim .xpTopo b{color:#ffe08a}
 /* 2v2: barras de vida do time (cada jogador carrega metade; se uma zera, o time perde) */
 #vidaTime{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:40;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;width:min(460px,60vw)}
 #vidaTime .vtLinha{width:100%;box-sizing:border-box}
@@ -1054,7 +1106,7 @@ html.fundoParado #cena .slide.ativo{animation:none}
 @keyframes kenburns{from{transform:scale(1.02) translateX(0)}to{transform:scale(1.12) translateX(-2%)}}
 #cena .veu{position:absolute;inset:0;background:linear-gradient(90deg,#0c0805f2 0%,#0c0805d9 22%,#0c080599 36%,#0c080533 52%,transparent 64%),linear-gradient(0deg,#0c080566 0%,transparent 22%)}
 #lobby:not(.naMenu) #cena .veu{background:#0c0805c8}
-#lobby>*:not(#cena):not(#btnAmigos):not(#painelAmigos):not(#convitesAmigos):not(#btnMissoes):not(#caixaMissoes){position:relative;z-index:1}
+#lobby>*:not(#cena):not(#btnAmigos):not(#painelAmigos):not(#convitesAmigos):not(#btnMissoes):not(#caixaMissoes):not(#btnOuro){position:relative;z-index:1}
 #cena .sol{animation:pulsoSol 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 #cena .halo{animation:halo 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 #cena .giro{animation:girar 90s linear infinite}
@@ -1469,6 +1521,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
 <canvas id="brasas"></canvas>
 </div>
   <div class="menuTopo"><button class="peq oculto" id="btnVoltar">← Menu</button><div class="marca">MESA</div><div id="chipPerfil" class="chipPerfil" title="Perfil"></div></div>
+  <button id="btnOuro" class="btnOuro oculto" title="Ouro e loja"></button>
   <button id="btnMissoes" class="btnMissoes oculto" title="Missões de hoje"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg><span id="nMissoes"></span></button>
   <div id="caixaMissoes" class="oculto"></div>
   <button id="btnAmigos" class="btnAmigos" title="Amigos">Amigos <span id="nAmigos"></span></button>
@@ -4222,7 +4275,93 @@ function telaVsChefe(cmdEu, cmdChefe){
 
 // ---------------- nível e missões
 let caixaMissoesAberta = false;
+
+// ---------------- Economia: Ouro, loja, boosters e coleção ----------------
+const MOEDA = '<svg class="moeda" viewBox="0 0 24 24"><defs><radialGradient id="mg" cx="35%" cy="30%"><stop offset="0" stop-color="#fff6c8"/><stop offset=".45" stop-color="#f0c44a"/><stop offset="1" stop-color="#9a6a18"/></radialGradient></defs><circle cx="12" cy="12" r="10.5" fill="url(#mg)" stroke="#7a5414" stroke-width="1.2"/><circle cx="12" cy="12" r="7.6" fill="none" stroke="#b8862a" stroke-width="1"/><path d="M8 16V8.4l4 4.6 4-4.6V16" fill="none" stroke="#7a5414" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+const fmtOuro = n => Number(n||0).toLocaleString('pt-BR');
+let lojaInfo = null;
+function desenharBtnOuro(){
+  const f = amigos && amigos.foto;
+  const b = $('#btnOuro'); if (!b) return;
+  if (!f || f.ouro === undefined){ b.classList.add('oculto'); return; }
+  b.classList.remove('oculto');
+  b.innerHTML = `${MOEDA}<span>${fmtOuro(f.ouro)}</span>${f.boosters ? `<span class="nB" title="Boosters para abrir">${f.boosters}</span>` : ''}`;
+}
+$('#btnOuro').onclick = ()=>abrirLoja();
+async function abrirLoja(){
+  const cx = abrirModal('<div class="dicaMenu">Abrindo a loja...</div>');
+  lojaInfo = await post('/api/loja', {acao:'saldo'});
+  desenharLoja(cx);
+}
+function desenharLoja(cx){
+  const L = lojaInfo || {};
+  if (L.erro){ cx.innerHTML = `<div class="amErro">${esc(L.erro)}</div><div class="linhaBts"><button id="ljFechar">Fechar</button></div>`; $('#ljFechar').onclick = ()=>fecharModal(true); return; }
+  cx.innerHTML = `<div class="lojaCx">
+    <div class="lojaCab"><div class="lojaSaldo">${MOEDA}${fmtOuro(L.ouro)} <small>Ouro</small></div><button class="peq" id="ljFechar">✕</button></div>
+    <div class="lojaGrade">
+      <div class="lojaItem"><div class="pacote"><i>MUNDO 1</i></div><div><b>Booster do Mundo 1</b><span>15 cartas: 10 comuns, 3 incomuns, 1 rara ou mítica e 1 especial (lendária ou terreno).</span>
+        <button class="pri" id="ljComprar" ${L.ouro >= L.precoBooster ? '' : 'disabled'}>Comprar por ${MOEDA} ${fmtOuro(L.precoBooster)}</button></div></div>
+      <div class="lojaItem"><div class="pacote" style="filter:brightness(${L.boosters ? 1 : .45})"><i>${L.boosters || 0} FECHADO${L.boosters === 1 ? '' : 'S'}</i></div><div><b>Seus boosters</b><span>${L.boosters ? `Você tem ${L.boosters} para abrir.` : 'Nenhum para abrir. Compre um ou vença batalhas da campanha.'}</span>
+        <button class="pri" id="ljAbrir" ${L.boosters ? '' : 'disabled'}>Abrir booster</button></div></div>
+      <div class="lojaItem"><div class="pacote" style="background:linear-gradient(160deg,#3a2a14,#1a120a)"><i>COLEÇÃO</i></div><div><b>Sua coleção</b><span>${fmtOuro(L.cartasNaColecao)} cartas (${fmtOuro(L.cartasDiferentes)} diferentes). Elas vão montar o seu deck da campanha.</span>
+        <button id="ljColecao">Ver coleção</button></div></div>
+    </div>
+    <div class="dicaMenu" style="background:none;border:none;padding:0">Ganhe Ouro em todas as partidas: jogar e vencer, criaturas abatidas, cartas compradas, missões e a primeira vitória do dia.</div>
+  </div>`;
+  $('#ljFechar').onclick = ()=>fecharModal(true);
+  $('#ljComprar').onclick = async ()=>{ const r = await post('/api/loja', {acao:'comprarBooster'}); if (r.erro){ avisoLocal(r.erro); return; } lojaInfo = r; atualizarOuroMenu(r); desenharLoja(cx); avisoLocal('Booster comprado!'); };
+  $('#ljAbrir').onclick = async ()=>{ const r = await post('/api/loja', {acao:'abrirBooster'}); if (r.erro){ avisoLocal(r.erro); return; } lojaInfo = r; atualizarOuroMenu(r); fecharModal(true); animarBooster(r.cartas || []); };
+  $('#ljColecao').onclick = ()=>verColecao();
+}
+function atualizarOuroMenu(r){ if (amigos && amigos.foto){ amigos.foto.ouro = r.ouro; amigos.foto.boosters = r.boosters; desenharBtnOuro(); } }
+// abrir booster: o pacote rasga e as 15 cartas aparecem viradas; clique para revelar (ou "Revelar todas")
+function animarBooster(cartas){
+  let el = $('#abrirBooster'); if (el) el.remove();
+  el = document.createElement('div'); el.id = 'abrirBooster'; document.body.appendChild(el);
+  el.innerHTML = `<div class="pacote pacoteGrande"><i>MUNDO 1</i></div><div class="dica">Clique no pacote para abrir</div>`;
+  const ordem = {comum:0, incomum:1, especial:2, rara:3, mitica:4};
+  const lista = [...cartas].sort((a,b)=>ordem[a.faixa]-ordem[b.faixa]);   // as melhores por último, como num pacote de verdade
+  lista.forEach(c=>{ const i = new Image(); i.src = imgCarta(c); });   // já começa a baixar as imagens enquanto o pacote está fechado
+  el.querySelector('.pacoteGrande').onclick = ev=>{
+    ev.currentTarget.classList.add('rasga');
+    try { if (cfgApp.somFx !== false) tocarBum(.35 * Math.min(1, (cfgApp.volFx ?? 50) / 50), 1.4); } catch(e){}
+    setTimeout(()=>{
+      el.innerHTML = `<div class="leque">${lista.map((c,i)=>`<div class="cartaBooster f-${c.faixa}" style="--d:${i*.06}s" data-img="${esc(imgCarta(c))}"><div class="gira"><div class="lado costas"></div><div class="lado face" style="background-image:url('${imgCarta(c)}')"></div></div>${c.nova ? '<span class="nova">NOVA</span>' : ''}</div>`).join('')}</div>
+        <div class="linhaBts"><button id="abRevelar">Revelar todas</button><button class="pri oculto" id="abPronto">Pronto</button></div>`;
+      const verificar = ()=>{ if (!el.querySelector('.cartaBooster:not(.virada)')){ $('#abRevelar').classList.add('oculto'); $('#abPronto').classList.remove('oculto'); } };
+      el.querySelectorAll('.cartaBooster').forEach(c=>{
+        c.onclick = ()=>{ if (!c.classList.contains('virada')){ c.classList.add('virada'); if (/f-(rara|mitica)/.test(c.className)) try { tocarBum(.3, 1.6); } catch(e){} verificar(); } };
+        c.onmouseenter = ev=>{ if (!c.classList.contains('virada')) return; const h = $('#hover'); h.innerHTML = `<img src="${c.dataset.img}" style="width:250px;border-radius:12px">`; h.classList.remove('oculto'); posicionarHover(ev); };
+        c.onmouseleave = esconderHover;
+      });
+      $('#abRevelar').onclick = ()=>{ el.querySelectorAll('.cartaBooster:not(.virada)').forEach((c,i)=>setTimeout(()=>c.click(), i*90)); };
+      $('#abPronto').onclick = ()=>{ el.remove(); esconderHover(); abrirLoja(); };
+    }, 650);
+  };
+}
+// coleção: todas as cartas que a pessoa tem, com filtro por raridade
+async function verColecao(){
+  const cx = abrirModal('<div class="dicaMenu">Carregando a coleção...</div>');
+  const r = await post('/api/loja', {acao:'colecao'});
+  if (r.erro){ cx.innerHTML = `<div class="amErro">${esc(r.erro)}</div>`; return; }
+  const col = r.colecao || []; let filtro = '';
+  const nomesF = {'':'Todas', comum:'Comuns', incomum:'Incomuns', rara:'Raras', mitica:'Míticas', especial:'Especiais'};
+  const ordem = {mitica:0, rara:1, especial:2, incomum:3, comum:4};
+  const desenhar = ()=>{
+    const lista = col.filter(c=>!filtro || c.faixa===filtro).sort((a,b)=>ordem[a.faixa]-ordem[b.faixa] || a.nome.localeCompare(b.nome));
+    cx.innerHTML = `<div class="lojaCx"><div class="lojaCab"><h3 class="subt" style="margin:0">Sua coleção <small style="font-family:inherit;text-transform:none;letter-spacing:0;color:var(--txt3)">${r.cartasNaColecao} cartas · ${r.cartasDiferentes} diferentes</small></h3>
+      <div style="display:flex;gap:8px"><button class="peq" id="colVoltar">Voltar à loja</button><button class="peq" id="colFechar">✕</button></div></div>
+      <div class="colFiltros">${Object.entries(nomesF).map(([k,n])=>`<button class="peq ${filtro===k?'sel':''}" data-f="${k}">${n} (${k ? col.filter(c=>c.faixa===k).length : col.length})</button>`).join('')}</div>
+      ${lista.length ? `<div class="colGrade">${lista.map(c=>`<div class="colCarta" style="background-image:url('${imgCarta(c)}')" data-img="${esc(imgCarta(c))}" title="${esc(c.nome)}">${c.qtd>1?`<b>${c.qtd}×</b>`:''}</div>`).join('')}</div>` : '<div class="dicaMenu">Nada aqui ainda. Abra um booster!</div>'}</div>`;
+    cx.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{ filtro = b.dataset.f; desenhar(); });
+    cx.querySelectorAll('.colCarta').forEach(el=>{ el.onmouseenter = ev=>{ const h = $('#hover'); h.innerHTML = `<img src="${el.dataset.img}" style="width:250px;border-radius:12px">`; h.classList.remove('oculto'); posicionarHover(ev); }; el.onmouseleave = esconderHover; });
+    $('#colVoltar').onclick = ()=>{ esconderHover(); abrirLoja(); };
+    $('#colFechar').onclick = ()=>{ esconderHover(); fecharModal(true); };
+  };
+  desenhar();
+}
 function desenharMissoes(){
+  desenharBtnOuro();
   const f = amigos && amigos.foto, ms = (f && f.missoes) || [];
   $('#btnMissoes').classList.toggle('oculto', !ms.length);
   const falta = ms.filter(m=>!m.feita).length;
@@ -4258,6 +4397,8 @@ function desenharXpFim(r){
     ${(x.ganhos||[]).length ? `<table class="xpTab">${x.ganhos.map(g=>`<tr><td>${esc(g.motivo)}${g.bot && x.multiplicador < 1 ? ` <small class="xpPct">${Math.round(x.multiplicador*100)}%</small>` : ''}</td><td class="q">${g.qtd!=null?`${g.qtd}x`:''}</td><td class="v">+${g.xp} XP</td><td class="m">${g.max?'MAX':''}</td></tr>`).join('')}
       <tr class="tot"><td>Total</td><td></td><td class="v">+${x.total} XP</td><td></td></tr></table>
       ${x.xpCheioChefe ? `<div class="xpNota">Primeira vitória contra este chefe: XP cheio (100%).</div>` : ''}
+      ${x.ouro && (x.ouro.ganhos||[]).length ? `<div class="ouroFim"><div class="xpTopo"><b>${MOEDA} +${fmtOuro(x.ouro.total)} de Ouro</b><span style="color:var(--txt3);font-size:13px">saldo ${fmtOuro(x.ouro.saldo)}</span></div>
+        <table class="xpTab">${x.ouro.ganhos.map(g=>`<tr><td>${esc(g.motivo)}</td><td class="q">${g.qtd!=null?`${g.qtd}×`:''}${g.max?' <small class="xpMax">MAX</small>':''}</td><td class="v">+${g.ouro}</td><td></td></tr>`).join('')}</table></div>` : ''}
       ${(x.conquistasNovas||[]).length ? `<div class="cqNovas"><div class="xpNota" style="color:var(--ouro)">Conquista desbloqueada!</div>${x.conquistasNovas.map(c=>conquistaHtml(Object.assign({quando:Date.now()}, c))).join('')}</div>` : ''}
       ${x.deckGanhoNome ? `<div class="deckGanho">Você ganhou o deck do chefe: <b>${esc(x.deckGanhoNome)}</b>. Ele está em Decks, na seção "Decks de chefe".</div>` : ''}
       ${x.multiplicador && x.multiplicador < 1 ? `<div class="xpNota">Partida com bots: os itens com % valem ${Math.round(x.multiplicador*100)}% (fácil 30%, normal 40%, difícil 50%, Chefe do dia 70%).</div>` : ''}`

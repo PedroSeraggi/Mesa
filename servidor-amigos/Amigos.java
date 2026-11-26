@@ -35,7 +35,9 @@ public class Amigos {
     static class Usuario {
         String id, codigo, nome = "?", avatar = "", status = "", xmage = ""; JsonObject sala, perfil; long visto;
         String playmat = ""; long playmatVer = 0;
-        Map<String, Long> conquistas = new LinkedHashMap<>();   // id -> quando desbloqueou   // playmat: "" (padrão), nome de um modelo pronto ou "foto" (imagem em playmats/<código>.jpg)
+        Map<String, Long> conquistas = new LinkedHashMap<>();   // id -> quando desbloqueou
+        long ouro = 0; int boosters = 0; boolean boasVindas = false;   // economia: Ouro, boosters fechados, saldo inicial já dado
+        Map<String, Integer> colecao = new LinkedHashMap<>();        // "nome|set|num" -> quantidade   // playmat: "" (padrão), nome de um modelo pronto ou "foto" (imagem em playmats/<código>.jpg)
         long xp = 0; String diaVitoria = ""; String diaMissoes = ""; Map<String, Integer> progresso = new HashMap<>(); Set<String> missoesFeitas = new HashSet<>();
         JsonObject recordes = new JsonObject(); List<JsonObject> historico = new ArrayList<>();
     }
@@ -72,6 +74,7 @@ public class Amigos {
         srv.createContext("/mao", ex -> tratar(ex, Amigos::mao));
         srv.createContext("/times", ex -> tratar(ex, Amigos::times));
         srv.createContext("/playmat", ex -> tratar(ex, Amigos::playmat));
+        srv.createContext("/loja", ex -> tratar(ex, Amigos::loja));
         srv.createContext("/playmats", ex -> tratar(ex, Amigos::playmats));
         srv.createContext("/playmatImg", Amigos::playmatImg);
         srv.createContext("/decksChefe", ex -> tratar(ex, c -> {   // todos os decks de chefe que a pessoa já ganhou (a Mesa baixa os que faltam)
@@ -233,6 +236,8 @@ public class Amigos {
         boolean primeiraContraChefe = venceuPartida(p) && !cicloChefe.isEmpty() && cicloChefe.equals(cicloAtual())
                 && b.derrotaramChefe.getOrDefault(cicloChefe, Collections.emptyList()).stream().noneMatch(d -> u.codigo.equals(d.get("codigo")));
         if (primeiraContraChefe) mult = 1.0;   // a primeira vitória contra o chefe vale 100%
+        boolean primeiraVitoriaDoDia = venceu && !hoje().equals(u.diaVitoria);   // antes do XP marcar o dia
+        List<Map<String, Object>> ouroGanhos = new ArrayList<>();
         int elim = p.getAsJsonArray("eliminou").size();
         int criaturasReais = p.get("criaturas").getAsInt(), comprasReais = p.get("compras").getAsInt();
         int criaturas = Math.min(15, criaturasReais), compras = Math.min(30, comprasReais);
@@ -294,6 +299,15 @@ public class Amigos {
                     soma(u.recordes, "decksDoDia", 1);
                 }
             }
+            // Ouro: base redonda; criaturas e cartas dão valores "quebrados"
+            {
+                boolean ehChefe = !str(p, "chefe").isEmpty(), ehDeckDia = !str(p, "deckDia").isEmpty();
+                ganhoOuro(ouroGanhos, "Jogar a partida", null, 60, false);
+                if (venceu) ganhoOuro(ouroGanhos, ehChefe ? "Vitória contra o Chefe do dia" : ehDeckDia ? "Vitória com o Deck do dia" : "Vitória", null, ehChefe ? 200 : 150, false);
+                if (criaturasReais > 0) ganhoOuro(ouroGanhos, "Criaturas abatidas", criaturasReais, Math.min(35, criaturasReais), criaturasReais >= 35);
+                if (comprasReais > 0) ganhoOuro(ouroGanhos, "Cartas compradas", comprasReais, Math.min(20, comprasReais), comprasReais >= 20);
+                if (primeiraVitoriaDoDia) ganhoOuro(ouroGanhos, "Primeira vitória do dia", null, 112, false);
+            }
             // missões
             missoesDoDia(u);
             Map<String, Integer> soma = new HashMap<>();
@@ -304,7 +318,8 @@ public class Amigos {
             for (Map.Entry<String, Integer> e : soma.entrySet()) u.progresso.merge(e.getKey(), e.getValue(), Integer::sum);
             for (Object[] m : missoesDoDia(u)) {
                 if (u.missoesFeitas.contains((String) m[0])) continue;
-                if (u.progresso.getOrDefault((String) m[4], 0) >= (Integer) m[2]) { u.missoesFeitas.add((String) m[0]); ganho.add("Missão: " + m[1], null, (Integer) m[3], false, false); }
+                if (u.progresso.getOrDefault((String) m[4], 0) >= (Integer) m[2]) { u.missoesFeitas.add((String) m[0]); ganho.add("Missão: " + m[1], null, (Integer) m[3], false, false);
+                    ganhoOuro(ouroGanhos, "Missão: " + m[1], null, ouroMissao((String) m[0]), false); }
             }
         }
         int antes = (Integer) nivelInfo(u).get("nivel");
@@ -345,6 +360,13 @@ public class Amigos {
         r.put("nivel", ni); r.put("subiu", (Integer) ni.get("nivel") > antes);
         r.put("missoes", missoesJson(u));
         if (!conqNovas.isEmpty()) r.put("conquistasNovas", conqNovas);
+        {   // Ouro da partida
+            darBoasVindas(u);
+            int tot = ouroGanhos.stream().mapToInt(g -> (Integer) g.get("ouro")).sum();
+            u.ouro += tot;
+            Map<String, Object> o = new LinkedHashMap<>(); o.put("ganhos", ouroGanhos); o.put("total", tot); o.put("saldo", u.ouro);
+            r.put("ouro", o);
+        }
         return r;
     }
     // ---------------- Chefe do dia ----------------
@@ -528,6 +550,95 @@ public class Amigos {
             novas.add(x);
         }
         return novas;
+    }
+
+    // ---------------- Economia: Ouro, boosters e coleção ----------------
+    static final int PRECO_BOOSTER = 450;
+    static void ganhoOuro(List<Map<String, Object>> l, String motivo, Integer qtd, int ouro, boolean max) {
+        if (ouro <= 0) return;
+        Map<String, Object> g = new LinkedHashMap<>(); g.put("motivo", motivo); if (qtd != null) g.put("qtd", qtd); g.put("ouro", ouro); if (max) g.put("max", true);
+        l.add(g);
+    }
+    /** Missão diária: 50 a 75 de Ouro (sempre o mesmo valor para a mesma missão). */
+    static int ouroMissao(String id) { return 50 + Math.floorMod(id.hashCode(), 26); }
+    /** Saldo inicial: 500 de Ouro e 1 booster, uma vez só. */
+    static void darBoasVindas(Usuario u) {
+        if (u.colecao == null) u.colecao = new LinkedHashMap<>();
+        if (u.boasVindas) return;
+        u.boasVindas = true; u.ouro += 500; u.boosters += 1; sujo = true;
+    }
+    // pool de cartas de cada mundo (pools/mundoN.json): comum, incomum, rara, mitica, especial
+    static final Map<String, JsonObject> pools = new HashMap<>();
+    static final Map<String, JsonObject> cartaPorChave = new HashMap<>();
+    static JsonObject pool(String mundo) throws IOException {
+        JsonObject p = pools.get(mundo);
+        if (p == null) {
+            java.nio.file.Path f = DADOS.toAbsolutePath().getParent().resolve("pools").resolve(mundo + ".json");
+            p = JsonParser.parseString(new String(Files.readAllBytes(f), StandardCharsets.UTF_8)).getAsJsonObject();
+            for (String r : new String[]{"comum", "incomum", "rara", "mitica", "especial"})
+                for (JsonElement e : p.getAsJsonArray(r)) { JsonObject c = e.getAsJsonObject(); c.addProperty("faixa", r); cartaPorChave.put(chaveCarta(c), c); }
+            pools.put(mundo, p);
+        }
+        return p;
+    }
+    static String chaveCarta(JsonObject c) { return str(c, "nome") + "|" + str(c, "set") + "|" + str(c, "num"); }
+    static final Random sorte = new Random();
+    static JsonObject sortear(JsonObject pool, String faixa, Set<String> ja) {
+        JsonArray a = pool.getAsJsonArray(faixa);
+        for (int t = 0; t < 30; t++) { JsonObject c = a.get(sorte.nextInt(a.size())).getAsJsonObject(); if (ja.add(str(c, "nome"))) return c; }
+        return a.get(sorte.nextInt(a.size())).getAsJsonObject();
+    }
+    /** Booster de 15: 10 comuns, 3 incomuns, 1 rara (1 em 8 vira mítica) e 1 especial (lendária ou terreno). */
+    static List<JsonObject> gerarBooster(String mundo) throws IOException {
+        JsonObject p = pool(mundo); Set<String> ja = new HashSet<>(); List<JsonObject> l = new ArrayList<>();
+        for (int i = 0; i < 10; i++) l.add(sortear(p, "comum", ja));
+        for (int i = 0; i < 3; i++) l.add(sortear(p, "incomum", ja));
+        l.add(sortear(p, sorte.nextInt(8) == 0 && p.getAsJsonArray("mitica").size() > 0 ? "mitica" : "rara", ja));
+        l.add(sortear(p, "especial", ja));
+        return l;
+    }
+    static Object loja(JsonObject c) throws IOException {
+        Usuario u = usuario(c);
+        darBoasVindas(u);
+        String acao = texto(c, "acao", 20, "saldo");
+        Map<String, Object> r = new LinkedHashMap<>();
+        switch (acao) {
+            case "comprarBooster": {
+                if (u.ouro < PRECO_BOOSTER) throw new IllegalArgumentException("Ouro insuficiente: o booster custa " + PRECO_BOOSTER + ".");
+                u.ouro -= PRECO_BOOSTER; u.boosters++; sujo = true;
+                break;
+            }
+            case "abrirBooster": {
+                if (u.boosters <= 0) throw new IllegalArgumentException("Você não tem booster para abrir.");
+                u.boosters--;
+                List<JsonObject> cartas = gerarBooster("mundo1");
+                JsonArray out = new JsonArray();
+                for (JsonObject x : cartas) {
+                    String k = chaveCarta(x); int q = u.colecao.merge(k, 1, Integer::sum);
+                    JsonObject y = x.deepCopy(); y.addProperty("nova", q == 1); out.add(y);
+                }
+                sujo = true;
+                r.put("cartas", out);
+                break;
+            }
+            case "colecao": {
+                pool("mundo1");
+                List<Map<String, Object>> l = new ArrayList<>();
+                for (Map.Entry<String, Integer> e : u.colecao.entrySet()) {
+                    JsonObject x = cartaPorChave.get(e.getKey()); if (x == null) continue;
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    for (String k : new String[]{"nome", "set", "num", "tipo", "cores", "faixa"}) m.put(k, str(x, k));
+                    m.put("qtd", e.getValue()); l.add(m);
+                }
+                r.put("colecao", l);
+                break;
+            }
+            default: break;
+        }
+        r.put("ouro", u.ouro); r.put("boosters", u.boosters); r.put("precoBooster", PRECO_BOOSTER);
+        int total = 0; for (int q : u.colecao.values()) total += q;
+        r.put("cartasNaColecao", total); r.put("cartasDiferentes", u.colecao.size());
+        return r;
     }
 
     // ---------------- Playmat: cada jogador escolhe um modelo ou sobe a própria imagem ----------------
@@ -777,6 +888,8 @@ public class Amigos {
         if (u.conquistas == null) u.conquistas = new LinkedHashMap<>();
         if (conferirConquistas(u).size() > 0) sujo = true;   // quem já tinha os recordes antes das conquistas existirem
         r.put("conquistas", conquistasJson(u));
+        darBoasVindas(u);
+        r.put("ouro", u.ouro); r.put("boosters", u.boosters);
         r.put("missoes", missoesJson(u));
         if (b.liderChefe != null && cicloAtual().equals(b.liderChefe.get("ciclo"))) r.put("liderChefe", b.liderChefe);   // aviso de novo 1º lugar
         List<Map<String, Object>> amigos = new ArrayList<>(), pedidos = new ArrayList<>(), online = new ArrayList<>(), convites = new ArrayList<>();
