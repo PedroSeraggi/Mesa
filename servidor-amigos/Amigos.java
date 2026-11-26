@@ -706,6 +706,41 @@ public class Amigos {
             cp.add("deck", deck); cp.addProperty("desde", System.currentTimeMillis());
             u.campanha = cp; sujo = true;
         }
+        if (acao.equals("editor")) {   // tudo para o editor: coleção (com dados das cartas), deck atual, comandante
+            if (u.campanha == null) throw new IllegalArgumentException("Escolha o seu deck inicial primeiro.");
+            pool("mundo1");
+            List<Map<String, Object>> col = new ArrayList<>();
+            for (Map.Entry<String, Integer> e : u.colecao.entrySet()) {
+                JsonObject x = cartaPorChave.get(e.getKey()); if (x == null) continue;
+                String tipo = str(x, "tipo");
+                if (tipo.contains("Basic") && tipo.contains("Land")) continue;
+                Map<String, Object> m = new LinkedHashMap<>();
+                for (String k : new String[]{"nome", "set", "num", "tipo", "faixa", "cores", "identidade"}) m.put(k, str(x, k));
+                m.put("cmc", x.has("cmc") ? x.get("cmc").getAsDouble() : 0);
+                m.put("qtd", e.getValue()); col.add(m);
+            }
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("colecao", col); r.put("campanha", u.campanha);
+            return r;
+        }
+        if (acao.equals("salvarDeck")) {   // valida: só cartas da coleção, uma de cada, nas cores do comandante, até 99
+            if (u.campanha == null) throw new IllegalArgumentException("Escolha o seu deck inicial primeiro.");
+            pool("mundo1");
+            JsonArray d = c.getAsJsonArray("deck");
+            if (d == null || d.size() > 99) throw new IllegalArgumentException("O deck pode ter no máximo 99 cartas além do comandante.");
+            String cor = str(u.campanha, "cor");
+            Set<String> nomes = new HashSet<>(); JsonArray novo = new JsonArray();
+            for (JsonElement e : d) {
+                JsonObject x = e.getAsJsonObject(); String k = chaveCarta(x);
+                if (u.colecao.getOrDefault(k, 0) < 1) throw new IllegalArgumentException("Você não tem a carta " + str(x, "nome") + ".");
+                JsonObject info = cartaPorChave.get(k);
+                if (info == null) throw new IllegalArgumentException("Carta desconhecida: " + str(x, "nome"));
+                if (!nomes.add(str(info, "nome"))) throw new IllegalArgumentException("Só pode uma cópia de " + str(info, "nome") + ".");
+                for (char ch : str(info, "identidade").toCharArray()) if (cor.indexOf(ch) < 0) throw new IllegalArgumentException(str(info, "nome") + " não é das cores do seu comandante.");
+                JsonObject y = new JsonObject(); y.addProperty("nome", str(info, "nome")); y.addProperty("set", str(info, "set")); y.addProperty("num", str(info, "num")); novo.add(y);
+            }
+            u.campanha.add("deck", novo); sujo = true;
+        }
         if (acao.equals("batalha")) {   // os decks para jogar a batalha n (só as já liberadas)
             if (u.campanha == null) throw new IllegalArgumentException("Escolha o seu deck inicial primeiro.");
             int n = c.has("n") ? c.get("n").getAsInt() : 0;

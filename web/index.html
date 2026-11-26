@@ -4331,6 +4331,26 @@ function telaEscolhaInicial(){
 }
 const NOME_COR = {W:'Branco', U:'Azul', B:'Preto', R:'Vermelho', G:'Verde'};
 // tela do mundo (campanha-mundo.html) por cima da Mesa: lista de batalhas, arte do comandante, história
+// editor do deck da campanha (campanha-deck.html): coleção como um grimório, deck na direita
+async function abrirEditorDeck(){
+  const dados = await post('/api/campanha', {acao:'editor'});
+  if (dados.erro){ avisoLocal(dados.erro); return; }
+  let fr = $('#frameDeckCamp'); if (fr) fr.remove();
+  fr = document.createElement('iframe'); fr.id = 'frameDeckCamp'; fr.src = 'campanha-deck.html';
+  fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9300;background:#0a0604';
+  const ouvir = async e=>{
+    if (!e.data || !e.data.campanha) return;
+    const a = e.data.acao;
+    if (a === 'prontaDeck') fr.contentWindow.postMessage({dados}, '*');
+    if (a === 'salvarDeck'){
+      const r = await post('/api/campanha', {acao:'salvarDeck', deck: e.data.deck});
+      fr.contentWindow.postMessage(r.erro ? {erro: r.erro} : {salvo: true}, '*');
+    }
+    if (a === 'fecharDeck'){ window.removeEventListener('message', ouvir); fr.remove(); abrirCampanha(); }
+  };
+  window.addEventListener('message', ouvir);
+  document.body.appendChild(fr);
+}
 function voltarCampanha(){ post('/api/sair'); irPara('menu'); abrirCampanha(); }
 function mostrarCampanha(c){
   $('#campSub').textContent = `Batalha ${Math.min(c.batalha,15)} de 15`;
@@ -4344,7 +4364,7 @@ function mostrarCampanha(c){
     if (a === 'pronta') fr.contentWindow.postMessage({estado: c, ouro: f.ouro || 0, nome: (perfilAtual && perfilAtual.nome) || ''}, '*');
     if (a === 'fechar'){ window.removeEventListener('message', ouvir); fr.remove(); }
     if (a === 'jogar'){ window.removeEventListener('message', ouvir); fr.remove(); post('/api/campanha', {acao:'jogar', n: e.data.batalha}).then(r=>{ if (r && r.erro) avisoLocal(r.erro); }); }
-    if (a === 'editar') avisoLocal('O editor de deck da campanha chega em breve.');
+    if (a === 'editar'){ window.removeEventListener('message', ouvir); fr.remove(); abrirEditorDeck(); }
   };
   window.addEventListener('message', ouvir);
   document.body.appendChild(fr);

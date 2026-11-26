@@ -1,0 +1,172 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Deck da campanha</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=EB+Garamond:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/mana-font@1.18.0/css/mana.min.css" rel="stylesheet">
+<style>
+:root{--ff:'Metamorphous',serif;--ouro:#E4C874;--ouro2:#c9a24a;--couro:#3a1a10}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:radial-gradient(ellipse at 40% 40%,#2a1810,#0a0604 75%);color:#2a1a0e;font-family:'EB Garamond',serif}
+#tudo{position:fixed;inset:0;display:flex;gap:18px;padding:18px 18px 18px 22px}
+/* ---- livro ---- */
+#livro{flex:1;min-width:0;display:flex;flex-direction:column;border-radius:18px;padding:16px 22px 14px;
+  background:linear-gradient(180deg,#5a2a16,#3a180c);box-shadow:inset 0 0 0 3px #8a5a2a,inset 0 0 0 6px #2a1008,0 20px 60px #000c}
+.topoLivro{display:flex;align-items:center;gap:14px;padding:0 4px 12px}
+.topoLivro .voltar{font-family:var(--ff);background:#0006;border:1px solid var(--ouro2);color:var(--ouro);padding:7px 14px;border-radius:9px;cursor:pointer}
+.cores{display:flex;gap:8px;margin:0 auto}
+.cores button{width:40px;height:40px;border-radius:50%;border:2px solid #8a6a3a;background:#1a0e08;cursor:pointer;display:grid;place-items:center;padding:0;transition:transform .15s,box-shadow .2s,opacity .2s;opacity:.55}
+.cores button i{font-size:22px}
+.cores button.on{opacity:1;border-color:var(--ouro);box-shadow:0 0 14px #f0c44a99;transform:scale(1.08)}
+.cores button.off{opacity:.2;cursor:not-allowed}
+.topoLivro .tit{font-family:var(--ff);color:var(--ouro);font-size:15px;letter-spacing:.14em;min-width:120px}
+#paginas{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:10px;position:relative;
+  background:linear-gradient(90deg,#e8d6b0 0%,#f4e6c4 46%,#c8b088 50%,#f4e6c4 54%,#e8d6b0 100%);box-shadow:inset 0 0 40px #8a6a3a88,0 4px 0 #2a1008}
+#paginas::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:30px;transform:translateX(-50%);background:linear-gradient(90deg,transparent,#0003,transparent);pointer-events:none}
+.pag{display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:12px;padding:16px 26px;min-height:0}
+.carta{position:relative;min-height:0;display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.carta img{max-width:100%;max-height:calc(100% - 22px);aspect-ratio:488/680;object-fit:contain;border-radius:4.5%;box-shadow:0 4px 10px #0006;transition:transform .15s,filter .2s}
+.carta:hover img{transform:translateY(-4px) scale(1.04);box-shadow:0 10px 20px #0008}
+.carta .qtd{height:22px;font-family:var(--ff);font-size:12px;color:#6a4a2a;display:flex;align-items:center;gap:5px}
+.carta.no img{filter:grayscale(.6) brightness(.75)}
+.carta.no .qtd{color:#2a7a3a;font-weight:700}
+.carta.fora{cursor:not-allowed}.carta.fora img{filter:grayscale(1) brightness(.6) opacity(.6)}
+.carta.fora .qtd{color:#9a3a2a}
+.carta .fx{position:absolute;inset:0;border-radius:6px;pointer-events:none}
+.vazio{grid-column:1/-1;grid-row:1/-1;display:grid;place-items:center;font-style:italic;color:#6a4a2a;font-size:20px}
+.setaPag{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:70px;border:0;border-radius:10px;background:#3a180ccc;color:var(--ouro);font-size:28px;cursor:pointer;z-index:2}
+.setaPag:disabled{opacity:.2;cursor:default}
+#ant{left:-14px}#prox{right:-14px}
+.rodaLivro{display:flex;align-items:center;gap:14px;padding:12px 4px 0}
+.custos{display:flex;gap:6px}
+.custos button{width:34px;height:34px;border-radius:50%;border:2px solid #4a7ab0;background:radial-gradient(circle at 35% 30%,#6aa0e0,#1a4a8a);color:#fff;font-family:var(--ff);font-size:14px;cursor:pointer;opacity:.55;padding:0}
+.custos button.on{opacity:1;box-shadow:0 0 12px #6ab0ff;border-color:#bfe0ff}
+.busca{flex:1;max-width:340px;display:flex;align-items:center;gap:8px;background:#1a0a06;border:1px solid #8a5a2a;border-radius:999px;padding:6px 14px}
+.busca input{flex:1;background:none;border:0;outline:0;color:#f0e0c0;font:16px 'EB Garamond'}
+.rodaLivro .npag{margin-left:auto;font-family:var(--ff);color:#c9a070;font-size:13px}
+/* ---- lista do deck ---- */
+#lista{width:330px;flex:none;display:flex;flex-direction:column;border-radius:16px;overflow:hidden;background:linear-gradient(180deg,#1e140c,#120a06);box-shadow:inset 0 0 0 2px #6a4a24,0 20px 50px #000c;color:#eee}
+.cab{position:relative;height:120px;background:#000 center 25%/cover;display:flex;align-items:flex-end;padding:12px 14px}
+.cab::before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#120a06 5%,#120a0688 60%,transparent)}
+.cab div{position:relative}
+.cab b{display:block;font-family:var(--ff);font-size:18px;color:var(--ouro)}
+.cab small{font-size:14px;color:#d9c8b0}
+#linhas{flex:1;overflow-y:auto;padding:8px 8px 8px 10px;scrollbar-width:thin;scrollbar-color:#c9a24a55 transparent}
+.lin{position:relative;display:flex;align-items:center;gap:8px;height:30px;margin-bottom:3px;padding:0 8px;border-radius:6px;cursor:pointer;overflow:hidden;
+  background:linear-gradient(90deg,#2a1c10 40%,transparent),var(--arte) right 40%/60% auto no-repeat;border:1px solid #4a3a2466}
+.lin:hover{border-color:#e05a3a;filter:brightness(1.15)}
+.lin .cmc{width:22px;height:22px;flex:none;border-radius:50%;background:radial-gradient(circle at 35% 30%,#6aa0e0,#1a4a8a);display:grid;place-items:center;font-family:var(--ff);font-size:12px}
+.lin span{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px #000,0 0 6px #000}
+.lin.basico{cursor:default;opacity:.75}.lin.basico:hover{border-color:#4a3a2466;filter:none}
+.lin.entra{animation:entra .35s ease-out}
+@keyframes entra{from{transform:translateX(30px);opacity:0}}
+.pe{padding:12px 14px;border-top:1px solid #4a3a24;display:flex;align-items:center;gap:10px}
+.pe .cont{font-family:var(--ff);font-size:15px;color:var(--ouro)}
+.pe .cont small{display:block;font-family:'EB Garamond';font-size:12px;color:#a8957d}
+#pronto{margin-left:auto;font-family:var(--ff);font-size:17px;letter-spacing:.1em;padding:10px 20px;border:0;border-radius:11px;cursor:pointer;color:#1a1006;background:linear-gradient(180deg,#ffe08a,#e0a83a 55%,#b8802a);box-shadow:0 4px 0 #6a4a14}
+#pronto:disabled{filter:grayscale(1);opacity:.6;cursor:wait}
+#msg{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1a0e08ee;border:1px solid var(--ouro2);color:#f0e0c0;padding:9px 18px;border-radius:10px;font-size:16px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9}
+#zoom{position:fixed;width:300px;border-radius:14px;pointer-events:none;display:none;z-index:8;box-shadow:0 20px 50px #000}
+</style></head><body>
+<div id="tudo">
+  <div id="livro">
+    <div class="topoLivro"><button class="voltar" id="voltar">← Voltar</button><div class="tit" id="tit">Sua coleção</div>
+      <div class="cores" id="cores"></div><div style="min-width:120px"></div></div>
+    <div id="paginas"><div class="pag" id="pE"></div><div class="pag" id="pD"></div>
+      <button class="setaPag" id="ant">‹</button><button class="setaPag" id="prox">›</button></div>
+    <div class="rodaLivro"><div class="custos" id="custos"></div>
+      <label class="busca">🔍<input id="busca" placeholder="Pesquisar carta..."></label><div class="npag" id="npag"></div></div>
+  </div>
+  <div id="lista">
+    <div class="cab" id="cab"><div><b id="cmdNome"></b><small>Deck da campanha</small></div></div>
+    <div id="linhas"></div>
+    <div class="pe"><div class="cont" id="cont"></div><button id="pronto">Concluído</button></div>
+  </div>
+</div>
+<div id="msg"></div><img id="zoom" alt="">
+<script>
+const img = (c, v='normal') => `https://api.scryfall.com/cards/${c.set.toLowerCase()}/${encodeURIComponent(c.num)}?format=image&version=${v}`;
+const BASICO = {W:'Plains',U:'Island',B:'Swamp',R:'Mountain',G:'Forest'}, NOME_BAS = {W:'Planícies',U:'Ilhas',B:'Pântanos',R:'Montanhas',G:'Florestas'};
+let COL = [], DECK = [], CMD = null, COR = 'W', filtroCor = new Set(), filtroCusto = new Set(), pag = 0, sujo = false;
+const POR_PAG = 8, chave = c => c.nome + '|' + c.set + '|' + c.num;
+const pai = m => parent.postMessage(Object.assign({campanha: true}, m), '*');
+function aviso(t){ const m = document.getElementById('msg'); m.textContent = t; m.style.opacity = 1; clearTimeout(aviso.t); aviso.t = setTimeout(()=>m.style.opacity = 0, 2200); }
+const cabe = c => [...(c.identidade || '')].every(x => COR.includes(x));
+const noDeck = c => DECK.some(d => d.nome === c.nome);
+function filtradas(){
+  const q = document.getElementById('busca').value.trim().toLowerCase();
+  return COL.filter(c => {
+    if (q && !c.nome.toLowerCase().includes(q) && !(c.tipo||'').toLowerCase().includes(q)) return false;
+    if (filtroCusto.size){ const k = Math.min(7, Math.floor(c.cmc)); if (!filtroCusto.has(k)) return false; }
+    if (filtroCor.size){ const id = c.identidade || ''; if (id === '') return filtroCor.has('C'); if (![...id].every(x => filtroCor.has(x))) return false; }
+    return true;
+  }).sort((a,b) => (cabe(b) - cabe(a)) || (a.cmc - b.cmc) || a.nome.localeCompare(b.nome));
+}
+function desenharLivro(){
+  const l = filtradas(), tot = Math.max(1, Math.ceil(l.length / POR_PAG)); pag = Math.min(pag, tot - 1);
+  const fatia = l.slice(pag * POR_PAG, pag * POR_PAG + POR_PAG);
+  const html = c => { const st = !cabe(c) ? 'fora' : noDeck(c) ? 'no' : '';
+    return `<div class="carta ${st}" data-k="${encodeURIComponent(chave(c))}"><img loading="lazy" src="${img(c)}" alt="${c.nome}"><div class="qtd">${st==='fora' ? 'Fora das cores do comandante' : st==='no' ? '✓ No deck' : c.qtd > 1 ? `x${c.qtd}` : ''}</div></div>`; };
+  const ladoE = fatia.slice(0, 4), ladoD = fatia.slice(4);
+  document.getElementById('pE').innerHTML = l.length ? ladoE.map(html).join('') : '<div class="vazio">Nenhuma carta com esses filtros.</div>';
+  document.getElementById('pD').innerHTML = ladoD.map(html).join('');
+  document.getElementById('npag').textContent = `Página ${pag + 1} de ${tot}`;
+  document.getElementById('ant').disabled = pag === 0; document.getElementById('prox').disabled = pag >= tot - 1;
+  document.getElementById('tit').textContent = `Coleção · ${l.length}`;
+}
+function desenharLista(nova){
+  const ord = [...DECK].sort((a,b) => (a.cmc - b.cmc) || a.nome.localeCompare(b.nome));
+  const bas = 99 - DECK.length;
+  document.getElementById('linhas').innerHTML = ord.map(c => `<div class="lin${nova === c.nome ? ' entra' : ''}" data-n="${encodeURIComponent(c.nome)}" style="--arte:url('${img(c,'art_crop')}')"><div class="cmc">${Math.floor(c.cmc)}</div><span>${c.nome}</span></div>`).join('')
+    + (bas > 0 ? `<div class="lin basico"><div class="cmc">${bas}</div><span>${NOME_BAS[COR]} (automático)</span></div>` : '');
+  document.getElementById('cont').innerHTML = `${DECK.length + 1 + Math.max(0, bas)}/100<small>${DECK.length} cartas + ${Math.max(0,bas)} terrenos básicos</small>`;
+  if (nova){ const e = document.querySelector('.lin.entra'); e && e.scrollIntoView({block:'nearest'}); }
+}
+document.getElementById('paginas').addEventListener('click', e => {
+  const el = e.target.closest('.carta'); if (!el) return;
+  const c = COL.find(x => chave(x) === decodeURIComponent(el.dataset.k));
+  if (!cabe(c)){ aviso(`${c.nome} não é das cores do seu comandante.`); return; }
+  if (noDeck(c)){ aviso('No Commander só pode uma cópia de cada carta.'); return; }
+  if (DECK.length >= 99){ aviso('O deck já tem 100 cartas.'); return; }
+  DECK.push(c); sujo = true; desenharLista(c.nome); desenharLivro();
+});
+document.getElementById('linhas').addEventListener('click', e => {
+  const el = e.target.closest('.lin'); if (!el || el.classList.contains('basico')) return;
+  const n = decodeURIComponent(el.dataset.n); DECK = DECK.filter(d => d.nome !== n); sujo = true; desenharLista(); desenharLivro();
+});
+// zoom da carta ao passar o mouse na lista
+const zoom = document.getElementById('zoom');
+document.getElementById('linhas').addEventListener('mousemove', e => {
+  const el = e.target.closest('.lin:not(.basico)'); if (!el){ zoom.style.display = 'none'; return; }
+  const c = DECK.find(d => d.nome === decodeURIComponent(el.dataset.n)); if (!c) return;
+  const u = img(c); if (zoom.dataset.u !== u){ zoom.src = u; zoom.dataset.u = u; }
+  zoom.style.display = 'block'; zoom.style.left = (el.getBoundingClientRect().left - 316) + 'px'; zoom.style.top = Math.min(innerHeight - 430, Math.max(10, e.clientY - 200)) + 'px';
+});
+document.getElementById('linhas').addEventListener('mouseleave', () => zoom.style.display = 'none');
+document.getElementById('ant').onclick = () => { pag--; desenharLivro(); };
+document.getElementById('prox').onclick = () => { pag++; desenharLivro(); };
+document.getElementById('busca').oninput = () => { pag = 0; desenharLivro(); };
+addEventListener('keydown', e => { if (e.target.tagName === 'INPUT') return; if (e.key === 'ArrowRight' && !document.getElementById('prox').disabled){ pag++; desenharLivro(); } if (e.key === 'ArrowLeft' && pag > 0){ pag--; desenharLivro(); } });
+document.getElementById('voltar').onclick = () => { if (sujo && !confirm('Sair sem salvar as mudanças do deck?')) return; pai({acao:'fecharDeck'}); };
+document.getElementById('pronto').onclick = () => { document.getElementById('pronto').disabled = true; pai({acao:'salvarDeck', deck: DECK.map(c => ({nome:c.nome, set:c.set, num:c.num}))}); };
+// filtros
+function montarFiltros(){
+  document.getElementById('cores').innerHTML = ['W','U','B','R','G','C'].map(k => `<button data-c="${k}" class="${k !== 'C' && !COR.includes(k) ? 'off' : ''}" title="${{W:'Branco',U:'Azul',B:'Preto',R:'Vermelho',G:'Verde',C:'Incolor'}[k]}"><i class="ms ms-${k.toLowerCase()} ms-cost"></i></button>`).join('');
+  document.querySelectorAll('#cores button').forEach(b => b.onclick = () => { if (b.classList.contains('off')) return; const k = b.dataset.c; filtroCor.has(k) ? filtroCor.delete(k) : filtroCor.add(k); b.classList.toggle('on'); pag = 0; desenharLivro(); });
+  document.getElementById('custos').innerHTML = [0,1,2,3,4,5,6,7].map(n => `<button data-n="${n}">${n === 7 ? '7+' : n}</button>`).join('');
+  document.querySelectorAll('#custos button').forEach(b => b.onclick = () => { const n = +b.dataset.n; filtroCusto.has(n) ? filtroCusto.delete(n) : filtroCusto.add(n); b.classList.toggle('on'); pag = 0; desenharLivro(); });
+}
+// o Mesa manda os dados (coleção + campanha) e responde ao salvar
+addEventListener('message', e => { const d = e.data; if (!d) return;
+  if (d.dados){
+    COL = d.dados.colecao.map(c => Object.assign(c, {cmc: +c.cmc || 0}));
+    const cp = d.dados.campanha; COR = cp.cor; CMD = cp.comandante;
+    const porChave = Object.fromEntries(COL.map(c => [chave(c), c]));
+    DECK = cp.deck.map(c => porChave[chave(c)]).filter(Boolean);
+    document.getElementById('cmdNome').textContent = CMD.nome.split(',')[0];
+    document.getElementById('cab').style.backgroundImage = `url('${img(CMD,'art_crop')}')`;
+    montarFiltros(); desenharLivro(); desenharLista();
+  }
+  if (d.salvo){ sujo = false; document.getElementById('pronto').disabled = false; aviso('Deck salvo!'); setTimeout(() => pai({acao:'fecharDeck'}), 700); }
+  if (d.erro){ document.getElementById('pronto').disabled = false; aviso(d.erro); }
+});
+pai({acao:'prontaDeck'});
+</script></body></html>
