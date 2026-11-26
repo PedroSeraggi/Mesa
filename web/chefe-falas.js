@@ -25,13 +25,13 @@
   -webkit-mask:radial-gradient(ellipse 70% 95% at 50% 40%,#000 35%,transparent 85%);mask:radial-gradient(ellipse 70% 95% at 50% 40%,#000 35%,transparent 85%);transition:filter .5s,transform 6s ease-out}
 .corpoTab.comChefe{position:relative;isolation:isolate}
 body.chefeFalando .chefePerfil{filter:saturate(1) brightness(.55) blur(0);transform:scale(1.06)}
-#chefeHeroi{position:fixed;z-index:9200;width:112px;height:134px;pointer-events:none;display:none;transform-origin:50% 40%;transition:transform .45s cubic-bezier(.2,1.4,.4,1),filter .4s}
+#chefeHeroi{position:fixed;z-index:9200;width:112px;height:134px;pointer-events:none;display:none;transform-origin:50% 78%;transform:scale(var(--esc,1));transition:transform .45s cubic-bezier(.2,1.4,.4,1),filter .4s}
 #chefeHeroi.on{display:block}
 #chefeHeroi .ft{position:absolute;inset:9px 10px 12px;border-radius:50% 50% 46% 46%/58% 58% 42% 42%;background:#000 center 25%/cover;box-shadow:inset 0 -16px 24px #000a}
 #chefeHeroi .mold{position:absolute;inset:0;border-radius:50% 50% 44% 44%/58% 58% 42% 42%;box-shadow:0 0 0 4px #8a5a24,0 0 0 6px #2a1408,0 0 0 8px #c9a24a,0 10px 24px #000e}
 #chefeHeroi .nm{position:absolute;left:50%;bottom:-12px;transform:translateX(-50%);padding:2px 12px;border-radius:6px;font-family:var(--ff-titulo,'Cinzel'),serif;font-size:12px;letter-spacing:.14em;color:#fff4e0;
   background:linear-gradient(#5a1a0c,#2a0a04);box-shadow:0 0 0 2px #c9a24a,0 4px 10px #000c;white-space:nowrap}
-body.chefeFalando #chefeHeroi{transform:scale(1.55) translateY(18px);filter:drop-shadow(0 0 24px var(--cf))}
+body.chefeFalando #chefeHeroi{transform:scale(calc(var(--esc,1) * 1.55)) translateY(12px);filter:drop-shadow(0 0 24px var(--cf))}
 body.chefeFalando #chefeHeroi .ft{animation:chefeBalanca .16s ease-in-out infinite alternate}
 @keyframes chefeBalanca{to{transform:translateY(-1.5px) rotate(.6deg)}}
 #chefeBal{position:fixed;z-index:9201;max-width:380px;padding:12px 18px 14px;border-radius:16px;font-family:'EB Garamond',serif;font-size:20px;line-height:1.3;pointer-events:none;
@@ -58,11 +58,13 @@ body.chefeFalando #chefeBal{opacity:1;transform:none}`;
       corpo.insertAdjacentHTML('afterbegin', '<div class="chefePerfil"></div>');
     }
     const r = tab.getBoundingClientRect();
+    // o retrato acompanha o tamanho do tabuleiro (zoom da câmera): referência = campo com 1000px de largura
+    const k = Math.max(.3, Math.min(1, r.width / 1000)); heroi.style.setProperty('--esc', k);
     heroi.style.left = (r.left + r.width / 2 - 56) + 'px';
     heroi.style.top = (r.bottom - 134 * .78) + 'px';
     heroi.classList.add('on'); bal.style.display = '';
-    bal.style.left = (r.left + r.width / 2 + 56 * 1.55 + 26) + 'px';
-    bal.style.top = (r.bottom - 134 * .78 - 40) + 'px';
+    bal.style.left = (r.left + r.width / 2 + 56 * 1.55 * k + 20) + 'px';
+    bal.style.top = (r.bottom - 134 * .78 - 40 * k) + 'px';
   }
   new MutationObserver(() => posicionar()).observe(document.documentElement, {childList: true, subtree: true});
   addEventListener('resize', posicionar);
