@@ -51,7 +51,9 @@ h1{margin:0;font-family:var(--ff);font-weight:900;font-size:clamp(28px,4vw,54px)
 @keyframes flutua{50%{transform:translateY(-6px)}}
 @keyframes textura{to{background-position:var(--fim,200% 200%)}}
 /* textura de cada cor */
-.W .simbolo{--tex:linear-gradient(180deg,#ffffff,#fffdf2 20%,#ffe9a0 35%,#ffffff 50%,#fffdf2 70%,#ffe9a0 85%,#ffffff);--tam:100% 200%;--vel:8s;--fim:0 200%}
+.W .simbolo{--tex:linear-gradient(180deg,#ffffff,#fff6d0 20%,#f0c84a 35%,#ffffff 50%,#fff6d0 70%,#f0c84a 85%,#ffffff);--tam:100% 200%;--vel:8s;--fim:0 200%}
+.W .simbolo i{filter:drop-shadow(0 0 2px #8a6a1a) drop-shadow(0 0 14px #fff) drop-shadow(0 0 0 #fff)}
+.W.est:hover .simbolo i{filter:drop-shadow(0 0 2px #8a6a1a) drop-shadow(0 0 30px #fff) drop-shadow(0 0 60px #fff)}
 .U .simbolo{--tex:linear-gradient(180deg,#0a3a7a,#2a8ae0 20%,#9fe0ff 30%,#1a5ab0 42%,#0a3a7a 50%,#2a8ae0 70%,#9fe0ff 80%,#1a5ab0 92%,#0a3a7a);--tam:100% 200%;--vel:10s;--fim:0 200%}
 .B .simbolo{--tex:linear-gradient(180deg,#2a1a34,#b090d0 25%,#3a2a48 50%,#e0d0f0 75%,#2a1a34);--tam:100% 300%;--vel:9s;--fim:0 -300%}
 .R .simbolo{--tex:linear-gradient(0deg,#5a0a02 0%,#d02a0a 25%,#ff7a1a 45%,#ffd04a 60%,#ff7a1a 75%,#d02a0a 90%,#5a0a02 100%);--tam:100% 220%;--vel:1.6s;--fim:0 -220%}
