@@ -38,6 +38,7 @@ public class Amigos {
         Map<String, Long> conquistas = new LinkedHashMap<>();   // id -> quando desbloqueou
         long ouro = 0; int boosters = 0; boolean boasVindas = false;   // economia: Ouro, boosters fechados, saldo inicial já dado
         Map<String, Integer> colecao = new LinkedHashMap<>();        // "nome|set|num" -> quantidade   // playmat: "" (padrão), nome de um modelo pronto ou "foto" (imagem em playmats/<código>.jpg)
+        JsonObject campanha;   // {cor, mundo, batalha, comandante:{nome,set,num}, deck:[{nome,set,num}]} (null = ainda não escolheu)
         long xp = 0; String diaVitoria = ""; String diaMissoes = ""; Map<String, Integer> progresso = new HashMap<>(); Set<String> missoesFeitas = new HashSet<>();
         JsonObject recordes = new JsonObject(); List<JsonObject> historico = new ArrayList<>();
     }
@@ -75,6 +76,7 @@ public class Amigos {
         srv.createContext("/times", ex -> tratar(ex, Amigos::times));
         srv.createContext("/playmat", ex -> tratar(ex, Amigos::playmat));
         srv.createContext("/loja", ex -> tratar(ex, Amigos::loja));
+        srv.createContext("/campanha", ex -> tratar(ex, Amigos::campanha));
         srv.createContext("/playmats", ex -> tratar(ex, Amigos::playmats));
         srv.createContext("/playmatImg", Amigos::playmatImg);
         srv.createContext("/decksChefe", ex -> tratar(ex, c -> {   // todos os decks de chefe que a pessoa já ganhou (a Mesa baixa os que faltam)
@@ -638,6 +640,43 @@ public class Amigos {
         r.put("ouro", u.ouro); r.put("boosters", u.boosters); r.put("precoBooster", PRECO_BOOSTER);
         int total = 0; for (int q : u.colecao.values()) total += q;
         r.put("cartasNaColecao", total); r.put("cartasDiferentes", u.colecao.size());
+        return r;
+    }
+
+    // ---------------- Campanha: escolha do deck inicial e progresso ----------------
+    static java.nio.file.Path pastaCampanha() { return DADOS.toAbsolutePath().getParent().resolve("campanha"); }
+    /** Lê um .dck: [comandante, cartas...] (básicos ficam de fora: são de graça). */
+    static List<JsonObject> lerDck(java.nio.file.Path f) throws IOException {
+        List<JsonObject> l = new ArrayList<>(); JsonObject cmd = null;
+        java.util.regex.Pattern pt = java.util.regex.Pattern.compile("(SB: )?(\\d+) \\[(\\w+):(\\w+)\\] (.+)");
+        for (String ln : Files.readAllLines(f, StandardCharsets.UTF_8)) {
+            java.util.regex.Matcher m = pt.matcher(ln.trim()); if (!m.matches()) continue;
+            String nome = m.group(5);
+            if (Arrays.asList("Plains", "Island", "Swamp", "Mountain", "Forest").contains(nome)) continue;
+            JsonObject c = new JsonObject(); c.addProperty("nome", nome); c.addProperty("set", m.group(3)); c.addProperty("num", m.group(4));
+            if (m.group(1) != null) cmd = c; else l.add(c);
+        }
+        if (cmd != null) l.add(0, cmd);
+        return l;
+    }
+    static Object campanha(JsonObject c) throws IOException {
+        Usuario u = usuario(c);
+        darBoasVindas(u);
+        String acao = texto(c, "acao", 20, "estado");
+        if (acao.equals("escolher")) {
+            if (u.campanha != null) throw new IllegalArgumentException("Você já escolheu o seu deck inicial.");
+            String cor = texto(c, "cor", 1, "");
+            if (!"WUBRG".contains(cor) || cor.isEmpty()) throw new IllegalArgumentException("cor inválida");
+            List<JsonObject> d = lerDck(pastaCampanha().resolve("mundo1").resolve("inicial-" + cor + ".dck"));
+            JsonObject cp = new JsonObject(); cp.addProperty("cor", cor); cp.addProperty("mundo", 1); cp.addProperty("batalha", 1);
+            cp.add("comandante", d.get(0));
+            JsonArray deck = new JsonArray();
+            for (int i = 1; i < d.size(); i++) { deck.add(d.get(i)); u.colecao.merge(chaveCarta(d.get(i)), 1, Integer::sum); }
+            cp.add("deck", deck); cp.addProperty("desde", System.currentTimeMillis());
+            u.campanha = cp; sujo = true;
+        }
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("campanha", u.campanha);
         return r;
     }
 

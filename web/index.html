@@ -1143,6 +1143,13 @@ html.fundoParado #cena .slide.ativo{animation:none}
 .marcaMenu p{margin:0;color:var(--txt2);font-style:italic;font-size:16px}
 .grupoMenu{display:flex;flex-direction:column;gap:12px}
 .subtituloMenu{font-family:var(--ff-titulo);letter-spacing:.2em;text-transform:uppercase;color:var(--txt2);font-size:13px}
+.btnCampanha{position:fixed;right:calc(50% - 560px);top:50%;transform:translateY(-50%);width:200px;height:300px;border-radius:16px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;padding:0 0 26px;
+  border:1px solid #c9a24a88;background:linear-gradient(180deg,#0000 30%,#000c),radial-gradient(ellipse at 50% 30%,#6a4a1a,#1a120a 70%);color:#E4C874;font-family:var(--ff-titulo);box-shadow:0 0 30px #c9a24a33,0 20px 40px #000c;transition:transform .3s,box-shadow .3s}
+.btnCampanha i{font-style:normal;font-size:64px;margin-bottom:auto;margin-top:60px;filter:drop-shadow(0 0 14px #f0c44a);animation:flutCamp 3s ease-in-out infinite}
+@keyframes flutCamp{50%{transform:translateY(-6px)}}
+.btnCampanha b{font-size:20px;letter-spacing:.2em}.btnCampanha small{font-family:var(--ff-corpo,serif);font-size:13px;color:#d9c8b0}
+.btnCampanha:hover{transform:translateY(-50%) scale(1.04);box-shadow:0 0 50px #f0c44a66,0 20px 40px #000c}
+@media (max-width:1200px){.btnCampanha{right:24px}}
 .btnMenu{position:relative;text-align:left;padding:15px 22px;font-family:var(--ff-titulo);font-size:19px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--txt);background:linear-gradient(90deg,#1e1712ee,#1e171299);border:1px solid #6E553780;border-left:3px solid var(--acento);border-radius:3px;
   box-shadow:0 8px 24px #0009;transition:transform .15s,background .15s,border-color .15s,color .15s}
@@ -1548,6 +1555,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
         <button class="btnMenu voltar" id="mnVoltar">Voltar</button>
       </div>
       <div class="rodapeMenu" id="rodapePerfil"></div>
+      <button id="btnCampanha" class="btnCampanha" title="Campanha"><i>⚔</i><b>CAMPANHA</b><small id="campSub">Comece sua jornada</small></button>
       <div id="avisoVersao" class="avisoVersao oculto"></div>
       <div id="numVersao" class="numVersao"></div>
     </div>
@@ -4288,6 +4296,40 @@ function desenharBtnOuro(){
   b.innerHTML = `${MOEDA}<span>${fmtOuro(f.ouro)}</span>${f.boosters ? `<span class="nB" title="Boosters para abrir">${f.boosters}</span>` : ''}`;
 }
 $('#btnOuro').onclick = ()=>abrirLoja();
+// ---- Campanha ----
+$('#btnCampanha').onclick = ()=>abrirCampanha();
+async function abrirCampanha(){
+  const r = await post('/api/campanha', {acao:'estado'});
+  if (r.erro){ avisoLocal(r.erro); return; }
+  if (!r.campanha) telaEscolhaInicial(); else mostrarCampanha(r.campanha);
+}
+function telaEscolhaInicial(){
+  let fr = $('#frameCampanha'); if (fr) fr.remove();
+  fr = document.createElement('iframe'); fr.id = 'frameCampanha'; fr.src = 'campanha-inicio.html';
+  fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9300;background:#000';
+  const ouvir = async e=>{
+    if (!e.data || !e.data.campanha) return;
+    if (e.data.acao === 'fechar'){ window.removeEventListener('message', ouvir); fr.remove(); }
+    if (e.data.acao === 'escolher'){
+      const r = await post('/api/campanha', {acao:'escolher', cor: e.data.cor});
+      if (r.erro){ fr.contentWindow.postMessage({erro: r.erro}, '*'); return; }
+      window.removeEventListener('message', ouvir); fr.remove(); mostrarCampanha(r.campanha);
+    }
+  };
+  window.addEventListener('message', ouvir);
+  document.body.appendChild(fr);
+}
+const NOME_COR = {W:'Branco', U:'Azul', B:'Preto', R:'Vermelho', G:'Verde'};
+function mostrarCampanha(c){   // por enquanto: resumo (o mapa do Mundo 1 vem no próximo passo)
+  $('#campSub').textContent = `Mundo ${c.mundo} · Batalha ${c.batalha}`;
+  const cx = abrirModal('');
+  cx.innerHTML = `<h3>Campanha · Mundo ${c.mundo}</h3>
+    <p>Seu deck: <b>${NOME_COR[c.cor] || c.cor}</b>, comandante <b>${esc(c.comandante.nome)}</b> (${c.deck.length} cartas + terrenos básicos). As cartas já estão na sua coleção.</p>
+    <p>Próxima batalha: <b>${c.batalha}</b> de 15.</p>
+    <div class="dicaMenu">O mapa do Mundo 1 e as batalhas chegam no próximo passo.</div>
+    <div class="linhaBts"><button id="cpFechar">Fechar</button></div>`;
+  $('#cpFechar').onclick = ()=>fecharModal(true);
+}
 async function abrirLoja(){
   const cx = abrirModal('<div class="dicaMenu">Abrindo a loja...</div>');
   lojaInfo = await post('/api/loja', {acao:'saldo'});
