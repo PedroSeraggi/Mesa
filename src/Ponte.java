@@ -2127,7 +2127,15 @@ public class Ponte implements MageClient {
             json(ex, 200, Collections.singletonMap("erro", String.valueOf(t.getMessage())));
         }
     }
+    // listar as placas de rede no Windows demora (até segundos): guarda a lista por 1 minuto
+    static volatile Set<InetAddress> destinosCache; static volatile long destinosQuando;
     static Set<InetAddress> destinosBroadcast() throws Exception {
+        Set<InetAddress> c = destinosCache;
+        if (c != null && System.currentTimeMillis() - destinosQuando < 60000) return c;
+        destinosCache = c = destinosBroadcastAgora(); destinosQuando = System.currentTimeMillis();
+        return c;
+    }
+    static Set<InetAddress> destinosBroadcastAgora() throws Exception {
         Set<InetAddress> destinos = new LinkedHashSet<>();
         for (NetworkInterface ni : Collections.list(NetworkInterface.getNetworkInterfaces())) {
             if (!ni.isUp() || ni.isLoopback()) continue;
