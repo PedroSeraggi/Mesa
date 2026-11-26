@@ -37,6 +37,13 @@ public class GerarPool {
             if (c.getColor().isWhite()) cores.append('W'); if (c.getColor().isBlue()) cores.append('U'); if (c.getColor().isBlack()) cores.append('B');
             if (c.getColor().isRed()) cores.append('R'); if (c.getColor().isGreen()) cores.append('G');
             x.put("cores", cores.toString());
+            // identidade de cor (Commander): inclui os símbolos de mana do texto das habilidades
+            try {
+                mage.filter.FilterMana id = mage.util.ManaUtil.getColorIdentity(c.createCard());
+                StringBuilder ident = new StringBuilder();
+                if (id.isWhite()) ident.append('W'); if (id.isBlue()) ident.append('U'); if (id.isBlack()) ident.append('B'); if (id.isRed()) ident.append('R'); if (id.isGreen()) ident.append('G');
+                x.put("identidade", ident.toString());
+            } catch (Throwable e) { x.put("identidade", cores.toString()); }
             Rarity r = c.getRarity();
             if (lendaria || terreno) pool.get("especial").add(x);
             else if (r == Rarity.COMMON) pool.get("comum").add(x);

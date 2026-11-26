@@ -1,0 +1,322 @@
+{
+ "mundo": 1,
+ "nome": "Mundo 1",
+ "batalhas": [
+  {
+   "numero": 1,
+   "bots": [
+    {
+     "arquivo": "bot01.dck",
+     "nome": "Soldados de Akros",
+     "comandante": {
+      "nome": "Kytheon, Hero of Akros",
+      "set": "ORI",
+      "num": "23"
+     }
+    }
+   ]
+  },
+  {
+   "numero": 2,
+   "bots": [
+    {
+     "arquivo": "bot02.dck",
+     "nome": "Horda de Zumbis",
+     "comandante": {
+      "nome": "Liliana, Heretical Healer",
+      "set": "ORI",
+      "num": "106"
+     }
+    }
+   ]
+  },
+  {
+   "numero": 3,
+   "bots": [
+    {
+     "arquivo": "bot03.dck",
+     "nome": "Bando Goblin",
+     "comandante": {
+      "nome": "Pia and Kiran Nalaar",
+      "set": "ORI",
+      "num": "157"
+     }
+    }
+   ]
+  },
+  {
+   "numero": 4,
+   "bots": [
+    {
+     "arquivo": "bot04.dck",
+     "nome": "Elfos da Floresta",
+     "comandante": {
+      "nome": "Dwynen, Gilt-Leaf Daen",
+      "set": "ORI",
+      "num": "172"
+     }
+    }
+   ]
+  },
+  {
+   "numero": 5,
+   "bots": [
+    {
+     "arquivo": "bot05.dck",
+     "nome": "Maré dos Merfolk",
+     "comandante": {
+      "nome": "Jalira, Master Polymorphist",
+      "set": "M15",
+      "num": "64"
+     }
+    },
+    {
+     "arquivo": "bot06.dck",
+     "nome": "Feras Selvagens",
+     "comandante": {
+      "nome": "Yisan, the Wanderer Bard",
+      "set": "M15",
+      "num": "209"
+     }
+    },
+    {
+     "arquivo": "bot07.dck",
+     "nome": "Guerreiros Ancestrais",
+     "comandante": {
+      "nome": "Kurkesh, Onakke Ancient",
+      "set": "M15",
+      "num": "153"
+     }
+    }
+   ]
+  },
+  {
+   "numero": 6,
+   "bots": [
+    {
+     "arquivo": "bot08.dck",
+     "nome": "Corte dos Vampiros",
+     "comandante": {
+      "nome": "Kothophed, Soul Hoarder",
+      "set": "ORI",
+      "num": "104"
+     }
+    }
+   ]
+  },
+  {
+   "numero": 7,
+   "bots": [
+    {
+     "arquivo": "bot09.dck",
+     "nome": "Círculo dos Magos",
+     "comandante": {
+      "nome": "Talrand, Sky Summoner",
+      "set": "M13",
+      "num": "72"
+     }
+    }
+   ]
+  },
+  {
+   "numero": 8,
+   "bots": [
+    {
+     "arquivo": "bot10.dck",
+     "nome": "Fúria Elemental",
+     "comandante": {
+      "nome": "Nissa, Vastwood Seer",
+      "set": "ORI",
+      "num": "189"
+     }
+    }
+   ]
+  },
+  {
+   "numero": 9,
+   "bots": [
+    {
+     "arquivo": "bot11.dck",
+     "nome": "Oficina dos Golens",
+     "comandante": {
+      "nome": "Alhammarret, High Arbiter",
+      "set": "ORI",
+      "num": "43"
+     }
+    }
+   ]
+  },
+  {
+   "numero": 10,
+   "bots": [
+    {
+     "arquivo": "bot12.dck",
+     "nome": "Ordem dos Cavaleiros",
+     "comandante": {
+      "nome": "Hixus, Prison Warden",
+      "set": "ORI",
+      "num": "19"
+     }
+    },
+    {
+     "arquivo": "bot13.dck",
+     "nome": "Véu das Ilusões",
+     "comandante": {
+      "nome": "Jace, Vryn's Prodigy",
+      "set": "ORI",
+      "num": "60"
+     }
+    },
+    {
+     "arquivo": "bot14.dck",
+     "nome": "Enxame de Insetos",
+     "comandante": {
+      "nome": "Yeva, Nature's Herald",
+      "set": "M13",
+      "num": "197"
+     }
+    }
+   ]
+  },
+  {
+   "numero": 11,
+   "bots": [
+    {
+     "arquivo": "bot15.dck",
+     "nome": "Colmeia dos Slivers",
+     "comandante": {
+      "nome": "Sliver Hivelord",
+      "set": "M15",
+      "num": "211"
+     }
+    }
+   ]
+  },
+  {
+   "numero": 12,
+   "bots": [
+    {
+     "arquivo": "bot16.dck",
+     "nome": "Pacto de Sangue",
+     "comandante": {
+      "nome": "Ob Nixilis, Unshackled",
+      "set": "M15",
+      "num": "110"
+     }
+    }
+   ]
+  },
+  {
+   "numero": 13,
+   "bots": [
+    {
+     "arquivo": "bot17.dck",
+     "nome": "Ninho dos Dragões",
+     "comandante": {
+      "nome": "Chandra, Fire of Kaladesh",
+      "set": "ORI",
+      "num": "135"
+     }
+    }
+   ]
+  },
+  {
+   "numero": 14,
+   "bots": [
+    {
+     "arquivo": "bot18.dck",
+     "nome": "Coro dos Anjos",
+     "comandante": {
+      "nome": "Avacyn, Guardian Angel",
+      "set": "M15",
+      "num": "3"
+     }
+    }
+   ]
+  },
+  {
+   "numero": 15,
+   "bots": [
+    {
+     "arquivo": "bot19.dck",
+     "nome": "Legião de Nefarox",
+     "comandante": {
+      "nome": "Nefarox, Overlord of Grixis",
+      "set": "M13",
+      "num": "103"
+     }
+    },
+    {
+     "arquivo": "bot20.dck",
+     "nome": "Exército de Krenko",
+     "comandante": {
+      "nome": "Krenko, Mob Boss",
+      "set": "M13",
+      "num": "138"
+     }
+    },
+    {
+     "arquivo": "bot21.dck",
+     "nome": "Tropa de Elite de Odric",
+     "comandante": {
+      "nome": "Odric, Master Tactician",
+      "set": "M13",
+      "num": "23"
+     }
+    }
+   ]
+  }
+ ],
+ "iniciais": [
+  {
+   "cor": "W",
+   "arquivo": "inicial-W.dck",
+   "nome": "Iniciante Branco",
+   "comandante": {
+    "nome": "Danitha Capashen, Paragon",
+    "set": "J22",
+    "num": "168"
+   }
+  },
+  {
+   "cor": "U",
+   "arquivo": "inicial-U.dck",
+   "nome": "Iniciante Azul",
+   "comandante": {
+    "nome": "Tetsuko Umezawa, Fugitive",
+    "set": "FRA",
+    "num": "221"
+   }
+  },
+  {
+   "cor": "B",
+   "arquivo": "inicial-B.dck",
+   "nome": "Iniciante Preto",
+   "comandante": {
+    "nome": "Yargle, Glutton of Urborg",
+    "set": "J22",
+    "num": "491"
+   }
+  },
+  {
+   "cor": "R",
+   "arquivo": "inicial-R.dck",
+   "nome": "Iniciante Vermelho",
+   "comandante": {
+    "nome": "Valduk, Keeper of the Flame",
+    "set": "DMR",
+    "num": "147"
+   }
+  },
+  {
+   "cor": "G",
+   "arquivo": "inicial-G.dck",
+   "nome": "Iniciante Verde",
+   "comandante": {
+    "nome": "Grunn, the Lonely King",
+    "set": "DOM",
+    "num": "165"
+   }
+  }
+ ]
+}
