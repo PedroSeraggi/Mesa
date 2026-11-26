@@ -37,6 +37,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;font-f
 // mov: desce, sobe, dir, esq, aprox, afasta  (para onde a CÂMERA vai)
 const nome = new URLSearchParams(location.search).get('c') || 'abertura';
 const base = `cutscenes/${nome}/`;
+const estilo = new URLSearchParams(location.search).get('estilo') || '';   // ex.: pintado -> cutscenes/<nome>/pintado/qN.jpg
+const imgDe = arq => base + (estilo ? estilo + '/' : '') + arq;
 const cam = document.getElementById('camera'), leg = document.getElementById('legenda'), blur = document.getElementById('borraoG');
 const VEL = {desce:[0,1], sobe:[0,-1], dir:[1,0], esq:[-1,0], aprox:[0,0], afasta:[0,0]};
 const ESCALA = 1.12, TRANS = 1.9;   // passagem mais longa: acelera e desacelera sem pressa   // folga para a câmera andar; duração da passagem (s)
@@ -110,8 +112,8 @@ fetch(base + 'roteiro.json').then(r => r.json()).then(async roteiro => {
     a.onloadedmetadata = () => { q._fala = a.duration; ok(); }; a.onerror = ok; }) : null));
   if (R.musica){ musica = new Audio(base + R.musica); musica.loop = true; musica.volume = 0; }
   if (R.vento){ vento = new Audio(base + R.vento); vento.preload = 'auto'; }
-  await Promise.all(Q.map(q => new Promise(ok => { const i = new Image(); i.onload = ok; i.onerror = () => { if (q.reserva) q.img = q.reserva; ok(); }; i.src = base + q.img; })));
-  els = Q.map(q => { const d = document.createElement('div'); d.className = 'quadro'; d.style.backgroundImage = `url('${base}${q.img}')`; d.style.display = 'none'; cam.appendChild(d); return d; });
+  await Promise.all(Q.map(q => new Promise(ok => { const i = new Image(); i.onload = ok; i.onerror = () => { if (q.reserva) q.img = q.reserva; ok(); }; i.src = imgDe(q.img); })));
+  els = Q.map(q => { const d = document.createElement('div'); d.className = 'quadro'; d.style.backgroundImage = `url('${imgDe(q.img)}')`; d.style.display = 'none'; cam.appendChild(d); return d; });
   const comecar = () => { if (musica){ musica.play().catch(()=>{}); fadeVol(musica, R.volumeMusica ?? .16, 3000); } document.getElementById('iniciar').style.display = 'none'; els[0].style.display = 'block'; document.getElementById('escuro').style.opacity = 0; quadro(0); requestAnimationFrame(loop); };
   if ((Q.some(q => q.audio) || R.musica) && !navigator.userActivation?.hasBeenActive){ const b = document.getElementById('iniciar'); b.style.display = 'flex'; b.onclick = comecar; } else comecar();
 });
