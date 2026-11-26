@@ -48,6 +48,15 @@ html,body{margin:0;height:100%;overflow:hidden;background:#070504;color:#eee;fon
 .bat.tres .mini{background-size:cover;display:flex;overflow:hidden}
 .bat.tres .mini span{flex:1;background:center/cover}
 .bat.tres .num{background:#d0603a;color:#fff}
+/* chefe do mundo */
+.bat.chefe{padding:10px;border-color:#ff7a3a;background:linear-gradient(90deg,#3a120aee,#1a0806dd);box-shadow:0 0 0 1px #ff7a3a88,0 0 22px #ff5a2a44}
+.bat.chefe .mini{width:84px;height:62px}
+.bat.chefe b{color:#ffb070}
+.bat.chefe .num{background:linear-gradient(180deg,#ffd060,#d07a1a);color:#2a0a04}
+.bat.chefe .coroa{position:absolute;right:30px;top:-9px;font-size:18px;filter:drop-shadow(0 0 6px #ff8a3a)}
+.bat.chefe.bloq{filter:brightness(.55) saturate(.6)}
+#painel.chefe{border-color:#ff7a3a;box-shadow:0 0 40px #ff5a2a33,0 20px 50px #000c}
+#painel.chefe .cap{color:#ff9a5a}
 /* a atual: maior e brilhando */
 .bat.atual{padding:10px;margin:10px 0 14px;border-color:var(--ouro);box-shadow:0 0 0 1px var(--ouro),0 0 26px #f0c44a55;animation:pulsoAtual 2.4s ease-in-out infinite}
 .bat.atual .mini{width:84px;height:62px}
@@ -114,7 +123,7 @@ const BAT = [
  {n:12, d:[['Pacto de Sangue','Ob Nixilis, Unshackled']], lore:'Ob Nixilis quebrou as próprias correntes e agora cobra um preço de quem cruza o caminho dele. Toda carta que você busca vai custar caro. Lembre-se: ele também paga.'},
  {n:13, d:[['Ninho dos Dragões','Chandra, Fire of Kaladesh']], lore:'Uma garota em Kaladesh não consegue controlar o próprio fogo. Os dragões sentiram e vieram até ela. Chandra não quer te machucar, mas o fogo não pergunta.'},
  {n:14, d:[['Coro dos Anjos','Avacyn, Guardian Angel']], lore:'Os sinos de Innistrad tocam e Avacyn desce com o seu coro. O anjo guardião protege tudo o que é dela, e agora você está no território dela.'},
- {n:15, d:[['Legião de Nefarox','Nefarox, Overlord of Grixis'],['Exército de Krenko','Krenko, Mob Boss'],['Tropa de Elite de Odric','Odric, Master Tactician']], lore:'O fim das Terras de Origem. Nefarox desceu de Grixis, Krenko juntou todos os goblins que sobraram e Odric marcha com a tropa de elite. Os três sabem que você é a maior ameaça. Vença e o próximo mundo se abre.'},
+ {n:15, chefe:true, d:[['Exército de Krenko','Krenko, Mob Boss']], lore:'No fim das Terras de Origem, uma risada ecoa pelos becos. Krenko não é o mais forte, nem o mais esperto, mas nunca está sozinho: a cada turno, mais goblins saem das sombras. Se você não derrubá-lo rápido, a horda vai cobrir o mundo. Vença e o próximo mundo se abre.'},
 ];
 let ATUAL = 1, sel = 1;
 const MOEDA = document.querySelector('.ouro svg').outerHTML;
@@ -122,9 +131,9 @@ function desenharLista(){
   document.getElementById('lista').innerHTML = BAT.map(b=>{
     const tres = b.d.length > 1, st = b.n < ATUAL ? 'feita' : b.n === ATUAL ? 'atual' : 'bloq';
     const mini = tres ? `<div class="mini">${b.d.map(x=>`<span style="background-image:url('${art(x[1])}')"></span>`).join('')}</div>` : `<div class="mini" style="background-image:url('${art(b.d[0][1])}')"></div>`;
-    const nome = tres ? 'Batalha dos três' : b.d[0][0];
+    const nome = tres ? 'Batalha dos três' : b.chefe ? 'Chefe: Krenko' : b.d[0][0];
     const cmd = tres ? b.d.map(x=>x[1].split(',')[0]).join(' · ') : b.d[0][1];
-    return `<div class="bat ${st}${tres?' tres':''}${b.n===sel?' sel':''}" data-n="${b.n}"><span class="num">${b.n}</span>${mini}<div class="tx"><b>${nome}</b><small>${cmd}</small></div><span class="est">${st==='feita'?'✓':st==='bloq'?'🔒':''}</span></div>`;
+    return `<div class="bat ${st}${tres?' tres':''}${b.chefe?' chefe':''}${b.n===sel?' sel':''}" data-n="${b.n}"><span class="num">${b.n}</span>${b.chefe?'<span class="coroa">👑</span>':''}${mini}<div class="tx"><b>${nome}</b><small>${cmd}</small></div><span class="est">${st==='feita'?'✓':st==='bloq'?'🔒':''}</span></div>`;
   }).join('');
   document.querySelectorAll('.bat').forEach(e=>e.onclick=()=>{ const n=+e.dataset.n; if (n>ATUAL || n===sel) return; sel=n; mostrar(); desenharLista(); });
 }
@@ -132,9 +141,10 @@ function mostrar(){
   const b = BAT[sel-1], tres = b.d.length > 1, f = document.getElementById('fundo');
   f.classList.add('troca');
   setTimeout(()=>{ f.className = tres ? 'tres' : ''; f.innerHTML = `<div class="borrado" style="background-image:url('${art(b.d[0][1])}')"></div><div class="nitida">${b.d.map(x=>`<div style="background-image:url('${artFundo(x[1])}')"></div>`).join('')}</div>`; f.classList.remove('troca'); }, 350);
-  document.getElementById('nomeGrande').innerHTML = `<small>BATALHA ${b.n}${tres?' · TRÊS OPONENTES':''}</small><b>${tres?'Batalha dos três':b.d[0][1].split(',')[0]}</b>`;
-  const ganho = tres ? 500 : 250, feita = b.n < ATUAL;
-  document.getElementById('painel').innerHTML = `<div class="cap">BATALHA ${b.n} DE 15</div><h2>${tres?'Batalha dos três':b.d[0][0]}</h2>
+  document.getElementById('nomeGrande').innerHTML = `<small>${b.chefe ? 'CHEFE DO MUNDO' : `BATALHA ${b.n}${tres?' · TRÊS OPONENTES':''}`}</small><b>${tres?'Batalha dos três':b.d[0][1].split(',')[0]}</b>`;
+  const ganho = tres || b.chefe ? 500 : 250, feita = b.n < ATUAL;
+  document.getElementById('painel').classList.toggle('chefe', !!b.chefe);
+  document.getElementById('painel').innerHTML = `<div class="cap">${b.chefe ? 'CHEFE DO MUNDO · BATALHA 15' : `BATALHA ${b.n} DE 15`}</div><h2>${tres?'Batalha dos três':b.d[0][0]}</h2>
     <div class="cmds">${b.d.map(x=>x[1]).join(' · ')}</div>
     <p class="lore">${b.lore}</p>
     <div class="premio"><span>${MOEDA} ${ganho} na vitória</span>${feita?'<span>✓ Já vencida</span>':'<span>+1 booster na primeira vitória</span>'}</div>

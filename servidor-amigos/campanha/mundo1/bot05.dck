@@ -1,7 +1,7 @@
 SB: 1 [M15:64] Jalira, Master Polymorphist
+1 [ORI:58] Harbinger of the Tides
 1 [M13:59] Master of the Pearl Trident
 1 [M14:73] Tidebinder Mage
-1 [ORI:58] Harbinger of the Tides
 1 [M10:62] Merfolk Sovereign
 1 [M11:66] Merfolk Spy
 1 [M13:43] Augur of Bolas
@@ -11,9 +11,9 @@ SB: 1 [M15:64] Jalira, Master Polymorphist
 1 [M13:60] Merfolk of the Pearl Trident
 1 [M11:72] Scroll Thief
 1 [M11:63] Maritime Guard
-1 [M15:78] Soul of Ravnica
-1 [M11:51] Conundrum Sphinx
-1 [M12:72] Phantasmal Image
+1 [ORI:53] Disciple of the Ring
+1 [M14:54] Elite Arcanist
+1 [ORI:229] Hangarback Walker
 1 [M15:76] Quickling
 1 [M12:220] Thran Golem
 1 [M12:64] Master Thief
@@ -40,6 +40,7 @@ SB: 1 [M15:64] Jalira, Master Polymorphist
 1 [M15:72] Nimbus of the Isles
 1 [ORI:70] Screeching Skaab
 1 [M15:55] Frost Lynx
+1 [M10:69] Sage Owl
 1 [M15:56] Fugitive Wizard
 1 [M11:41] Aether Adept
 1 [M10:55] Horned Turtle
@@ -55,7 +56,6 @@ SB: 1 [M15:64] Jalira, Master Polymorphist
 1 [M12:48] Chasm Drake
 1 [M13:78] Watercourser
 1 [M12:75] Skywinder Drake
-1 [M10:70] Serpent of the Endless Sea
 1 [ORI:228] Guardians of Meletis
 1 [M10:82] Zephyr Sprite
 1 [M12:70] Phantasmal Bear

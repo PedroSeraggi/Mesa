@@ -239,29 +239,11 @@
    "bots": [
     {
      "arquivo": "bot19.dck",
-     "nome": "Legião de Nefarox",
-     "comandante": {
-      "nome": "Nefarox, Overlord of Grixis",
-      "set": "M13",
-      "num": "103"
-     }
-    },
-    {
-     "arquivo": "bot20.dck",
      "nome": "Exército de Krenko",
      "comandante": {
       "nome": "Krenko, Mob Boss",
       "set": "M13",
       "num": "138"
-     }
-    },
-    {
-     "arquivo": "bot21.dck",
-     "nome": "Tropa de Elite de Odric",
-     "comandante": {
-      "nome": "Odric, Master Tactician",
-      "set": "M13",
-      "num": "23"
      }
     }
    ]

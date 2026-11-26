@@ -41,9 +41,7 @@ BOTS = [
     (12, 'Pacto de Sangue', 'Ob Nixilis, Unshackled', ['Demon', 'Horror'], 'tribal'),
     (13, 'Ninho dos Dragões', 'Chandra, Fire of Kaladesh', ['Dragon'], 'tribal'),
     (14, 'Coro dos Anjos', 'Avacyn, Guardian Angel', ['Angel'], 'tribal'),
-    (15, 'Legião de Nefarox', 'Nefarox, Overlord of Grixis', ['Demon', 'Zombie'], 'tribal'),
-    (15, 'Exército de Krenko', 'Krenko, Mob Boss', ['Goblin'], 'tribal'),
-    (15, 'Tropa de Elite de Odric', 'Odric, Master Tactician', ['Soldier', 'Knight'], 'tribal'),
+    (15, 'Exército de Krenko', 'Krenko, Mob Boss', ['Goblin'], 'chefe'),   # chefe final do mundo: 1 contra 1, deck no máximo
 ]
 INICIAIS = [
     ('W', 'Iniciante Branco', 'Danitha Capashen, Paragon', 'J22', '168'),
@@ -62,8 +60,10 @@ COMPLEXAS = [
     r'additional cost to cast this spell, sacrifice',
     r'[Ff]lip a coin', r'[Ee]xchange control',
     r'[Rr]emove a .* counter from', r'phylactery', r'number of cards named',
+    r'choose a .*card name', r'loyalty abilities',
 ]
-def complexa(c): return any(re.search(p, c.get('texto', '')) for p in COMPLEXAS)
+LIBERADAS = {'Siege-Gang Commander'}   # forte só por entrar em campo; a IA não precisa usar a habilidade
+def complexa(c): return c['nome'] not in LIBERADAS and any(re.search(p, c.get('texto', '')) for p in COMPLEXAS)
 
 
 def cabe(c, cores):   # identidade de cor (inclui símbolos no texto das habilidades) cabe na do comandante
@@ -81,13 +81,18 @@ def montar_bot(batalha, nome, cmdNome, tribos, estilo, seed):
     cores = cmd['cores'] or 'WUBRG'
     t = batalha   # 1..15: quanto maior, mais forte
     max_rara, max_mitica, max_inc = round(t * 1.3), t // 3, 8 + 2 * t
+    if estilo == 'chefe': max_rara, max_mitica, max_inc = 99, 99, 99   # chefe: sem limite de raridade
     cand = [c for c in TODAS if not eh(c, 'Land') and c['nome'] not in LENDAS and cabe(c, cores) and not complexa(c)]
 
     def nota(c):
         n = 0
         st = subtipos(c)
         if any(tr in st for tr in tribos): n += 6
-        if eh(c, 'Creature'): n += 2 if estilo in ('tribal', 'sacrificio') else 0.5
+        if estilo == 'chefe':
+            tx = c.get('texto', '')
+            if any(tr in tx for tr in tribos): n += 6                       # cartas que falam de goblins
+            if re.search(r'[Cc]reate .*token|creatures you control get|deals \d+ damage to any target', tx): n += 3
+        if eh(c, 'Creature'): n += 2 if estilo in ('tribal', 'sacrificio', 'chefe') else 0.5
         if estilo == 'magias' and (eh(c, 'Instant') or eh(c, 'Sorcery')): n += 4
         if estilo == 'artefatos' and eh(c, 'Artifact'): n += 4
         n += RANK[c['faixa']] * (0.4 + t * 0.12)          # força: raridade pesa mais a cada batalha

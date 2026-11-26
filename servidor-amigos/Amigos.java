@@ -677,7 +677,7 @@ public class Amigos {
         if (cmd != null) l.add(0, cmd);
         return l;
     }
-    static boolean batalhaTripla(int n) { return n == 5 || n == 10 || n == 15; }
+    static boolean batalhaTripla(int n) { return n == 5 || n == 10 || n == 15; }   // 5 e 10: três bots; 15: o chefe do mundo (prêmio maior)
     static final String[][] BASICOS = {{"W", "Plains", "M15", "250"}, {"U", "Island", "M15", "254"}, {"B", "Swamp", "M15", "258"}, {"R", "Mountain", "M15", "262"}, {"G", "Forest", "M15", "266"}};
     /** O deck da campanha do jogador em .dck: comandante + cartas + básicos da cor até dar 100. */
     static String dckCampanha(JsonObject cp) {
@@ -759,7 +759,8 @@ public class Amigos {
             }
             Map<String, Object> r = new LinkedHashMap<>();
             r.put("n", n); r.put("jogador", dckCampanha(u.campanha)); r.put("bots", bots);
-            r.put("nivel", n <= 7 ? 4 : 5);
+            r.put("nivel", n == 15 ? 7 : n <= 7 ? 4 : 5);   // chefe do mundo: IA bem mais forte (o 10 do Chefe do dia é lento demais)
+            r.put("chefe", n == 15);
             return r;
         }
         Map<String, Object> r = new LinkedHashMap<>();

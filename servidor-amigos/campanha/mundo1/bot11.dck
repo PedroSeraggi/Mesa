@@ -1,13 +1,13 @@
 SB: 1 [ORI:43] Alhammarret, High Arbiter
+1 [M11:214] Steel Overseer
 1 [M12:201] Adaptive Automaton
 1 [M12:217] Solemn Simulacrum
-1 [M11:214] Steel Overseer
-1 [M13:218] Stuffy Doll
 1 [ORI:229] Hangarback Walker
+1 [M13:218] Stuffy Doll
 1 [M15:229] Scuttling Doom Engine
 1 [ORI:225] Chief of the Foundry
-1 [M12:220] Thran Golem
 1 [M10:208] Darksteel Colossus
+1 [M12:220] Thran Golem
 1 [M11:215] Stone Golem
 1 [M12:204] Crumbling Colossus
 1 [M13:209] Phyrexian Hulk
@@ -15,18 +15,18 @@ SB: 1 [ORI:43] Alhammarret, High Arbiter
 1 [ORI:238] Runed Servitor
 1 [M13:201] Chronomaton
 1 [M15:239] Will-Forged Golem
-1 [M14:218] Sliver Construct
 1 [M14:211] Guardian of the Ages
-1 [ORI:232] Mage-Ring Responder
+1 [M14:218] Sliver Construct
 1 [ORI:227] Guardian Automaton
 1 [ORI:228] Guardians of Meletis
 1 [ORI:223] Bonded Construct
-1 [ORI:221] Alhammarret's Archive
+1 [ORI:232] Mage-Ring Responder
 1 [M15:224] Perilous Vault
-1 [M15:230] Shield of the Avatar
-1 [M15:212] Avarice Amulet
-1 [M12:222] Worldslayer
-1 [M13:216] Sands of Delirium
+1 [ORI:221] Alhammarret's Archive
+1 [M13:206] Gilded Lotus
+1 [M12:207] Druidic Satchel
+1 [M15:217] Grindclock
+1 [ORI:230] Helm of the Gods
 1 [M10:216] Ornithopter
 1 [M11:207] Gargoyle Sentinel
 1 [M14:219] Staff of the Death Magus
@@ -59,6 +59,6 @@ SB: 1 [ORI:43] Alhammarret, High Arbiter
 1 [M11:54] Foresee
 1 [M10:68] Ponder
 1 [M13:74] Tricks of the Trade
+1 [ORI:66] Nivix Barrier
 1 [ORI:68] Ringwarden Owl
-1 [M15:74] Peel from Reality
 37 [M15:254] Island

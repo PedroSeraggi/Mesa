@@ -1,20 +1,20 @@
 SB: 1 [ORI:189] Nissa, Vastwood Seer
 1 [M15:191] Phytotitan
-1 [M14:203] Woodborn Behemoth
 1 [M11:174] Gaea's Revenge
+1 [M14:203] Woodborn Behemoth
 1 [M15:184] Living Totem
 1 [M15:170] Carnivorous Moss-Beast
 1 [M10:171] Bramble Creeper
 1 [M10:200] Protean Hydra
-1 [ORI:229] Hangarback Walker
-1 [M15:225] Phyrexian Revoker
-1 [ORI:182] Honored Hierarch
-1 [M12:217] Solemn Simulacrum
+1 [M11:214] Steel Overseer
+1 [M15:182] Kalonian Twingrove
+1 [M13:218] Stuffy Doll
+1 [M11:185] Mitotic Slime
+1 [M14:195] Scavenging Ooze
+1 [M12:195] Skinshifter
 1 [M10:176] Elvish Archdruid
 1 [M10:166] Ant Queen
-1 [M14:185] Megantic Sliver
-1 [M15:176] Genesis Hydra
-1 [M13:218] Stuffy Doll
+1 [M15:177] Hornet Nest
 1 [ORI:237] Ramroller
 1 [M14:166] Briarpack Alpha
 1 [ORI:198] Somberwald Alpha
@@ -39,13 +39,13 @@ SB: 1 [ORI:189] Nissa, Vastwood Seer
 1 [M11:209] Juggernaut
 1 [ORI:225] Chief of the Foundry
 1 [ORI:185] Llanowar Empath
+1 [M15:204] Undergrowth Scavenger
 1 [M15:186] Netcaster Spider
 1 [M14:189] Predatory Sliver
 1 [M13:189] Sentinel Spider
 1 [M11:199] Wall of Vines
 1 [M14:218] Sliver Construct
 1 [M10:175] Deadly Recluse
-1 [M14:196] Sporemound
 1 [M14:164] Advocate of the Beast
 1 [M13:160] Arbor Elf
 1 [M13:161] Bond Beetle
@@ -59,6 +59,5 @@ SB: 1 [ORI:189] Nissa, Vastwood Seer
 1 [M15:214] Bronze Sable
 1 [M10:172] Centaur Courser
 1 [M10:203] Runeclaw Bear
-1 [M10:178] Elvish Visionary
-1 [ORI:181] Hitchclaw Recluse
-37 [M15:266] Forest
+1 [M12:178] Gladecover Scout
+38 [M15:266] Forest

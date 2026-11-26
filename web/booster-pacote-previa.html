@@ -1,0 +1,5 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia: pacote do Mundo 1</title><style>html,body{margin:0;height:100%;background:#000;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}</style></head><body>
+<iframe id="f" src="booster.html"></iframe><script>
+const cartas=['Goblin Chieftain','Shock','Llanowar Elves','Serra Angel','Divination','Doom Blade','Giant Growth','Pacifism','Lightning Bolt','Naturalize','Cancel','Mind Rot','Act of Treason','Krenko, Mob Boss','Day of Judgment'].map((n,i)=>({nome:n,faixa:i==13?'especial':i==14?'rara':i>9?'incomum':'comum',nova:true,img:'https://api.scryfall.com/cards/named?format=image&exact='+encodeURIComponent(n)}));
+addEventListener('message',e=>{if(!e.data||!e.data.booster)return;if(e.data.booster==='pronta')document.getElementById('f').contentWindow.postMessage({mundo:'Mundo 1',nomeMundo:'Terras de Origem',arte:new URL('campanha/artes/krenko.jpg',location.href).href,foco:'42%',cartas},'*');if(e.data.booster==='pronto')location.reload();});
+</script></body></html>

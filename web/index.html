@@ -4380,7 +4380,7 @@ function desenharLoja(cx){
   cx.innerHTML = `<div class="lojaCx">
     <div class="lojaCab"><div class="lojaSaldo">${MOEDA}${fmtOuro(L.ouro)} <small>Ouro</small></div><button class="peq" id="ljFechar">✕</button></div>
     <div class="lojaGrade">
-      <div class="lojaItem"><div class="pacote"><i>MUNDO 1</i></div><div><b>Booster do Mundo 1</b><span>15 cartas: 10 comuns, 3 incomuns, 1 rara ou mítica e 1 especial (lendária ou terreno).</span>
+      <div class="lojaItem"><div class="pacote" style="background:linear-gradient(180deg,#0008,transparent 30%,transparent 55%,#000d),url('campanha/artes/krenko.jpg') 42% 30%/cover"><i>TERRAS DE ORIGEM</i></div><div><b>Booster do Mundo 1</b><span>15 cartas: 10 comuns, 3 incomuns, 1 rara ou mítica e 1 especial (lendária ou terreno).</span>
         <button class="pri" id="ljComprar" ${L.ouro >= L.precoBooster ? '' : 'disabled'}>Comprar por ${MOEDA} ${fmtOuro(L.precoBooster)}</button></div></div>
       <div class="lojaItem"><div class="pacote" style="filter:brightness(${L.boosters ? 1 : .45})"><i>${L.boosters || 0} FECHADO${L.boosters === 1 ? '' : 'S'}</i></div><div><b>Seus boosters</b><span>${L.boosters ? `Você tem ${L.boosters} para abrir.` : 'Nenhum para abrir. Compre um ou vença batalhas da campanha.'}</span>
         <button class="pri" id="ljAbrir" ${L.boosters ? '' : 'disabled'}>Abrir booster</button></div></div>
@@ -4400,7 +4400,7 @@ function animarBooster(cartas){
   let fr = $('#frameBooster'); if (fr) fr.remove();
   fr = document.createElement('iframe'); fr.id = 'frameBooster'; fr.src = 'booster.html';
   fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9300;background:transparent';
-  const dados = {mundo: 'Mundo 1', cartas: cartas.map(c=>({nome: c.nome, faixa: c.faixa, nova: !!c.nova, img: new URL(imgCarta(c), location.href).href}))};
+  const dados = {mundo: 'Mundo 1', nomeMundo: 'Terras de Origem', arte: new URL('campanha/artes/krenko.jpg', location.href).href, foco: '42%', cartas: cartas.map(c=>({nome: c.nome, faixa: c.faixa, nova: !!c.nova, img: new URL(imgCarta(c), location.href).href}))};
   const ouvir = e=>{
     if (!e.data || !e.data.booster) return;
     if (e.data.booster === 'pronta') fr.contentWindow.postMessage(dados, '*');
