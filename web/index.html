@@ -4422,9 +4422,19 @@ function telaEscolhaInicial(){
     if (e.data.acao === 'escolher'){
       const r = await post('/api/campanha', {acao:'escolher', cor: e.data.cor});
       if (r.erro){ fr.contentWindow.postMessage({erro: r.erro}, '*'); return; }
-      window.removeEventListener('message', ouvir); fr.remove(); mostrarCampanha(r.campanha);
+      window.removeEventListener('message', ouvir); fr.remove(); tocarCutscene('abertura', ()=>mostrarCampanha(r.campanha));
     }
   };
+  window.addEventListener('message', ouvir);
+  document.body.appendChild(fr);
+}
+// cutscene (cutscene.html por cima de tudo); 'depois' roda quando ela termina ou é pulada
+function tocarCutscene(nome, depois){
+  const fr = document.createElement('iframe'); fr.src = 'cutscene.html?c=' + encodeURIComponent(nome);
+  fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9500;background:#000';
+  fr.allow = 'autoplay';
+  const ouvir = e=>{ if (!e.data || !e.data.cutscene || e.source !== fr.contentWindow) return;
+    if (e.data.acao === 'fim'){ window.removeEventListener('message', ouvir); fr.remove(); if (depois) depois(); } };
   window.addEventListener('message', ouvir);
   document.body.appendChild(fr);
 }

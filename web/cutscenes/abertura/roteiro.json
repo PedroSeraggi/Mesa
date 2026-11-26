@@ -1,0 +1,11 @@
+{
+  "titulo": "A Mesa",
+  "quadros": [
+    {"img": "q1.jpg", "mov": "desce", "texto": "Antes dos reis e dos deuses, os primeiros magos se reuniram sobre uma pedra no centro de todas as coisas. Ali, dividiram a mana entre os mundos... para que nenhum ser jamais tivesse todo o poder."},
+    {"img": "q2.jpg", "mov": "aprox", "texto": "Chamaram aquele lugar de a Mesa. E deixaram nela um guardião."},
+    {"img": "q3.jpg", "mov": "desce", "texto": "Mas há quem não aceite dividir. Um dragão mais velho que muitos mundos... Nicol Bolas."},
+    {"img": "q4.jpg", "mov": "desce", "tremor": true, "texto": "Ele não podia entrar nos mundos. O pacto o impedia. Então atacou primeiro quem o protegia."},
+    {"img": "q5.jpg", "mov": "dir", "texto": "E escolheu três comandantes. Um para cada mundo. Cada um com uma missão: quebrar o pacto por dentro."},
+    {"img": "q6.jpg", "mov": "esq", "texto": "Muito longe dali, nos portões de Akros... alguém acordou sem lembrar o próprio nome."}
+  ]
+}

@@ -1,0 +1,106 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Cutscene</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=EB+Garamond:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;font-family:'EB Garamond',serif;cursor:default}
+/* a "câmera": as imagens ficam maiores que a tela para poder deslizar */
+#camera{position:fixed;inset:0;overflow:hidden;filter:url(#borrao)}
+.quadro{position:absolute;left:50%;top:50%;will-change:transform;background:#000 center/cover no-repeat}
+/* profundidade: névoa e brasas por cima, em velocidades diferentes */
+#nevoa{position:fixed;inset:-20%;pointer-events:none;opacity:.55;mix-blend-mode:screen;
+  background:radial-gradient(ellipse 30% 18% at 20% 70%,#8a9aa033,transparent 70%),radial-gradient(ellipse 34% 20% at 75% 60%,#8a9aa02a,transparent 70%),radial-gradient(ellipse 26% 14% at 50% 85%,#9aaab022,transparent 70%);
+  animation:nevoa 40s linear infinite alternate}
+@keyframes nevoa{to{transform:translateX(8%) translateY(-3%)}}
+#brasas{position:fixed;inset:0;pointer-events:none}
+#vinheta{position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 200px 70px #000c}
+/* faixas de cinema */
+.faixa{position:fixed;left:0;right:0;height:5.5vh;background:#000;z-index:3}
+.faixa.cima{top:0}.faixa.baixo{bottom:0}
+/* legenda */
+#legenda{position:fixed;left:50%;bottom:9vh;transform:translateX(-50%);z-index:4;width:min(1100px,86vw);text-align:center;font-size:clamp(18px,1.7vw,27px);line-height:1.35;
+  text-shadow:0 2px 4px #000,0 0 14px #000,0 0 30px #000;opacity:0;transition:opacity .6s}
+#legenda.on{opacity:1}
+#pular{position:fixed;right:24px;bottom:calc(5.5vh + 14px);z-index:5;font-family:'Metamorphous',serif;font-size:14px;letter-spacing:.12em;color:#e8d8b8;background:#0008;border:0;border-radius:8px;padding:8px 16px;cursor:pointer;opacity:.55;transition:opacity .2s}
+#pular:hover{opacity:1}
+#escuro{position:fixed;inset:0;background:#000;z-index:6;pointer-events:none;transition:opacity 1.4s}
+#iniciar{position:fixed;inset:0;z-index:7;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:#000;cursor:pointer;font-family:'Metamorphous',serif;color:#e8c874;letter-spacing:.2em}
+#iniciar small{color:#8a7a60;font-family:'EB Garamond',serif;letter-spacing:.05em;font-size:16px}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute"><filter id="borrao" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur id="borraoG" stdDeviation="0 0"/></filter></svg>
+<div id="camera"></div><div id="nevoa"></div><canvas id="brasas"></canvas><div id="vinheta"></div>
+<div class="faixa cima"></div><div class="faixa baixo"></div>
+<div id="legenda"></div><button id="pular">Pular</button><div id="escuro"></div>
+<div id="iniciar">CLIQUE PARA COMEÇAR<small>(o navegador só toca a narração depois de um clique)</small></div>
+<script>
+// Roteiro: cutscenes/<nome>/roteiro.json  { quadros: [ {img, texto, mov, tremor?, audio?} ] }
+// mov: desce, sobe, dir, esq, aprox, afasta  (para onde a CÂMERA vai)
+const nome = new URLSearchParams(location.search).get('c') || 'abertura';
+const base = `cutscenes/${nome}/`;
+const cam = document.getElementById('camera'), leg = document.getElementById('legenda'), blur = document.getElementById('borraoG');
+const VEL = {desce:[0,1], sobe:[0,-1], dir:[1,0], esq:[-1,0], aprox:[0,0], afasta:[0,0]};
+const ESCALA = 1.12, TRANS = 1.15;   // folga para a câmera andar; duração da passagem (s)
+let Q = [], els = [], atual = 0, t0 = 0, fim = false, audio = null;
+const pai = m => parent !== window && parent.postMessage(Object.assign({cutscene: true}, m), '*');
+
+function tamanho(){ const W = innerWidth, H = innerHeight, r = 1584/672; let w = W * ESCALA, h = w / r; if (h < H * ESCALA){ h = H * ESCALA; w = h * r; } return {w, h, W, H}; }
+// posição da câmera dentro de um quadro: u vai de 0 a 1; a velocidade é maior no começo e no fim (chega rápido, desacelera sem parar, acelera para sair)
+function pose(q, u){
+  const {w, h, W, H} = tamanho(), fx = (w - W) / 2, fy = (h - H) / 2, k = .62;
+  const s = u + k * Math.sin(2 * Math.PI * u) / (2 * Math.PI);   // velocidade 1 + k·cos: rápida nas pontas, lenta no meio (nunca para)
+  const v = VEL[q.mov] || [0,0];
+  let x = -v[0] * fx * (2 * s - 1), y = -v[1] * fy * (2 * s - 1), z = 1;
+  if (q.mov === 'aprox') z = 1 + .16 * s; if (q.mov === 'afasta') z = 1.16 - .16 * s;
+  return {x, y, z, w, h};
+}
+function aplicar(el, p, dx, dy){ el.style.width = p.w + 'px'; el.style.height = p.h + 'px';
+  el.style.transform = `translate(calc(-50% + ${p.x + dx}px), calc(-50% + ${p.y + dy}px)) scale(${p.z})`; }
+const dur = q => q.dur || Math.max(6.5, q.texto.length * 0.068);
+function legenda(txt){ leg.classList.remove('on'); setTimeout(() => { leg.textContent = txt; leg.classList.add('on'); }, 350); }
+function tocar(q){ if (audio) audio.pause(); audio = null; if (q.audio){ audio = new Audio(base + q.audio); audio.play().catch(()=>{}); } }
+let tremor = 0;
+function quadro(i){ atual = i; t0 = performance.now(); legenda(Q[i].texto); tocar(Q[i]); tremor = Q[i].tremor ? 1 : 0; }
+function loop(agora){
+  if (fim) return;
+  const q = Q[atual], d = dur(q) * 1000, el = els[atual];
+  let u = (agora - t0) / d;
+  const W = innerWidth, H = innerHeight;
+  // tremor (impacto)
+  let tx = 0, ty = 0; if (tremor > 0){ tremor = Math.max(0, tremor - .012); tx = (Math.random() - .5) * 26 * tremor; ty = (Math.random() - .5) * 26 * tremor; }
+  if (u < 1){ aplicar(el, pose(q, u), tx, ty); blur.setAttribute('stdDeviation', '0 0'); }
+  else {
+    // passagem para o próximo: os dois andam juntos na direção da câmera do próximo quadro, com borrão de movimento
+    const prox = Q[atual + 1];
+    if (!prox){ acabar(); return; }
+    const tt = Math.min(1, (u - 1) * d / (TRANS * 1000)), e = tt < .5 ? 4*tt*tt*tt : 1 - Math.pow(-2*tt + 2, 3) / 2, vel = tt < .5 ? 12*tt*tt : 12*(1-tt)*(1-tt);
+    let dirv = VEL[prox.mov] || [0,0]; if (!dirv[0] && !dirv[1]) dirv = VEL[q.mov] && (VEL[q.mov][0] || VEL[q.mov][1]) ? VEL[q.mov] : [1,0];
+    const dist = dirv[0] ? W * 1.05 : H * 1.12;
+    aplicar(el, pose(q, 1), -dirv[0] * dist * e, -dirv[1] * dist * e);
+    const pn = els[atual + 1]; pn.style.display = 'block'; aplicar(pn, pose(prox, 0), dirv[0] * dist * (1 - e), dirv[1] * dist * (1 - e));
+    const b = Math.min(28, vel * 9); blur.setAttribute('stdDeviation', dirv[0] ? `${b} 0` : `0 ${b}`);
+    if (tt >= 1){ el.style.display = 'none'; blur.setAttribute('stdDeviation', '0 0'); quadro(atual + 1); }
+  }
+  requestAnimationFrame(loop);
+}
+function acabar(){ if (fim) return; fim = true; leg.classList.remove('on'); if (audio) audio.pause();
+  document.getElementById('escuro').style.opacity = 1; setTimeout(() => pai({acao: 'fim'}), 1500); }
+document.getElementById('pular').onclick = acabar;
+addEventListener('keydown', e => { if (e.key === 'Escape') acabar(); });
+// brasas
+const cv = document.getElementById('brasas'), g = cv.getContext('2d'); let B = [];
+function tam(){ cv.width = innerWidth; cv.height = innerHeight; } tam(); addEventListener('resize', tam);
+const nova = s => ({x: Math.random()*innerWidth, y: s ? Math.random()*innerHeight : innerHeight+10, v: .3+Math.random()*.9, r: .5+Math.random()*1.8, o: Math.random()*7, a: .25+Math.random()*.5});
+for (let i = 0; i < 50; i++) B.push(nova(true));
+(function br(){ g.clearRect(0,0,cv.width,cv.height);
+  for (const b of B){ b.y -= b.v; b.o += .02; b.x += Math.sin(b.o)*.5; if (b.y < -10) Object.assign(b, nova(false));
+    g.beginPath(); g.fillStyle = `rgba(255,${160+Math.floor(b.r*30)},70,${b.a*Math.min(1,b.y/innerHeight*1.4)})`; g.shadowColor = '#ff9a3a'; g.shadowBlur = 8; g.arc(b.x,b.y,b.r,0,7); g.fill(); }
+  requestAnimationFrame(br); })();
+// carregar e começar
+fetch(base + 'roteiro.json').then(r => r.json()).then(async R => {
+  Q = R.quadros;
+  els = Q.map(q => { const d = document.createElement('div'); d.className = 'quadro'; d.style.backgroundImage = `url('${base}${q.img}')`; d.style.display = 'none'; cam.appendChild(d); return d; });
+  await Promise.all(Q.map(q => new Promise(ok => { const i = new Image(); i.onload = i.onerror = ok; i.src = base + q.img; })));
+  const comecar = () => { document.getElementById('iniciar').style.display = 'none'; els[0].style.display = 'block'; document.getElementById('escuro').style.opacity = 0; quadro(0); requestAnimationFrame(loop); };
+  if (Q.some(q => q.audio) && !navigator.userActivation?.hasBeenActive){ const b = document.getElementById('iniciar'); b.style.display = 'flex'; b.onclick = comecar; } else comecar();
+});
+</script></body></html>
