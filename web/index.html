@@ -4380,7 +4380,7 @@ function desenharLoja(cx){
   cx.innerHTML = `<div class="lojaCx">
     <div class="lojaCab"><div class="lojaSaldo">${MOEDA}${fmtOuro(L.ouro)} <small>Ouro</small></div><button class="peq" id="ljFechar">✕</button></div>
     <div class="lojaGrade">
-      <div class="lojaItem"><div class="pacote" style="background:linear-gradient(180deg,#0008,transparent 30%,transparent 55%,#000d),url('campanha/artes/krenko.jpg') 42% 30%/cover"><i>TERRAS DE ORIGEM</i></div><div><b>Booster do Mundo 1</b><span>15 cartas: 10 comuns, 3 incomuns, 1 rara ou mítica e 1 especial (lendária ou terreno).</span>
+      <div class="lojaItem"><div class="pacote" style="background:linear-gradient(180deg,#0008,transparent 30%,transparent 55%,#000d),url('campanha/artes/krenko.jpg') 42% 30%/cover"><i>TERRAS DE ORIGEM</i></div><div><b>Booster do Mundo 1</b><span>15 cartas: 10 comuns, 3 incomuns, 1 rara (ou mítica, em 1 a cada 6 pacotes) e 1 terreno ou comum.</span>
         <button class="pri" id="ljComprar" ${L.ouro >= L.precoBooster ? '' : 'disabled'}>Comprar por ${MOEDA} ${fmtOuro(L.precoBooster)}</button></div></div>
       <div class="lojaItem"><div class="pacote" style="filter:brightness(${L.boosters ? 1 : .45})"><i>${L.boosters || 0} FECHADO${L.boosters === 1 ? '' : 'S'}</i></div><div><b>Seus boosters</b><span>${L.boosters ? `Você tem ${L.boosters} para abrir.` : 'Nenhum para abrir. Compre um ou vença batalhas da campanha.'}</span>
         <button class="pri" id="ljAbrir" ${L.boosters ? '' : 'disabled'}>Abrir booster</button></div></div>
@@ -4420,8 +4420,8 @@ async function verColecao(){
   const r = await post('/api/loja', {acao:'colecao'});
   if (r.erro){ cx.innerHTML = `<div class="amErro">${esc(r.erro)}</div>`; return; }
   const col = r.colecao || []; let filtro = '';
-  const nomesF = {'':'Todas', comum:'Comuns', incomum:'Incomuns', rara:'Raras', mitica:'Míticas', especial:'Especiais'};
-  const ordem = {mitica:0, rara:1, especial:2, incomum:3, comum:4};
+  const nomesF = {'':'Todas', comum:'Comuns', incomum:'Incomuns', rara:'Raras', mitica:'Míticas'};
+  const ordem = {mitica:0, rara:1, incomum:3, comum:4};
   const desenhar = ()=>{
     const lista = col.filter(c=>!filtro || c.faixa===filtro).sort((a,b)=>ordem[a.faixa]-ordem[b.faixa] || a.nome.localeCompare(b.nome));
     cx.innerHTML = `<div class="lojaCx"><div class="lojaCab"><h3 class="subt" style="margin:0">Sua coleção <small style="font-family:inherit;text-transform:none;letter-spacing:0;color:var(--txt3)">${r.cartasNaColecao} cartas · ${r.cartasDiferentes} diferentes</small></h3>

@@ -23,7 +23,7 @@ def ler(arq):
 def img(nome): return 'https://api.scryfall.com/cards/named?format=image&version=normal&exact=' + html.escape(nome.replace("'", '%27'))
 
 
-COR_F = {'comum': '#9a948a', 'incomum': '#b8c8d8', 'rara': '#e8c874', 'mitica': '#ff8a4a', 'especial': '#c8a0e8'}
+COR_F = {'comum': '#9a948a', 'incomum': '#b8c8d8', 'rara': '#e8c874', 'mitica': '#ff8a4a', 'terreno': '#c8a0e8'}
 
 
 def bloco(titulo, sub, arq):
@@ -34,7 +34,7 @@ def bloco(titulo, sub, arq):
         grupos['Criaturas' if 'Creature' in t else 'Mágicas' if ('Instant' in t or 'Sorcery' in t) else 'Outras'].append(n)
     contagem = {}
     for n in cartas: f = INFO.get(n, {}).get('faixa', 'comum'); contagem[f] = contagem.get(f, 0) + 1
-    raro = ' · '.join(f"{v} {k}" for k, v in sorted(contagem.items(), key=lambda kv: ['comum', 'incomum', 'rara', 'mitica', 'especial'].index(kv[0])))
+    raro = ' · '.join(f"{v} {k}" for k, v in sorted(contagem.items(), key=lambda kv: ['comum', 'incomum', 'rara', 'mitica', 'terreno'].index(kv[0])))
     cols = ''.join(f"<div><h4>{g} ({len(l)})</h4>" + ''.join(
         f"<div class='c' data-img=\"{img(n)}\" style='color:{COR_F.get(INFO.get(n, {}).get('faixa'), '#ddd')}'>{html.escape(n)}</div>" for n in sorted(l)) + "</div>" for g, l in grupos.items())
     return f"""<section><div class='cab'><img src="{img(cmd[0])}"><div><small>{html.escape(sub)}</small><h3>{html.escape(titulo)}</h3>
@@ -54,7 +54,7 @@ section{{background:#1e1610;border:1px solid #4a3a28;border-radius:12px;padding:
 .cab small{{color:#c9a24a;letter-spacing:.15em;text-transform:uppercase;font-size:12px}}.cab h3{{font-family:Cinzel,serif;margin:2px 0 4px;font-size:20px}}.cab p{{margin:2px 0;color:#d9c8b0;font-size:14px}}.r{{color:#a8957d}}
 .cols{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px}}h4{{font-family:Cinzel,serif;color:#c9a24a;margin:0 0 4px;font-size:13px}}.c{{font-size:13.5px;line-height:1.45;cursor:zoom-in}}
 #zoom{{position:fixed;pointer-events:none;width:240px;border-radius:12px;display:none;z-index:9;box-shadow:0 10px 30px #000}}</style></head><body>
-<h1 style="font-family:Cinzel,serif;color:#E4C874;margin:0">Campanha · Mundo 1</h1><p style="color:#a8957d">Cores das cartas: cinza comum · azul-prata incomum · dourado rara · laranja mítica · roxo especial. Passe o mouse para ver a carta.</p>
+<h1 style="font-family:Cinzel,serif;color:#E4C874;margin:0">Campanha · Mundo 1</h1><p style="color:#a8957d">Cores das cartas: cinza comum · azul-prata incomum · dourado rara · laranja mítica · roxo terreno. Passe o mouse para ver a carta.</p>
 {h}<img id="zoom"><script>const z=document.getElementById('zoom');document.querySelectorAll('.c').forEach(e=>{{e.onmouseenter=v=>{{z.src=e.dataset.img;z.style.display='block'}};e.onmousemove=v=>{{z.style.left=(v.clientX+16)+'px';z.style.top=Math.min(v.clientY-40,innerHeight-340)+'px'}};e.onmouseleave=()=>z.style.display='none'}})</script></body></html>"""
 open(os.path.join(WEB, 'campanha-decks-previa.html'), 'w', encoding='utf-8').write(pag)
 print('ok')

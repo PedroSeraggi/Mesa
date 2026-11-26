@@ -11,10 +11,10 @@ SAIDA = os.path.join(AQUI, 'campanha', 'mundo1')
 os.makedirs(SAIDA, exist_ok=True)
 
 BASICO = {'W': ('Plains', 'M15', '250'), 'U': ('Island', 'M15', '254'), 'B': ('Swamp', 'M15', '258'), 'R': ('Mountain', 'M15', '262'), 'G': ('Forest', 'M15', '266')}
-RANK = {'comum': 0, 'incomum': 1, 'rara': 2, 'mitica': 3, 'especial': 2}
+RANK = {'comum': 0, 'incomum': 1, 'rara': 2, 'mitica': 3, 'terreno': 1}
 TODAS = [dict(c, faixa=f) for f, l in POOL.items() for c in l]
 POR_NOME = {c['nome']: c for c in TODAS}
-LENDAS = {c['nome'] for c in POOL['especial'] if 'Creature' in c['tipo']}
+LENDAS = {c['nome'] for c in TODAS if c.get('lendaria') and 'Creature' in c['tipo']}
 
 
 def subtipos(c): return set(re.findall(r"[A-Za-z']+", c.get('subtipos', '')))
@@ -105,7 +105,7 @@ def montar_bot(batalha, nome, cmdNome, tribos, estilo, seed):
     esc, cont, raros = [], {}, {'rara': 0, 'mitica': 0, 'incomum': 0}
     for c in cand:
         if len(esc) >= 62: break
-        f = c['faixa'] if c['faixa'] != 'especial' else 'rara'
+        f = c['faixa']
         if f == 'rara' and raros['rara'] >= max_rara: continue
         if f == 'mitica' and raros['mitica'] >= max_mitica: continue
         if f == 'incomum' and raros['incomum'] >= max_inc: continue
@@ -145,7 +145,7 @@ for i, (bat, nome, cmdNome, tribos, estilo) in enumerate(BOTS):
     cmd, esc, cores = montar_bot(bat, nome, cmdNome, tribos, estilo, seed=1000 + i)
     arq = f"bot{i+1:02d}.dck"
     open(os.path.join(SAIDA, arq), 'w', encoding='utf-8').write(dck(cmd, esc, cores, 99 - len(esc)))
-    raros = sum(1 for c in esc if c['faixa'] in ('rara', 'mitica', 'especial'))
+    raros = sum(1 for c in esc if c['faixa'] in ('rara', 'mitica'))
     trib = sum(1 for c in esc if any(t in subtipos(c) for t in tribos))
     print(f"batalha {bat:2d} {nome:28s} {cmdNome:32s} cartas={len(esc)} tribo={trib} raras/miticas={raros}")
     b = next((x for x in indice['batalhas'] if x['numero'] == bat), None)

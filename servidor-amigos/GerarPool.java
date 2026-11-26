@@ -14,13 +14,13 @@ import java.util.*;
 /**
  * Gera o "pool" de cartas de um mundo da campanha (cartas que saem nos boosters), a partir do banco do XMage.
  * Uso: java GerarPool <saida.json> <SET1,SET2,...>   (rodar na pasta do mage-client, onde fica o db/)
- * Saída: {comum:[...], incomum:[...], rara:[...], mitica:[...], especial:[...]} com {nome,set,num,tipo,cores}
+ * Saída: {comum:[...], incomum:[...], rara:[...], mitica:[...], terreno:[...]} com {nome,set,num,tipo,cores}
  */
 public class GerarPool {
     public static void main(String[] a) throws Exception {
         String[] sets = a[1].split(",");
         Map<String, List<Map<String, String>>> pool = new LinkedHashMap<>();
-        for (String k : new String[]{"comum", "incomum", "rara", "mitica", "especial"}) pool.put(k, new ArrayList<>());
+        for (String k : new String[]{"comum", "incomum", "rara", "mitica", "terreno"}) pool.put(k, new ArrayList<>());
         Set<String> vistos = new HashSet<>();
         for (CardInfo c : CardRepository.instance.findCards(new CardCriteria().setCodes(sets))) {
             if (c.getTypes().isEmpty()) continue;
@@ -46,7 +46,8 @@ public class GerarPool {
                 x.put("identidade", ident.toString());
             } catch (Throwable e) { x.put("identidade", cores.toString()); }
             Rarity r = c.getRarity();
-            if (lendaria || terreno) pool.get("especial").add(x);
+            x.put("lendaria", lendaria ? "1" : "");
+            if (terreno) pool.get("terreno").add(x);   // terrenos não básicos: espaço próprio no booster
             else if (r == Rarity.COMMON) pool.get("comum").add(x);
             else if (r == Rarity.UNCOMMON) pool.get("incomum").add(x);
             else if (r == Rarity.RARE) pool.get("rara").add(x);

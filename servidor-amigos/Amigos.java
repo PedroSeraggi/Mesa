@@ -587,7 +587,7 @@ public class Amigos {
         if (u.boasVindas) return;
         u.boasVindas = true; u.ouro += 500; u.boosters += 1; sujo = true;
     }
-    // pool de cartas de cada mundo (pools/mundoN.json): comum, incomum, rara, mitica, especial
+    // pool de cartas de cada mundo (pools/mundoN.json): comum, incomum, rara, mitica, terreno
     static final Map<String, JsonObject> pools = new HashMap<>();
     static final Map<String, JsonObject> cartaPorChave = new HashMap<>();
     static JsonObject pool(String mundo) throws IOException {
@@ -595,8 +595,11 @@ public class Amigos {
         if (p == null) {
             java.nio.file.Path f = DADOS.toAbsolutePath().getParent().resolve("pools").resolve(mundo + ".json");
             p = JsonParser.parseString(new String(Files.readAllBytes(f), StandardCharsets.UTF_8)).getAsJsonObject();
-            for (String r : new String[]{"comum", "incomum", "rara", "mitica", "especial"})
-                for (JsonElement e : p.getAsJsonArray(r)) { JsonObject c = e.getAsJsonObject(); c.addProperty("faixa", r); cartaPorChave.put(chaveCarta(c), c); }
+            for (String r : new String[]{"comum", "incomum", "rara", "mitica", "terreno"})
+                for (JsonElement e : p.getAsJsonArray(r)) { JsonObject c = e.getAsJsonObject();
+                    String fx = r;
+                    if (r.equals("terreno")) { String ra = str(c, "raridade"); fx = ra.equals("Mythic") ? "mitica" : ra.equals("Rare") ? "rara" : ra.equals("Uncommon") ? "incomum" : "comum"; }   // terreno mostra a raridade real
+                    c.addProperty("faixa", fx); cartaPorChave.put(chaveCarta(c), c); }
             pools.put(mundo, p);
         }
         return p;
@@ -608,13 +611,14 @@ public class Amigos {
         for (int t = 0; t < 30; t++) { JsonObject c = a.get(sorte.nextInt(a.size())).getAsJsonObject(); if (ja.add(str(c, "nome"))) return c; }
         return a.get(sorte.nextInt(a.size())).getAsJsonObject();
     }
-    /** Booster de 15: 10 comuns, 3 incomuns, 1 rara (1 em 8 vira mítica) e 1 especial (lendária ou terreno). */
+    /** Booster de 15, como no Magic: 10 comuns, 3 incomuns, 1 rara (1 em 6 vira mítica) e 1 terreno não básico (ou mais uma comum).
+     *  Com 290 raras, uma rara específica (ex.: Krenko) sai em ~1 a cada 350 boosters; uma mítica específica, ~1 a cada 500. */
     static List<JsonObject> gerarBooster(String mundo) throws IOException {
         JsonObject p = pool(mundo); Set<String> ja = new HashSet<>(); List<JsonObject> l = new ArrayList<>();
         for (int i = 0; i < 10; i++) l.add(sortear(p, "comum", ja));
         for (int i = 0; i < 3; i++) l.add(sortear(p, "incomum", ja));
-        l.add(sortear(p, sorte.nextInt(8) == 0 && p.getAsJsonArray("mitica").size() > 0 ? "mitica" : "rara", ja));
-        l.add(sortear(p, "especial", ja));
+        l.add(sortear(p, sorte.nextInt(6) == 0 && p.getAsJsonArray("mitica").size() > 0 ? "mitica" : "rara", ja));
+        l.add(sorte.nextInt(10) < 3 && p.getAsJsonArray("terreno").size() > 0 ? sortear(p, "terreno", ja) : sortear(p, "comum", ja));   // 30%: terreno
         return l;
     }
     static Object loja(JsonObject c) throws IOException {
