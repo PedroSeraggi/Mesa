@@ -1,0 +1,151 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia: recompensas de nível</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Cinzel:wght@700;900&family=EB+Garamond:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+<style>
+:root{--ff:'Metamorphous',serif;--fn:'Cinzel',serif;--ouro:#E4C874;--ouro2:#c9a24a}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:radial-gradient(ellipse at 50% 0%,#2a1a10,#0a0604 70%);color:#eee;font-family:'EB Garamond',serif}
+h1{font-family:var(--ff);color:var(--ouro);margin:0;font-size:28px;letter-spacing:.06em}
+.topo{display:flex;align-items:center;gap:22px;padding:22px 32px 8px}
+.topo .av{width:64px;height:64px;flex:none}
+.topo .barra{flex:1;max-width:420px}
+.topo .barra b{font-family:var(--fn);font-size:15px;color:var(--ouro)}
+.topo .barra small{color:#a8957d;margin-left:8px}
+.prog{height:12px;border-radius:99px;background:#1a0e08;box-shadow:inset 0 1px 3px #000;margin-top:6px;overflow:hidden}
+.prog i{display:block;height:100%;width:62%;background:linear-gradient(90deg,#b8862a,#ffe08a);box-shadow:0 0 10px #f0c44a88}
+.sub{color:#a8957d;padding:0 32px 6px;font-size:15px}
+/* ---- trilha ---- */
+#trilha{position:relative;overflow-x:auto;padding:30px 40px 34px;scrollbar-width:thin;scrollbar-color:#c9a24a77 transparent;cursor:grab}
+#trilha .linha{position:relative;display:flex;align-items:flex-end;gap:0;min-width:max-content;height:250px}
+#trilha .eixo{position:absolute;left:0;right:0;bottom:44px;height:8px;border-radius:99px;background:#2a1a10;box-shadow:inset 0 1px 3px #000}
+#trilha .eixo i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,#8a5a14,#ffe08a);box-shadow:0 0 12px #f0c44a99}
+.nv{position:relative;width:96px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.nv .num{position:absolute;bottom:0;font-family:var(--fn);font-weight:900;font-size:17px;color:#a8957d}
+.nv .pino{position:absolute;bottom:40px;width:16px;height:16px;border-radius:50%;background:#2a1a10;border:2px solid #6a4a24;z-index:1}
+.nv.feito .pino{background:radial-gradient(circle at 35% 30%,#fff0b0,#c08a2a);border-color:#ffe08a;box-shadow:0 0 10px #f0c44a}
+.nv.feito .num{color:var(--ouro)}
+.nv.atual .num{color:#fff;font-size:21px;text-shadow:0 0 12px #f0c44a}
+.nv.atual .pino{width:22px;height:22px;bottom:37px;background:radial-gradient(circle at 35% 30%,#fff,#ffd060);box-shadow:0 0 0 4px #f0c44a55,0 0 22px #ffd060;animation:pinoAtual 1.6s ease-in-out infinite}
+@keyframes pinoAtual{50%{box-shadow:0 0 0 8px #f0c44a22,0 0 30px #ffd060}}
+.premio{position:absolute;bottom:72px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:transform .2s}
+.premio:hover{transform:translateY(-6px)}
+.premio .val{font-family:var(--fn);font-weight:700;font-size:13px;color:var(--ouro);text-shadow:0 1px 3px #000}
+.moeda{width:42px;height:42px}
+.pack{width:40px;height:58px;border-radius:4px;background:linear-gradient(180deg,#0008,transparent 30%,transparent 55%,#000d),url('campanha/artes/krenko.jpg') 42% 30%/cover;box-shadow:0 0 0 2px #c9a24a,0 6px 12px #000a;position:relative}
+.pack::after{content:'M';position:absolute;top:3px;left:0;right:0;text-align:center;font-family:var(--ff);font-size:13px;color:#ffe08a;text-shadow:0 1px 2px #000}
+.nv.feito .premio{filter:saturate(.5) brightness(.65)}
+.nv.feito .premio::after{content:'✓';position:absolute;top:-6px;right:-10px;width:20px;height:20px;border-radius:50%;background:#3a9a5a;color:#fff;font-size:12px;display:grid;place-items:center}
+/* marcos (10, 20, 30, 40, 50) */
+.nv.marco{width:150px}
+.nv.marco .premio{bottom:66px}
+.cartaoMarco{width:128px;padding:10px 8px 9px;border-radius:12px;text-align:center;background:linear-gradient(180deg,#2a1a10,#140a06);border:1px solid var(--cm);box-shadow:0 0 18px color-mix(in srgb,var(--cm) 45%,transparent),0 10px 20px #000a;cursor:pointer}
+.cartaoMarco .vis{height:84px;display:grid;place-items:center;margin-bottom:6px}
+.cartaoMarco b{display:block;font-family:var(--ff);font-size:13px;color:#fff;line-height:1.15}
+.cartaoMarco small{display:block;font-size:12px;color:#c9b89a;line-height:1.2;margin-top:3px}
+.m10{--cm:#c98a4a}.m20{--cm:#d0d8e0}.m30{--cm:#ffd060}.m40{--cm:#ff7a3a}.m50{--cm:#c890ff}
+.nv.marco .num{font-size:20px;color:var(--ouro)}
+/* mini playmat, costas de carta, cartas à escolha */
+.miniMat{width:96px;height:58px;border-radius:6px;background:radial-gradient(ellipse at 50% 120%,#ff8a3a55,transparent 60%),linear-gradient(160deg,#3a1a0c,#120806);box-shadow:inset 0 0 0 1px #c98a4a,0 4px 10px #000;position:relative;overflow:hidden}
+.miniMat i{position:absolute;bottom:-4px;width:3px;height:3px;border-radius:50%;background:#ffb050;box-shadow:0 0 6px #ff8a2a;animation:sobe 2.6s linear infinite}
+@keyframes sobe{to{transform:translateY(-70px);opacity:0}}
+.costas{width:52px;height:74px;border-radius:5px;background:radial-gradient(ellipse at 50% 50%,#3a2a12,#0a0604 70%);box-shadow:0 0 0 2px #c9a24a,0 4px 10px #000;display:grid;place-items:center;font-family:var(--ff);font-size:28px;color:transparent;background-clip:border-box}
+.costas span{background:linear-gradient(180deg,#fff4c8,#e8b84a 45%,#8a5a18);-webkit-background-clip:text;background-clip:text;color:transparent;font-family:var(--ff);font-size:30px}
+.escolha{display:flex}
+.escolha div{width:34px;height:48px;border-radius:4px;margin-left:-14px;background:#000 center/cover;box-shadow:0 0 0 1.5px var(--cm),0 3px 8px #000}
+.escolha div:first-child{margin-left:0;transform:rotate(-10deg)}.escolha div:last-child{transform:rotate(10deg)}
+.escolha div:nth-child(2){transform:translateY(-6px);z-index:1}
+/* ---- molduras de avatar ---- */
+.av{position:relative;width:86px;height:86px;display:grid;place-items:center}
+.av .foto{width:64%;height:64%;border-radius:50%;background:url('campanha/artes/kytheon.jpg') 60% 30%/cover;position:relative;z-index:2}
+.av .anel{position:absolute;inset:8%;border-radius:50%;z-index:1}
+.f0 .anel{box-shadow:0 0 0 3px #5a4a3a}
+.f10 .anel{background:conic-gradient(#8a5a2a,#e0a060,#7a4a1a,#d09050,#8a5a2a);-webkit-mask:radial-gradient(circle,transparent 58%,#000 60%);mask:radial-gradient(circle,transparent 58%,#000 60%)}
+.f20 .anel{background:repeating-conic-gradient(#f0f4f8 0 10deg,#8a96a2 10deg 20deg);-webkit-mask:radial-gradient(circle,transparent 57%,#000 59%);mask:radial-gradient(circle,transparent 57%,#000 59%);box-shadow:0 0 12px #d0e0f066}
+.f20::after{content:'';position:absolute;inset:4%;border-radius:50%;border:2px solid #c8d4e0;z-index:1}
+.f30 .anel{background:conic-gradient(#fff0b0,#d0a040,#8a6a14,#ffe08a,#c08a2a,#fff0b0);-webkit-mask:radial-gradient(circle,transparent 55%,#000 57%);mask:radial-gradient(circle,transparent 55%,#000 57%);box-shadow:0 0 16px #ffd06088}
+.f30 .gema{position:absolute;width:12%;height:12%;border-radius:50%;z-index:3;background:radial-gradient(circle at 35% 30%,#ff9a9a,#c01a2a);box-shadow:0 0 6px #ff3a4a,0 0 0 1.5px #ffe08a}
+.f30 .g1{top:2%;left:44%}.f30 .g2{bottom:2%;left:44%;background:radial-gradient(circle at 35% 30%,#9affc0,#1a9a4a);box-shadow:0 0 6px #3aff7a,0 0 0 1.5px #ffe08a}.f30 .g3{left:2%;top:44%;background:radial-gradient(circle at 35% 30%,#9ad0ff,#1a4ac0);box-shadow:0 0 6px #3a8aff,0 0 0 1.5px #ffe08a}.f30 .g4{right:2%;top:44%;background:radial-gradient(circle at 35% 30%,#e0b0ff,#7a2ac0);box-shadow:0 0 6px #b04aff,0 0 0 1.5px #ffe08a}
+.f40 .anel{inset:2%;background:conic-gradient(from 0deg,#ff3a0a,#ffb040,#ff6a1a,#fff0a0,#ff3a0a);-webkit-mask:radial-gradient(circle,transparent 60%,#000 62%,#000 70%,transparent 72%);mask:radial-gradient(circle,transparent 60%,#000 62%,#000 70%,transparent 72%);filter:url(#chama) drop-shadow(0 0 6px #ff6a1a);animation:gira 4s linear infinite}
+.f40 .anel2{position:absolute;inset:12%;border-radius:50%;z-index:1;box-shadow:0 0 0 3px #ffb040,0 0 14px #ff6a1a}
+@keyframes gira{to{transform:rotate(360deg)}}
+.f50 .anel{inset:-6%;background:conic-gradient(from 0deg,#c890ff,#5ad0ff,#ffe08a,#ff5ac8,#c890ff);-webkit-mask:radial-gradient(circle,transparent 46%,#000 50%,#000 62%,transparent 70%);mask:radial-gradient(circle,transparent 46%,#000 50%,#000 62%,transparent 70%);filter:url(#chama2) drop-shadow(0 0 10px #c890ff);animation:gira 3s linear infinite}
+.f50 .runas{position:absolute;inset:-14%;border-radius:50%;z-index:1;animation:gira 14s linear infinite reverse}
+.f50 .runas span{position:absolute;left:50%;top:50%;font-family:serif;font-size:15px;line-height:1;color:#f0e0ff;text-shadow:0 0 6px #c890ff,0 0 12px #c890ff}
+.f50 .anel2{position:absolute;inset:12%;border-radius:50%;z-index:1;box-shadow:0 0 0 2px #fff,0 0 0 4px #c890ff,0 0 26px #c890ff,0 0 50px #5ad0ff88}
+.f50 .orbe{position:absolute;width:9%;height:9%;border-radius:50%;background:#fff;box-shadow:0 0 10px 3px #c890ff;z-index:3;left:45.5%;top:45.5%;animation:orbita 2.6s linear infinite}
+.f50 .orbe.b{animation-delay:-1.3s;background:#ffe08a;box-shadow:0 0 10px 3px #ffb040}
+@keyframes orbita{from{transform:rotate(0deg) translateX(52px) rotate(0deg)}to{transform:rotate(360deg) translateX(52px) rotate(-360deg)}}
+.f50 .coroa{position:absolute;top:-22%;left:50%;transform:translateX(-50%);font-size:26px;z-index:4;filter:drop-shadow(0 0 8px #ffd060)}
+/* ---- seção das molduras ---- */
+.secao{padding:10px 32px 30px}
+.secao h2{font-family:var(--ff);color:var(--ouro);font-size:20px;margin:10px 0 14px}
+.molduras{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-end}
+.molduras .it{display:flex;flex-direction:column;align-items:center;gap:10px}
+.molduras .it .av{width:120px;height:120px}
+.molduras .it b{font-family:var(--fn);font-size:14px;color:var(--ouro)}
+.molduras .it small{font-size:13px;color:#a8957d}
+.titulo{font-family:var(--ff);font-size:12px;letter-spacing:.2em;background:linear-gradient(90deg,#c890ff,#ffe08a,#5ad0ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* detalhe do marco */
+#det{margin:0 32px 30px;padding:18px 22px;border-radius:14px;background:linear-gradient(180deg,#1e140c,#120a06);border:1px solid #6a4a24;display:none;gap:22px;align-items:center}
+#det.on{display:flex}
+#det h3{margin:0 0 6px;font-family:var(--ff);color:var(--ouro);font-size:20px}
+#det p{margin:0;color:#d9c8b0;font-size:16px;line-height:1.45}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute">
+ <filter id="chama" x="-30%" y="-30%" width="160%" height="160%"><feTurbulence type="fractalNoise" baseFrequency="0.04 0.07" numOctaves="2" seed="5" result="r"><animate attributeName="baseFrequency" dur="5s" values="0.04 0.07;0.06 0.1;0.04 0.07" repeatCount="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="r" scale="10" xChannelSelector="R" yChannelSelector="G"/><feGaussianBlur stdDeviation="1"/></filter>
+ <filter id="chama2" x="-40%" y="-40%" width="180%" height="180%"><feTurbulence type="fractalNoise" baseFrequency="0.03 0.06" numOctaves="2" seed="9" result="r"><animate attributeName="baseFrequency" dur="4s" values="0.03 0.06;0.05 0.09;0.03 0.06" repeatCount="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="r" scale="16" xChannelSelector="R" yChannelSelector="G"/><feGaussianBlur stdDeviation="1.4"/></filter>
+</svg>
+<div class="topo">
+  <div class="av f20" id="meuAv"><div class="anel"></div><div class="foto"></div></div>
+  <div><h1>Recompensas de nível</h1><div class="barra"><b>Nível 17</b><small>620 / 1.000 XP para o nível 18</small><div class="prog"><i></i></div></div></div>
+</div>
+<div class="sub">Cada nível dá Ouro; de 3 em 3 níveis, um booster. Nos níveis 10, 20, 30, 40 e 50, prêmios que não se compram. Clique num prêmio grande para ver os detalhes.</div>
+<div id="trilha"><div class="linha" id="linha"><div class="eixo"><i id="eixoFeito"></i></div></div></div>
+<div id="det"></div>
+<div class="secao">
+  <h2>Molduras de avatar</h2>
+  <div class="molduras" id="molduras"></div>
+</div>
+<script>
+const ATUAL = 17;
+const MOEDA = '<svg class="moeda" viewBox="0 0 24 24"><defs><radialGradient id="mg" cx="35%" cy="30%"><stop offset="0" stop-color="#fff6c8"/><stop offset=".45" stop-color="#f0c44a"/><stop offset="1" stop-color="#9a6a18"/></radialGradient></defs><circle cx="12" cy="12" r="10.5" fill="url(#mg)" stroke="#7a5414" stroke-width="1.2"/><circle cx="12" cy="12" r="7.6" fill="none" stroke="#b8862a" stroke-width="1"/><path d="M8 16V8.4l4 4.6 4-4.6V16" fill="none" stroke="#7a5414" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+const art = n => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n)}&format=image&version=art_crop`;
+const moldura = (k) => {
+  if (k === 50) return `<div class="av f50"><div class="runas">${'✦✧✦✧✦✧✦✧✦✧✦✧'.split('').map((r,i)=>`<span style="transform:translate(-50%,-50%) rotate(${i*30}deg) translateY(-62%) translateY(-50px)">${r}</span>`).join('')}</div><div class="anel"></div><div class="anel2"></div><div class="foto"></div><div class="orbe"></div><div class="orbe b"></div><div class="coroa">👑</div></div>`;
+  if (k === 40) return `<div class="av f40"><div class="anel"></div><div class="anel2"></div><div class="foto"></div></div>`;
+  if (k === 30) return `<div class="av f30"><div class="anel"></div><div class="foto"></div><i class="gema g1"></i><i class="gema g2"></i><i class="gema g3"></i><i class="gema g4"></i></div>`;
+  return `<div class="av f${k}"><div class="anel"></div><div class="foto"></div></div>`;
+};
+const MARCOS = {
+  10: {t:'Playmat "Brasas de Akros"', s:'animado + moldura de bronze', vis:`<div class="miniMat">${[10,25,40,55,70,85].map((x,i)=>`<i style="left:${x}%;animation-delay:${-i*.45}s"></i>`).join('')}</div>`,
+       d:'Um playmat exclusivo e animado, com brasas subindo pela mesa, e a primeira moldura de avatar: <b>Bronze</b>. Mais 300 de Ouro.'},
+  20: {t:'Costas de carta', s:'personalizadas + moldura de prata', vis:'<div class="costas"><span>M</span></div>',
+       d:'Libera trocar as costas das suas cartas: use a versão preta e dourada da Mesa ou <b>qualquer imagem que você quiser</b>. Todos na mesa veem suas cartas assim. Ganha também a moldura de <b>Prata</b>.'},
+  30: {t:'Rara à sua escolha', s:'+ moldura de ouro', vis:`<div class="escolha"><div style="background-image:url('${art('Goblin Chieftain')}')"></div><div style="background-image:url('${art('Krenko, Mob Boss')}')"></div><div style="background-image:url('${art('Serra Angel')}')"></div></div>`,
+       d:'Escolha <b>qualquer rara</b> do mundo e ela vai para a sua coleção. É o jeito de pegar aquela carta que não sai no booster. Ganha também a moldura de <b>Ouro</b>, com gemas das cinco cores.'},
+  40: {t:'Moldura em chamas', s:'animada + entrada de comandante + booster', vis:moldura(40),
+       d:'Moldura <b>animada</b> com um anel de fogo vivo girando, uma nova <b>entrada do comandante</b> (chamas douradas em vez do impacto comum) e mais um booster.'},
+  50: {t:'Lenda da Mesa', s:'mítica à escolha + título + moldura lendária', vis:moldura(50),
+       d:'O grande prêmio: <b>qualquer mítica</b> à sua escolha, o título <span class="titulo">LENDA DA MESA</span> embaixo do seu nome, uma conquista com brasão próprio e a moldura <b>Lendária</b>: anel de energia viva, runas girando, orbes em órbita e coroa.'},
+};
+function premio(n){
+  if (MARCOS[n]){ const m = MARCOS[n]; return `<div class="premio"><div class="cartaoMarco m${n}" data-n="${n}"><div class="vis">${m.vis}</div><b>${m.t}</b><small>${m.s}</small></div></div>`; }
+  if (n === 1) return `<div class="premio">${MOEDA}<span class="val">500</span></div>`;
+  if (n % 3 === 0) return `<div class="premio"><div class="pack"></div><span class="val">Booster</span></div>`;
+  return `<div class="premio">${MOEDA}<span class="val">150</span></div>`;
+}
+const L = document.getElementById('linha');
+L.insertAdjacentHTML('beforeend', Array.from({length:50}, (_, i)=>{ const n = i + 1;
+  return `<div class="nv${MARCOS[n]?' marco':''}${n<ATUAL?' feito':n===ATUAL?' atual':''}">${premio(n)}<div class="pino"></div><div class="num">${n}</div></div>`; }).join(''));
+const nos = [...L.querySelectorAll('.nv')], alvo = nos[ATUAL-1];
+document.getElementById('eixoFeito').style.width = (alvo.offsetLeft + alvo.offsetWidth/2) + 'px';
+const tr = document.getElementById('trilha'); tr.scrollLeft = alvo.offsetLeft - 200;
+// arrastar a trilha com o mouse
+let arr = null; tr.onpointerdown = e => { arr = {x: e.clientX, s: tr.scrollLeft}; tr.style.cursor = 'grabbing'; };
+addEventListener('pointerup', () => { arr = null; tr.style.cursor = ''; }); addEventListener('pointermove', e => { if (arr) tr.scrollLeft = arr.s - (e.clientX - arr.x); });
+tr.addEventListener('wheel', e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)){ tr.scrollLeft += e.deltaY; e.preventDefault(); } }, {passive:false});
+document.querySelectorAll('.cartaoMarco').forEach(c => c.onclick = () => { const m = MARCOS[c.dataset.n], d = document.getElementById('det');
+  d.innerHTML = `<div style="flex:none">${m.vis}</div><div><h3>Nível ${c.dataset.n}: ${m.t}</h3><p>${m.d}</p></div>`; d.classList.add('on'); d.scrollIntoView({behavior:'smooth', block:'nearest'}); });
+document.getElementById('molduras').innerHTML = [[0,'Sem moldura','todos'],[10,'Bronze','nível 10'],[20,'Prata','nível 20'],[30,'Ouro','nível 30'],[40,'Chamas','nível 40 · animada'],[50,'Lendária','nível 50']]
+  .map(([k,n,s])=>`<div class="it">${moldura(k)}<b>${n}</b><small>${s}</small>${k===50?'<span class="titulo">LENDA DA MESA</span>':''}</div>`).join('');
+</script></body></html>
