@@ -92,9 +92,15 @@ html,body{margin:0;height:100%;overflow:hidden;background:#070504;color:#eee;fon
 #nomeGrande{position:fixed;left:410px;bottom:34px;z-index:2;pointer-events:none}
 #nomeGrande b{display:block;font-family:var(--ff);font-weight:900;font-size:clamp(28px,3.4vw,52px);line-height:1.02;color:#fff;text-shadow:0 4px 30px #000}
 #nomeGrande small{font-family:var(--ff);font-size:14px;letter-spacing:.24em;color:var(--ouro)}
-.editar{position:fixed;left:28px;bottom:26px;z-index:3;font-family:var(--ff);font-weight:700;letter-spacing:.14em;font-size:15px;background:#140e09e8;border:1px solid var(--ouro2);color:var(--ouro);padding:12px 30px;border-radius:12px;cursor:pointer}
-.editar.bazar{left:220px}
-.editar:hover{background:#2a1e10;box-shadow:0 0 20px #c9a24a44}
+/* atalhos: placas de couro com ícone gravado em ouro */
+.atalhos{position:fixed;left:28px;bottom:26px;z-index:3;display:flex;gap:14px}
+.editar{position:relative;display:flex;align-items:center;gap:10px;font-family:var(--ff);font-size:16px;letter-spacing:.1em;color:#f0d890;padding:11px 24px 11px 18px;border:0;border-radius:12px;cursor:pointer;
+  background:radial-gradient(ellipse at 50% 0%,#5a3418,transparent 70%),linear-gradient(180deg,#3a2210,#1e1008);
+  box-shadow:inset 0 1px 0 #ffd88a33,inset 0 0 0 1px #00000088,inset 0 -3px 6px #0008,0 5px 0 #0c0603,0 10px 22px #000a;text-shadow:0 1px 0 #000,0 0 10px #e8b84a44;transition:transform .15s,filter .2s,box-shadow .2s}
+.editar::after{content:'';position:absolute;inset:4px;border-radius:9px;border:1px solid #c9a24a40;pointer-events:none}
+.editar svg{width:22px;height:22px;fill:none;stroke:#e8c870;stroke-width:1.6;stroke-linejoin:round;filter:drop-shadow(0 0 4px #e8b84a66)}
+.editar:hover{filter:brightness(1.18);box-shadow:inset 0 1px 0 #ffd88a44,inset 0 0 0 1px #00000088,inset 0 -3px 6px #0008,0 5px 0 #0c0603,0 0 26px #e8b84a44}
+.editar:active{transform:translateY(4px);box-shadow:inset 0 1px 0 #ffd88a33,inset 0 0 0 1px #00000088,0 1px 0 #0c0603}
 @media (max-width:1100px){#nomeGrande{display:none}#lista{width:300px}}
 </style></head><body>
 <div id="fundo"></div><div id="sombra"></div><canvas id="brasas"></canvas>
@@ -108,7 +114,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#070504;color:#eee;fon
 <div id="lista"></div>
 <div id="nomeGrande"></div>
 <div id="painel"></div>
-<button class="editar">EDITAR DECK</button><button class="editar bazar">O BAZAR</button>
+<div class="atalhos"><button class="editar"><svg viewBox="0 0 24 24"><path d="M4 4.5C4 3.7 4.7 3 5.5 3H11v17H5.5c-.8 0-1.5-.7-1.5-1.5z"/><path d="M20 4.5c0-.8-.7-1.5-1.5-1.5H13v17h5.5c.8 0 1.5-.7 1.5-1.5z"/><path d="M6.5 7h2.5M6.5 10h2.5M15 7h2.5M15 10h2.5" stroke-linecap="round"/></svg><span>Editar deck</span></button><button class="editar bazar"><svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6"/><path d="M5 10v9h14v-9"/><path d="M3 10c1.5 2 3 2 4.5 0 1.5 2 3 2 4.5 0 1.5 2 3 2 4.5 0 1.5 2 3 2 4.5 0"/><path d="M10 19v-5h4v5"/></svg><span>O Bazar</span></button></div>
 <script>
 const artSf = n => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n).replace(/'/g,'%27')}&format=image&version=art_crop`;
 const artHd = n => `campanha/artes/${encodeURIComponent(n.split(',')[0].toLowerCase().replace(/[^a-z0-9]+/g,'-'))}.jpg`;

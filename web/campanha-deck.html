@@ -102,23 +102,32 @@ html,body{margin:0;height:100%;overflow:hidden;color:#2a1a0e;font-family:'EB Gar
 /* ---------- lista do deck ---------- */
 #lista{width:340px;flex:none;display:flex;flex-direction:column;position:relative;border-radius:16px;overflow:hidden;color:#eee;
   background:var(--ruido),linear-gradient(180deg,#2a1810,#140a06);background-blend-mode:overlay,normal;
-  box-shadow:0 0 0 2px #1a0804,0 0 0 4px #8a6a2a,0 0 0 6px #2a1208,0 30px 60px #000}
-.cab{position:relative;height:130px;background:#000 center 25%/cover;display:flex;align-items:flex-end;padding:12px 16px;border-bottom:2px solid #8a6a2a}
+  box-shadow:inset 0 0 0 1px #00000099,inset 0 0 40px #000a,0 30px 60px #000}
+/* moldura gravada em ouro por dentro do couro, com cantos em losango */
+#lista::after{content:'';position:absolute;inset:7px;border-radius:11px;pointer-events:none;z-index:5;
+  box-shadow:inset 0 0 0 1px #c9a24a38,inset 0 0 0 3px #00000040,inset 0 0 0 4px #c9a24a1c}
+#lista::before{content:'';position:absolute;inset:3px;pointer-events:none;z-index:5;
+  background:radial-gradient(circle at 10px 10px,#e8c870 0 2px,transparent 3px),radial-gradient(circle at calc(100% - 10px) 10px,#e8c870 0 2px,transparent 3px),
+  radial-gradient(circle at 10px calc(100% - 10px),#e8c870 0 2px,transparent 3px),radial-gradient(circle at calc(100% - 10px) calc(100% - 10px),#e8c870 0 2px,transparent 3px);opacity:.8}
+.cab{position:relative;height:130px;background:#000 center 25%/cover;display:flex;align-items:flex-end;padding:12px 16px}
+.cab::after{content:'';position:absolute;left:14px;right:14px;bottom:0;height:1px;background:linear-gradient(90deg,transparent,#e8c870aa,transparent);box-shadow:0 0 8px #e8b84a66}
 .cab::before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#140a06 2%,#140a0699 55%,transparent)}
 .cab div{position:relative}
 .cab b{display:block;font-family:var(--ff);font-size:21px;color:var(--ouro);text-shadow:0 2px 6px #000}
 .cab small{font-size:14px;color:#d9c8b0;font-style:italic}
 #linhas{flex:1;overflow-y:auto;padding:10px 10px 10px 12px;scrollbar-width:thin;scrollbar-color:#c9a24a55 transparent}
 .lin{position:relative;display:flex;align-items:center;gap:9px;height:32px;margin-bottom:4px;padding:0 10px 0 6px;border-radius:5px;cursor:pointer;overflow:hidden;
-  background:linear-gradient(90deg,#1e120a 35%,#1e120a00 75%),var(--arte) right 35%/62% auto no-repeat,#1e120a;border:1px solid #5a4024;box-shadow:inset 0 1px 0 #ffffff10,0 2px 3px #0007}
-.lin:hover{border-color:#e05a3a;filter:brightness(1.2)}
+  background:linear-gradient(90deg,#1e120a 35%,#1e120a00 75%),var(--arte) right 35%/62% auto no-repeat,#1e120a;border:0;box-shadow:inset 0 1px 0 #ffffff0d,inset 0 -1px 0 #00000080,0 2px 4px #0006}
+.lin:hover{filter:brightness(1.25);box-shadow:inset 0 1px 0 #ffffff14,inset 3px 0 0 #e8b84a,0 2px 8px #0008}
 .lin .cmc{width:24px;height:26px;flex:none;display:grid;place-items:center;font-family:var(--fn);font-weight:700;font-size:13px;color:#fff;text-shadow:0 1px 2px #000;
   clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:linear-gradient(160deg,#9fd0ff,#3a80d0 35%,#1a4a9a 70%,#0a2a6a)}
 .lin span{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px #000,0 0 8px #000}
-.lin.basico{cursor:default;opacity:.8;background:linear-gradient(90deg,#1e120a,#2a1a0e)}.lin.basico:hover{border-color:#5a4024;filter:none}
+.lin.basico{cursor:default;opacity:.85;background:linear-gradient(90deg,#24160c,#1a0f08);box-shadow:inset 0 1px 0 #ffffff0a,inset 0 -1px 0 #00000080}
+.lin.basico:hover{filter:none;box-shadow:inset 0 1px 0 #ffffff0a,inset 0 -1px 0 #00000080}
+.lin.basico span{font-style:italic;color:#d8c8a8}
 .lin.entra{animation:entra .45s ease-out}
 @keyframes entra{0%{transform:translateX(40px);opacity:0}60%{box-shadow:0 0 16px #f0c44a}}
-.pe{padding:14px 16px;border-top:2px solid #8a6a2a;display:flex;align-items:center;gap:10px;background:linear-gradient(180deg,#1a0e08,#0e0604)}
+.pe{position:relative;padding:14px 16px;display:flex;align-items:center;gap:10px;background:linear-gradient(180deg,#1a0e08,#0e0604)}
 .pe .cont{font-family:var(--fn);font-weight:700;font-size:18px;color:var(--ouro)}
 .pe .cont small{display:block;font-family:'EB Garamond';font-weight:400;font-size:12.5px;color:#a8957d}
 #pronto{margin-left:auto;font-family:var(--ff);font-size:18px;letter-spacing:.1em;padding:11px 22px;border:0;border-radius:12px;cursor:pointer;color:#2a1606;
@@ -153,8 +162,9 @@ html,body{margin:0;height:100%;overflow:hidden;color:#2a1a0e;font-family:'EB Gar
 .menuF .limpar:hover{color:var(--ouro)}
 /* ---- trocar de comandante ---- */
 .cab{cursor:pointer}
-.cab .trocar{position:absolute;right:12px;top:10px;z-index:1;font-family:var(--ff);font-size:12px;letter-spacing:.08em;color:var(--ouro);background:#0009;border:1px solid #c9a24a88;border-radius:8px;padding:5px 10px;transition:border-color .2s,background .2s}
-.cab:hover .trocar{border-color:var(--ouro);background:#2a1a0ccc}
+.pe::before{content:'';position:absolute;left:14px;right:14px;top:0;height:1px;background:linear-gradient(90deg,transparent,#e8c870aa,transparent);box-shadow:0 0 8px #e8b84a66}
+.cab .trocar{position:absolute;right:14px;top:14px;z-index:1;font-family:var(--ff);font-size:12px;letter-spacing:.08em;color:#f0d890;padding:6px 12px;border-radius:8px;border:0;background:linear-gradient(180deg,#3a2210ee,#1e1008ee);box-shadow:inset 0 1px 0 #ffd88a33,inset 0 0 0 1px #00000088,0 3px 0 #0c0603,0 4px 10px #000a;transition:filter .2s}
+.cab:hover .trocar{filter:brightness(1.2)}
 #troca{position:fixed;inset:0;z-index:25;display:none;flex-direction:column;padding:22px 30px;background:#070403f2}
 #troca.on{display:flex}
 #troca .cabT{display:flex;align-items:center;gap:16px;margin-bottom:6px}
@@ -265,7 +275,17 @@ function desenharLivro(){
   document.getElementById('tit').textContent = `${l.length} cartas`;
 }
 // virar a página: uma folha gira por cima e o conteúdo troca no meio do giro
+// sons do grimório: carta deslizando ao passar o mouse, página folheando ao virar
+let AC_ = null;
+function somCarta(){ try { const a = AC_ || (AC_ = new (window.AudioContext||window.webkitAudioContext)()), t = a.currentTime;
+  const n = a.createBuffer(1, a.sampleRate * .09, a.sampleRate), d = n.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/d.length, 2);
+  const s = a.createBufferSource(); s.buffer = n; const f = a.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = .9; f.frequency.setValueAtTime(2400, t); f.frequency.exponentialRampToValueAtTime(5200, t + .08);
+  const g = a.createGain(); g.gain.value = .12; s.connect(f).connect(g).connect(a.destination); s.start(t); } catch(e){} }
+function somPagina(){ try { const a = new Audio('sons/kenney/rpg/bookFlip' + (1 + Math.floor(Math.random()*3)) + '.ogg'); a.volume = .55; a.play().catch(()=>{}); } catch(e){} }
+let ultimaCartaSom = null;
+document.addEventListener('mouseover', e => { const c = e.target.closest('#pE .carta, #pD .carta, #pE [data-n], #pD [data-n]'); if (c && c !== ultimaCartaSom){ ultimaCartaSom = c; somCarta(); } if (!c) ultimaCartaSom = null; });
 function virar(dir){
+  somPagina();
   const f = document.createElement('div'); f.className = 'folha ' + (dir > 0 ? 'paraFrente' : 'paraTras');
   document.getElementById('paginas').appendChild(f); setTimeout(()=>f.remove(), 560);
   setTimeout(()=>{ pag += dir; desenharLivro(); }, 260);
