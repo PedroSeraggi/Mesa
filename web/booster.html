@@ -4,15 +4,40 @@
 <style>
 :root{--ff:'Cinzel',serif}
 *{box-sizing:border-box}
-body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color:#eee;background:radial-gradient(ellipse at 50% 45%,#2a1638f2 0%,#120a18f2 55%,#06030af2 100%);user-select:none}
-#palco{position:absolute;inset:0}
+body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color:#eee;background:#060302;user-select:none}
+#fundoB{position:fixed;inset:0;pointer-events:none}
+#fundoB .arte{position:absolute;inset:-40px;background:url('campanha/artes/krenko.jpg') center 30%/cover;filter:blur(18px) brightness(.2) saturate(1.3) sepia(.45)}
+#fundoB .piso{position:absolute;left:-10%;right:-10%;bottom:-30%;height:75%;transform:perspective(900px) rotateX(62deg);transform-origin:50% 100%;
+  background:radial-gradient(ellipse at 50% 30%,#3a2a1e 0%,#1a120c 55%,#0a0604 80%);opacity:.9;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 40%,#000 30%,transparent 70%);mask-image:radial-gradient(ellipse at 50% 40%,#000 30%,transparent 70%)}
+#fundoB .vela{position:absolute;left:50%;top:-10%;width:140vw;height:110vh;transform:translateX(-50%);background:radial-gradient(ellipse at 50% 42%,#ffaa4a22,transparent 55%);animation:velaB 4s ease-in-out infinite}
+@keyframes velaB{25%{opacity:.85}50%{opacity:1}70%{opacity:.9}}
+#fundoB .vinheta{position:absolute;inset:0;box-shadow:inset 0 0 260px 90px #000}
+#energia{position:fixed;inset:0;pointer-events:none;z-index:1}
+#palco{position:absolute;inset:0;z-index:2}
 #palco.treme{animation:treme .5s cubic-bezier(.36,.07,.19,.97)}
 @keyframes treme{10%{transform:translate(-8px,5px)}25%{transform:translate(9px,-6px)}40%{transform:translate(-7px,-4px)}55%{transform:translate(6px,6px)}70%{transform:translate(-4px,3px)}85%{transform:translate(3px,-2px)}}
 /* encaixe no centro (onde se solta o pacote) */
-.encaixe{position:absolute;left:50%;top:46%;width:250px;height:250px;transform:translate(-50%,-50%);border-radius:50%;
-  background:radial-gradient(circle,#3a2450 0%,#1a0e24 60%,transparent 72%);box-shadow:inset 0 0 0 3px #c9a24a55,0 0 60px #7a4ad044;transition:box-shadow .3s}
-.encaixe::before{content:'';position:absolute;inset:18px;border-radius:50%;border:2px dashed #c9a24a55;animation:gira 20s linear infinite}
-.encaixe.ativo{box-shadow:inset 0 0 0 3px #ffd04a,0 0 90px #ffb84a88}
+.encaixe{position:absolute;left:50%;top:46%;width:460px;height:460px;transform:translate(-50%,-50%);border-radius:50%;transition:opacity .6s,filter .4s;--vel:1}
+.encaixe svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.encaixe .anel{transform-origin:230px 230px;transition:filter .4s}
+.encaixe .a1{animation:gira calc(80s / var(--vel)) linear infinite}
+.encaixe .a2{animation:gira calc(55s / var(--vel)) linear infinite reverse}
+.encaixe .a3{animation:gira calc(30s / var(--vel)) linear infinite}
+.encaixe .geo{transform-origin:230px 230px;animation:gira calc(120s / var(--vel)) linear infinite reverse}
+.encaixe text{fill:#d8a860;transition:fill .4s}
+.encaixe .linha{stroke:#c9963a;transition:stroke .4s}
+.encaixe .nucleo{position:absolute;left:50%;top:50%;width:90px;height:90px;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle,#fff6d0 0%,#ffc860aa 25%,#ff8a2a33 55%,transparent 70%);animation:pulsaN 2.4s ease-in-out infinite;transition:width .4s,height .4s}
+@keyframes pulsaN{50%{opacity:.6;transform:translate(-50%,-50%) scale(.88)}}
+.encaixe .chao{position:absolute;inset:6%;border-radius:50%;background:radial-gradient(circle,#ffb04a18,transparent 65%);box-shadow:0 0 80px #ff9a3a22}
+.encaixe.ativo{--vel:4}
+.encaixe.ativo text{fill:#fff0b0;filter:drop-shadow(0 0 4px #ffb040)}
+.encaixe.ativo .linha{stroke:#ffd070}
+.encaixe.ativo .anel{filter:drop-shadow(0 0 6px #ffb040)}
+.encaixe.ativo .nucleo{width:170px;height:170px}
+.encaixe.ativo .chao{background:radial-gradient(circle,#ffb04a40,transparent 65%);box-shadow:0 0 140px #ff9a3a66}
+.encaixe.dispara{--vel:14;filter:brightness(2.2)}
 @keyframes gira{to{transform:rotate(360deg)}}
 .dica{position:absolute;left:0;right:0;bottom:8%;text-align:center;font-family:var(--ff);letter-spacing:.2em;font-size:13px;color:#d9c8e8b0;text-transform:uppercase}
 /* pacote 3D: embalagem metalizada preta e dourada com a logo da Mesa; inclina seguindo o mouse */
@@ -116,6 +141,7 @@ body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color
   <feTurbulence type="fractalNoise" baseFrequency="0.018 0.035" numOctaves="2" seed="3" result="r"><animate attributeName="baseFrequency" dur="7s" values="0.018 0.035;0.026 0.05;0.018 0.035" repeatCount="indefinite"/></feTurbulence>
   <feDisplacementMap in="SourceGraphic" in2="r" scale="26" xChannelSelector="R" yChannelSelector="G"/>
   <feGaussianBlur stdDeviation="3.5"/></filter></svg>
+<div id="fundoB"><div class="arte"></div><div class="piso"></div><div class="vela"></div><div class="vinheta"></div></div><canvas id="energia"></canvas>
 <div id="palco"></div>
 <script>
 // o pacote vem da Mesa (que abriu esta tela por cima dela)
@@ -129,14 +155,38 @@ function brilhoSom(nivel){   // "plim" que sobe com a raridade (desligado por en
     notas.forEach((hz,k)=>{ const o = a.createOscillator(), g = a.createGain(); o.type = 'triangle'; o.frequency.value = hz; const t0 = t + k*.06;
       g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.12, t0+.02); g.gain.exponentialRampToValueAtTime(.001, t0+.6); o.connect(g).connect(a.destination); o.start(t0); o.stop(t0+.7); }); } catch(e){}
 }
+// energia: partículas douradas que nascem em volta do círculo e espiralam até o centro
+const ENERGIA = {fim: false, disparo: 0};
+(function(){
+  const cv = document.getElementById('energia'), g = cv.getContext('2d'); let P = [];
+  const tam = () => { cv.width = innerWidth; cv.height = innerHeight; }; tam(); addEventListener('resize', tam);
+  const nova = () => ({a: Math.random() * 6.283, r: 260 + Math.random() * 260, v: .4 + Math.random() * .8, giro: (.004 + Math.random() * .008), t: .8 + Math.random() * 1.8, vida: 0});
+  for (let i = 0; i < 90; i++){ const p = nova(); p.r = 40 + Math.random() * 460; P.push(p); }
+  (function loop(){
+    const enc = document.getElementById('encaixe'); g.clearRect(0, 0, cv.width, cv.height);
+    if (enc && !ENERGIA.fim){
+      const e = enc.getBoundingClientRect(), cx = e.left + e.width / 2, cy = e.top + e.height / 2, ativo = enc.classList.contains('ativo'), k = ativo ? 3.2 : 1;
+      for (const p of P){
+        p.r -= p.v * k * (1 + (500 - p.r) / 400); p.a += p.giro * k; p.vida = Math.min(1, p.vida + .02);
+        if (p.r < 26) Object.assign(p, nova());
+        const x = cx + Math.cos(p.a) * p.r, y = cy + Math.sin(p.a) * p.r * .92, al = p.vida * Math.min(1, (p.r - 26) / 60) * (ativo ? .95 : .6);
+        g.beginPath(); g.fillStyle = `rgba(255,${190 + Math.floor(p.t * 20)},110,${al})`; g.shadowColor = '#ffb040'; g.shadowBlur = ativo ? 12 : 7;
+        g.arc(x, y, p.t * (ativo ? 1.25 : 1), 0, 7); g.fill();
+        if (ativo){ g.strokeStyle = `rgba(255,200,110,${al * .35})`; g.lineWidth = p.t * .8; g.beginPath(); g.moveTo(x, y);
+          g.lineTo(cx + Math.cos(p.a - p.giro * 6) * (p.r + 14), cy + Math.sin(p.a - p.giro * 6) * (p.r + 14) * .92); g.stroke(); }
+      }
+    }
+    requestAnimationFrame(loop);
+  })();
+})();
 function montar(){
   const palco = document.getElementById('palco');
-  palco.innerHTML = `<div class="encaixe" id="encaixe"></div><div class="pacote flutua" id="pacote" style="left:10%;top:50%"><div class="pkt">
+  palco.innerHTML = `<div class="encaixe" id="encaixe"><div class="chao"></div><svg viewBox="0 0 460 460"><g class="anel a1"><circle cx="230" cy="230" r="222" fill="none" class="linha" stroke-width="2.2"/><circle cx="230" cy="230" r="200" fill="none" class="linha" stroke-width="1.3" opacity=".7"/><path id="ca1" d="M230 230 m-208 0 a208 208 0 1 1 416 0 a208 208 0 1 1 -416 0" fill="none"/><text font-family="serif" font-size="15"><textPath href="#ca1" textLength="1292" lengthAdjust="spacing">ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟᚠᚢᚦᚨ</textPath></text></g><g class="anel a2"><circle cx="230" cy="230" r="180" fill="none" class="linha" stroke-width="1.8"/><circle cx="230" cy="230" r="161" fill="none" class="linha" stroke-width="1.1" opacity=".7"/><path id="ca2" d="M230 230 m-168 0 a168 168 0 1 1 336 0 a168 168 0 1 1 -336 0" fill="none"/><text font-family="serif" font-size="13"><textPath href="#ca2" textLength="1043" lengthAdjust="spacing">ᛟᛞᛜᛚᛗᛖᛒᛏᛊᛉᛈᛇᛃᛁᚾᚺᚹᚷᚲᚱᚨᚦᚢᚠᛟᛞᛜᛚᛗᛖᛒᛏᛊᛉᛈᛇᛃᛁᚾᚺ</textPath></text></g><g class="geo"><g class="linha" stroke-width="1.2" fill="none" opacity=".8"><line x1="230.0" y1="110.0" x2="333.9" y2="290.0"/><line x1="333.9" y1="170.0" x2="230.0" y2="350.0"/><line x1="333.9" y1="290.0" x2="126.1" y2="290.0"/><line x1="230.0" y1="350.0" x2="126.1" y2="170.0"/><line x1="126.1" y1="290.0" x2="230.0" y2="110.0"/><line x1="126.1" y1="170.0" x2="333.9" y2="170.0"/><circle cx="230" cy="230" r="120"/></g><g class="linha" stroke-width="1" opacity=".6"><line x1="358.0" y1="230.0" x2="380.0" y2="230.0"/><line x1="353.6" y1="263.1" x2="374.9" y2="268.8"/><line x1="340.9" y1="294.0" x2="359.9" y2="305.0"/><line x1="320.5" y1="320.5" x2="336.1" y2="336.1"/><line x1="294.0" y1="340.9" x2="305.0" y2="359.9"/><line x1="263.1" y1="353.6" x2="268.8" y2="374.9"/><line x1="230.0" y1="358.0" x2="230.0" y2="380.0"/><line x1="196.9" y1="353.6" x2="191.2" y2="374.9"/><line x1="166.0" y1="340.9" x2="155.0" y2="359.9"/><line x1="139.5" y1="320.5" x2="123.9" y2="336.1"/><line x1="119.1" y1="294.0" x2="100.1" y2="305.0"/><line x1="106.4" y1="263.1" x2="85.1" y2="268.8"/><line x1="102.0" y1="230.0" x2="80.0" y2="230.0"/><line x1="106.4" y1="196.9" x2="85.1" y2="191.2"/><line x1="119.1" y1="166.0" x2="100.1" y2="155.0"/><line x1="139.5" y1="139.5" x2="123.9" y2="123.9"/><line x1="166.0" y1="119.1" x2="155.0" y2="100.1"/><line x1="196.9" y1="106.4" x2="191.2" y2="85.1"/><line x1="230.0" y1="102.0" x2="230.0" y2="80.0"/><line x1="263.1" y1="106.4" x2="268.8" y2="85.1"/><line x1="294.0" y1="119.1" x2="305.0" y2="100.1"/><line x1="320.5" y1="139.5" x2="336.1" y2="123.9"/><line x1="340.9" y1="166.0" x2="359.9" y2="155.0"/><line x1="353.6" y1="196.9" x2="374.9" y2="191.2"/></g></g><g class="anel a3"><circle cx="230" cy="230" r="102" fill="none" class="linha" stroke-width="1.6"/><circle cx="230" cy="230" r="86" fill="none" class="linha" stroke-width="1.0" opacity=".7"/><path id="ca3" d="M230 230 m-92 0 a92 92 0 1 1 184 0 a92 92 0 1 1 -184 0" fill="none"/><text font-family="serif" font-size="11"><textPath href="#ca3" textLength="567" lengthAdjust="spacing">ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ</textPath></text></g></svg><div class="nucleo"></div></div><div class="pacote flutua" id="pacote" style="left:10%;top:50%"><div class="pkt">
       <div class="verso"></div><div class="lado e"></div><div class="lado d"></div>
       <div class="frente"></div><div class="borda cima"></div><div class="borda baixo"></div>
       <div class="info">15 CARTAS</div><div class="faixa">${MUNDO}</div>
       <div class="logo"><b>M</b><span>MESA</span></div>${NOME_MUNDO ? `<div class="nomeMundo">${NOME_MUNDO}</div>` : ''}<div class="rodape">BOOSTER</div></div></div>
-    <div class="dica" id="dica">Arraste o pacote até o círculo</div><button id="pronto">Pronto</button>`;
+    <div class="dica" id="dica">Arraste o pacote até o círculo de runas</div><button id="pronto">Pronto</button>`;
   const pac = document.getElementById('pacote'), enc = document.getElementById('encaixe');
   let arrastando = false, ox = 0, oy = 0;
   pac.onpointerdown = ev=>{ arrastando = true; pac.classList.remove('flutua'); const r = pac.getBoundingClientRect(); ox = ev.clientX - r.left; oy = ev.clientY - r.top; pac.setPointerCapture(ev.pointerId); };
@@ -146,21 +196,21 @@ function montar(){
     pkt.style.setProperty('--ry', (-18 + dx*50) + 'deg'); pkt.style.setProperty('--rx', (-dy*30) + 'deg'); pkt.querySelector('.frente').style.setProperty('--brilho', (45 + dx*60) + '%'); };
   pac.onpointermove = ev=>{ if (!arrastando) return;
     pkt.style.setProperty('--ry', (ev.movementX * 2) + 'deg'); pkt.style.setProperty('--rx', (-ev.movementY * 2) + 'deg'); pac.style.left = (ev.clientX - ox) + 'px'; pac.style.top = (ev.clientY - oy) + 'px';
-    const e = enc.getBoundingClientRect(), d = Math.hypot(ev.clientX - (e.left + e.width/2), ev.clientY - (e.top + e.height/2)); enc.classList.toggle('ativo', d < 130); };
+    const e = enc.getBoundingClientRect(), d = Math.hypot(ev.clientX - (e.left + e.width/2), ev.clientY - (e.top + e.height/2)); enc.classList.toggle('ativo', d < 170); };
   pac.onpointerup = ev=>{ arrastando = false; const e = enc.getBoundingClientRect(), d = Math.hypot(ev.clientX - (e.left + e.width/2), ev.clientY - (e.top + e.height/2));
-    if (d < 130){ pac.style.left = (e.left + e.width/2 - 85) + 'px'; pac.style.top = (e.top + e.height/2 - 135) + 'px'; abrir(); } else { enc.classList.remove('ativo'); pac.classList.add('flutua'); } };
+    if (d < 170){ pac.style.left = (e.left + e.width/2 - 85) + 'px'; pac.style.top = (e.top + e.height/2 - 135) + 'px'; abrir(); } else { enc.classList.remove('ativo'); pac.classList.add('flutua'); } };
   pac.ondblclick = ()=>{ const e = enc.getBoundingClientRect(); pac.style.left = (e.left + e.width/2 - 85) + 'px'; pac.style.top = (e.top + e.height/2 - 135) + 'px'; abrir(); };
 }
 function abrir(){
   const palco = document.getElementById('palco'), pac = document.getElementById('pacote');
   pac.onpointerdown = pac.onpointermove = pac.onpointerup = pac.ondblclick = null;
   document.getElementById('dica').textContent = '';
-  pac.classList.add('explode'); bum(1.2, .5); palco.onmousemove = null;
+  pac.classList.add('explode'); document.getElementById('encaixe').classList.add('dispara'); ENERGIA.disparo = 1; bum(1.2, .5); palco.onmousemove = null;
   setTimeout(()=>pac.remove(), 600);   // some de verdade: não fica por cima das cartas roubando o mouse
   setTimeout(()=>{
     palco.insertAdjacentHTML('beforeend', '<div class="clarao"></div>');
     palco.classList.remove('treme'); void palco.offsetWidth; palco.classList.add('treme');
-    document.getElementById('encaixe').style.opacity = .25;
+    document.getElementById('encaixe').style.opacity = .18; ENERGIA.fim = true;
     // posições: as 10 comuns numa faixa em cima, as 5 melhores num arco embaixo (como no Hearthstone)
     const W = innerWidth, H = innerHeight;
     const ordem = [...PACOTE]; for (let i = ordem.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [ordem[i], ordem[j]] = [ordem[j], ordem[i]]; }
