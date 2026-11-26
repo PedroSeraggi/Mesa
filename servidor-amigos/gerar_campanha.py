@@ -58,12 +58,9 @@ PROIBIDAS = {'Primeval Titan'}   # banidas no Commander (o validador do XMage ac
 
 # A IA do XMage joga mal com estas: sacrifica o próprio campo, limpa a mesa dos dois lados, paga vida à toa...
 COMPLEXAS = [
-    r'[Ss]acrifice (a|an|another|two|three|six|X)\b',          # sacrificar outra coisa como custo
+    r'[Ss]acrifice (a|an|another|two|three|six|X)\b',          # sacrificar outra coisa sua como custo (a IA come o próprio campo)
     r'additional cost to cast this spell, sacrifice',
-    r'[Ee]ach player (sacrifices|loses|discards)',
-    r'[Dd]estroy all (?!.*(you don.t control|your opponents control))', r'[Ee]xile all', r'[Ss]acrifice all',
-    r'deals \d+ damage to each creature', r'[Ee]ach creature deals damage',
-    r'[Pp]ay \d+ life', r'[Pp]ay X life', r'[Ff]lip a coin', r'[Ee]xchange control', r'gains control of',
+    r'[Ff]lip a coin', r'[Ee]xchange control',
     r'[Rr]emove a .* counter from', r'phylactery', r'number of cards named',
 ]
 def complexa(c): return any(re.search(p, c.get('texto', '')) for p in COMPLEXAS)

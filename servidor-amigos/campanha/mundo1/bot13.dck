@@ -1,6 +1,6 @@
 SB: 1 [ORI:60] Jace, Vryn's Prodigy
-1 [M14:61] Jace's Mindseeker
 1 [M12:72] Phantasmal Image
+1 [M14:61] Jace's Mindseeker
 1 [M10:66] Phantom Warrior
 1 [M15:59] Illusory Angel
 1 [M13:57] Jace's Phantasm
@@ -9,20 +9,20 @@ SB: 1 [ORI:60] Jace, Vryn's Prodigy
 1 [M12:70] Phantasmal Bear
 1 [M11:69] Phantom Beast
 1 [M10:57] Illusionary Servant
-1 [M15:78] Soul of Ravnica
-1 [M11:55] Frost Titan
 1 [M15:231] Soul of New Phyrexia
-1 [M13:77] Void Stalker
-1 [M11:214] Steel Overseer
-1 [M15:67] Master of Predicaments
-1 [M12:201] Adaptive Automaton
-1 [M12:217] Solemn Simulacrum
-1 [M10:62] Merfolk Sovereign
-1 [ORI:84] Willbreaker
-1 [ORI:75] Soulblade Djinn
+1 [M11:55] Frost Titan
+1 [M15:78] Soul of Ravnica
 1 [M10:45] Clone
-1 [M13:59] Master of the Pearl Trident
-1 [ORI:64] Mizzium Meddler
+1 [M15:275] Mahamoti Djinn
+1 [M15:229] Scuttling Doom Engine
+1 [M13:218] Stuffy Doll
+1 [M15:68] Mercurial Pretender
+1 [M14:73] Tidebinder Mage
+1 [M15:46] Chasm Skulker
+1 [M15:67] Master of Predicaments
+1 [M10:62] Merfolk Sovereign
+1 [M11:214] Steel Overseer
+1 [M12:59] Jace's Archivist
 1 [M10:80] Wall of Frost
 1 [M11:215] Stone Golem
 1 [ORI:237] Ramroller
@@ -32,7 +32,6 @@ SB: 1 [ORI:60] Jace, Vryn's Prodigy
 1 [M10:216] Ornithopter
 1 [M14:79] Warden of Evos Isle
 1 [ORI:225] Chief of the Foundry
-1 [ORI:226] Gold-Forged Sentinel
 1 [M12:46] Belltower Sphinx
 1 [M12:45] Azure Mage
 1 [M13:52] Fog Bank
@@ -45,8 +44,9 @@ SB: 1 [ORI:60] Jace, Vryn's Prodigy
 1 [M15:73] Paragon of Gathering Mists
 1 [ORI:62] Jhessian Thief
 1 [M10:43] Alluring Siren
-1 [M15:66] Kapsho Kitefins
 1 [M11:209] Juggernaut
+1 [M10:42] Air Elemental
+1 [M12:64] Master Thief
 1 [ORI:57] Faerie Miscreant
 1 [ORI:223] Bonded Construct
 1 [M10:70] Serpent of the Endless Sea
@@ -58,7 +58,7 @@ SB: 1 [ORI:60] Jace, Vryn's Prodigy
 1 [M10:82] Zephyr Sprite
 1 [M12:66] Merfolk Mesmerist
 1 [M13:60] Merfolk of the Pearl Trident
-1 [M12:48] Chasm Drake
 1 [M15:214] Bronze Sable
+1 [M11:45] Augury Owl
 1 [M11:66] Merfolk Spy
 37 [M15:254] Island
