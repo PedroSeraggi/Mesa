@@ -77,6 +77,9 @@ body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color
 .carta.virada .nova{opacity:1;transition:opacity .3s .4s}
 .faisca{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--cor);box-shadow:0 0 8px var(--cor);pointer-events:none;animation:faisca .9s ease-out forwards}
 @keyframes faisca{from{opacity:1;transform:translate(0,0)}to{opacity:0;transform:translate(var(--x),var(--y))}}
+#zoom{position:fixed;inset:0;z-index:20;background:#06030ad0;display:flex;align-items:center;justify-content:center;cursor:zoom-out;animation:zIn .2s ease-out}
+#zoom img{width:min(340px,80vw);border-radius:16px;box-shadow:0 0 0 2px var(--cor,#c9a24a),0 0 40px var(--cor,#c9a24a),0 20px 50px #000;animation:zImg .25s cubic-bezier(.3,1.4,.5,1)}
+@keyframes zIn{from{opacity:0}}@keyframes zImg{from{transform:scale(.6)}}
 #pronto{position:absolute;left:50%;bottom:5%;transform:translateX(-50%);font-family:var(--ff);font-size:16px;padding:10px 46px;border-radius:9px;border:1px solid #E4C874;background:linear-gradient(#e0b050,#a87a28);color:#1a1008;cursor:pointer;display:none}
 #novo{position:fixed;left:14px;top:12px;font-family:var(--ff);background:#3a2a18;border:1px solid #E4C874;color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer;z-index:10}
 </style></head><body>
@@ -94,9 +97,9 @@ const PACOTE = [
 PACOTE.forEach((c,i)=>{ if (i % 3 === 0) c.nova = true; });
 const NOMES = {comum:'COMUM', incomum:'INCOMUM', rara:'RARA', mitica:'MÍTICA', especial:'ESPECIAL'};
 let AC = null; const ac = ()=> AC || (AC = new (window.AudioContext||window.webkitAudioContext)());
-function bum(tom=1, vol=.6){ try { const a = new Audio('sons/impacto/bum.ogg'); a.volume = vol; a.playbackRate = tom; a.preservesPitch = false; a.play().catch(()=>{}); } catch(e){} }
-function brilhoSom(nivel){   // "plim" que sobe com a raridade
-  try { const a = ac(), t = a.currentTime; const notas = {comum:[523], incomum:[523,659], rara:[523,659,784], especial:[587,740,880], mitica:[523,659,784,1046]}[nivel];
+function bum(tom=1, vol=.6){ return; try { const a = new Audio('sons/impacto/bum.ogg'); a.volume = vol; a.playbackRate = tom; a.preservesPitch = false; a.play().catch(()=>{}); } catch(e){} }
+function brilhoSom(nivel){   // "plim" que sobe com a raridade (desligado por enquanto)
+  return; try { const a = ac(), t = a.currentTime; const notas = {comum:[523], incomum:[523,659], rara:[523,659,784], especial:[587,740,880], mitica:[523,659,784,1046]}[nivel];
     notas.forEach((hz,k)=>{ const o = a.createOscillator(), g = a.createGain(); o.type = 'triangle'; o.frequency.value = hz; const t0 = t + k*.06;
       g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.12, t0+.02); g.gain.exponentialRampToValueAtTime(.001, t0+.6); o.connect(g).connect(a.destination); o.start(t0); o.stop(t0+.7); }); } catch(e){}
 }
@@ -149,7 +152,9 @@ function abrir(){
     const els = [...palco.querySelectorAll('.carta')];
     requestAnimationFrame(()=>requestAnimationFrame(()=>els.forEach(el=>{ el.style.left = el.dataset.x + 'px'; el.style.top = el.dataset.y + 'px'; el.classList.add('posta'); })));
     els.forEach(el=>el.onclick = ()=>{
-      if (el.classList.contains('virada')) return;
+      if (el.classList.contains('virada')){   // já virada: abre o zoom para ler
+        const z = document.createElement('div'); z.id = 'zoom'; z.style.setProperty('--cor', getComputedStyle(el).getPropertyValue('--cor'));
+        z.innerHTML = `<img src="${el.querySelector('.frente').style.backgroundImage.slice(5,-2)}">`; z.onclick = ()=>z.remove(); document.body.appendChild(z); return; }
       el.classList.add('virada');
       const nivel = ordem[els.indexOf(el)].faixa; brilhoSom(nivel);
       if (nivel === 'mitica'){ bum(.85, .8); palco.classList.remove('treme'); void palco.offsetWidth; palco.classList.add('treme'); }
