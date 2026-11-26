@@ -1,9 +1,9 @@
 SB: 1 [ORI:172] Dwynen, Gilt-Leaf Daen
-1 [M10:176] Elvish Archdruid
-1 [M11:172] Fauna Shaman
-1 [M15:194] Reclamation Sage
 1 [M10:177] Elvish Piper
+1 [M11:172] Fauna Shaman
+1 [M10:176] Elvish Archdruid
 1 [ORI:199] Sylvan Messenger
+1 [M15:194] Reclamation Sage
 1 [ORI:173] Dwynen's Elite
 1 [M10:189] Llanowar Elves
 1 [M13:160] Arbor Elf
@@ -16,22 +16,22 @@ SB: 1 [ORI:172] Dwynen, Gilt-Leaf Daen
 1 [M10:178] Elvish Visionary
 1 [ORI:185] Llanowar Empath
 1 [M14:169] Elvish Mystic
-1 [M15:201] Soul of Zendikar
-1 [M13:191] Silklash Spider
-1 [M12:217] Solemn Simulacrum
-1 [M14:203] Woodborn Behemoth
-1 [ORI:202] Undercity Troll
-1 [ORI:237] Ramroller
-1 [M14:184] Manaweft Sliver
-1 [ORI:197] Skysnare Spider
-1 [M13:188] Roaring Primadox
-1 [M10:174] Cudgel Troll
-1 [ORI:238] Runed Servitor
+1 [M10:191] Master of the Wild Hunt
+1 [M15:229] Scuttling Doom Engine
+1 [M13:193] Thragtusk
 1 [ORI:225] Chief of the Foundry
-1 [M13:201] Chronomaton
-1 [M13:210] Primal Clay
+1 [M15:190] Paragon of Eternal Wilds
+1 [ORI:202] Undercity Troll
+1 [M13:188] Roaring Primadox
+1 [ORI:171] Conclave Naturalists
 1 [M11:207] Gargoyle Sentinel
-1 [ORI:198] Somberwald Alpha
+1 [M12:181] Jade Mage
+1 [M14:203] Woodborn Behemoth
+1 [ORI:203] Valeron Wardens
+1 [M12:215] Rusted Sentinel
+1 [M15:168] Ancient Silverback
+1 [M13:210] Primal Clay
+1 [M10:174] Cudgel Troll
 1 [ORI:170] Caustic Caterpillar
 1 [ORI:196] Rhox Maulers
 1 [M12:200] Vastwood Gorger
@@ -44,7 +44,6 @@ SB: 1 [ORI:172] Dwynen, Gilt-Leaf Daen
 1 [M14:218] Sliver Construct
 1 [M15:181] Invasive Species
 1 [M15:214] Bronze Sable
-1 [M14:193] Rumbling Baloth
 1 [M11:166] Brindle Boar
 1 [M15:186] Netcaster Spider
 1 [M10:169] Borderland Ranger
@@ -55,9 +54,10 @@ SB: 1 [ORI:172] Dwynen, Gilt-Leaf Daen
 1 [M14:189] Predatory Sliver
 1 [M11:197] Spined Wurm
 1 [M11:180] Greater Basilisk
-1 [M10:204] Stampeding Rhino
 1 [M13:161] Bond Beetle
 1 [M11:199] Wall of Vines
+1 [ORI:223] Bonded Construct
 1 [M10:203] Runeclaw Bear
 1 [M11:176] Garruk's Companion
+1 [M10:175] Deadly Recluse
 38 [M15:266] Forest

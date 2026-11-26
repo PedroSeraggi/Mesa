@@ -38,7 +38,7 @@ BOTS = [
     (10, 'Véu das Ilusões', "Jace, Vryn's Prodigy", ['Illusion'], 'tribal'),
     (10, 'Enxame de Insetos', "Yeva, Nature's Herald", ['Insect', 'Spider'], 'tribal'),
     (11, 'Colmeia dos Slivers', 'Sliver Hivelord', ['Sliver'], 'tribal'),
-    (12, 'Pacto de Sangue', 'Ob Nixilis, Unshackled', ['Demon', 'Horror'], 'sacrificio'),
+    (12, 'Pacto de Sangue', 'Ob Nixilis, Unshackled', ['Demon', 'Horror'], 'tribal'),
     (13, 'Ninho dos Dragões', 'Chandra, Fire of Kaladesh', ['Dragon'], 'tribal'),
     (14, 'Coro dos Anjos', 'Avacyn, Guardian Angel', ['Angel'], 'tribal'),
     (15, 'Legião de Nefarox', 'Nefarox, Overlord of Grixis', ['Demon', 'Zombie'], 'tribal'),
@@ -56,6 +56,18 @@ INICIAIS = [
 
 PROIBIDAS = {'Primeval Titan'}   # banidas no Commander (o validador do XMage acusa)
 
+# A IA do XMage joga mal com estas: sacrifica o próprio campo, limpa a mesa dos dois lados, paga vida à toa...
+COMPLEXAS = [
+    r'[Ss]acrifice (a|an|another|two|three|six|X)\b',          # sacrificar outra coisa como custo
+    r'additional cost to cast this spell, sacrifice',
+    r'[Ee]ach player (sacrifices|loses|discards)',
+    r'[Dd]estroy all (?!.*(you don.t control|your opponents control))', r'[Ee]xile all', r'[Ss]acrifice all',
+    r'deals \d+ damage to each creature', r'[Ee]ach creature deals damage',
+    r'[Pp]ay \d+ life', r'[Pp]ay X life', r'[Ff]lip a coin', r'[Ee]xchange control', r'gains control of',
+    r'[Rr]emove a .* counter from', r'phylactery', r'number of cards named',
+]
+def complexa(c): return any(re.search(p, c.get('texto', '')) for p in COMPLEXAS)
+
 
 def cabe(c, cores):   # identidade de cor (inclui símbolos no texto das habilidades) cabe na do comandante
     return set(c.get('identidade', c['cores'])) <= set(cores) and c['nome'] not in PROIBIDAS
@@ -72,7 +84,7 @@ def montar_bot(batalha, nome, cmdNome, tribos, estilo, seed):
     cores = cmd['cores'] or 'WUBRG'
     t = batalha   # 1..15: quanto maior, mais forte
     max_rara, max_mitica, max_inc = round(t * 1.3), t // 3, 8 + 2 * t
-    cand = [c for c in TODAS if not eh(c, 'Land') and c['nome'] not in LENDAS and cabe(c, cores)]
+    cand = [c for c in TODAS if not eh(c, 'Land') and c['nome'] not in LENDAS and cabe(c, cores) and not complexa(c)]
 
     def nota(c):
         n = 0

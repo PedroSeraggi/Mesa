@@ -37,6 +37,7 @@ public class GerarPool {
             if (c.getColor().isWhite()) cores.append('W'); if (c.getColor().isBlue()) cores.append('U'); if (c.getColor().isBlack()) cores.append('B');
             if (c.getColor().isRed()) cores.append('R'); if (c.getColor().isGreen()) cores.append('G');
             x.put("cores", cores.toString());
+            x.put("texto", String.join(" | ", c.getRules()).replaceAll("<[^>]+>", ""));
             // identidade de cor (Commander): inclui os símbolos de mana do texto das habilidades
             try {
                 mage.filter.FilterMana id = mage.util.ManaUtil.getColorIdentity(c.createCard());
