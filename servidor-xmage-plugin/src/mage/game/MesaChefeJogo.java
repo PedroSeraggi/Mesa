@@ -7,6 +7,7 @@ import mage.abilities.condition.Condition;
 import mage.abilities.decorator.ConditionalContinuousEffect;
 import mage.abilities.effects.OneShotEffect;
 import mage.abilities.effects.common.CreateTokenEffect;
+import mage.abilities.effects.common.EndTurnEffect;
 import mage.abilities.effects.common.continuous.BoostControlledEffect;
 import mage.abilities.triggers.BeginningOfUpkeepTriggeredAbility;
 import mage.constants.Duration;
@@ -66,6 +67,7 @@ public class MesaChefeJogo extends CommanderFreeForAll {
     public static class KrenkoEmblema extends Emblem {
         public KrenkoEmblema() {
             super("Emblema do Chefe: Krenko");
+            this.getAbilities().add(new BeginningOfUpkeepTriggeredAbility(Zone.COMMAND, TargetController.OPPONENT, new KrenkoGuardas(), false));
             this.getAbilities().add(new BeginningOfUpkeepTriggeredAbility(Zone.COMMAND, TargetController.YOU, new KrenkoManutencao(), false));
             FilterCreaturePermanent goblins = new FilterCreaturePermanent(SubType.GOBLIN, "Goblins");
             this.getAbilities().add(new SimpleStaticAbility(Zone.COMMAND, new ConditionalContinuousEffect(
@@ -107,11 +109,36 @@ public class MesaChefeJogo extends CommanderFreeForAll {
         }
     }
 
+    /** Guardas: no primeiro turno de um oponente a partir do turno 5, o turno dele acaba na manutenção (ele perde o turno). */
+    public static class KrenkoGuardas extends OneShotEffect {
+        public KrenkoGuardas() {
+            super(Outcome.Benefit);
+            staticText = "Guardas: no primeiro turno de um oponente a partir do turno 5, esse oponente perde o turno";
+        }
+
+        private KrenkoGuardas(final KrenkoGuardas e) {
+            super(e);
+        }
+
+        @Override
+        public KrenkoGuardas copy() {
+            return new KrenkoGuardas(this);
+        }
+
+        @Override
+        public boolean apply(Game game, Ability source) {
+            String chave = "mesaChefe:" + source.getControllerId() + ":guardas";
+            if (game.getTurnNum() < 5 || game.getState().getValue(chave) != null) return false;
+            game.getState().setValue(chave, Boolean.TRUE);
+            game.informPlayers("Krenko: Guardas, segurem ele! (o turno de " + game.getPlayer(game.getActivePlayerId()).getName() + " acaba agora)");
+            return new EndTurnEffect().apply(game, source);
+        }
+    }
+
     public static class KrenkoManutencao extends OneShotEffect {
         public KrenkoManutencao() {
             super(Outcome.Benefit);
-            staticText = "Horda: a cada 3 manutenções suas, crie duas fichas Goblin 1/1 vermelhas. "
-                    + "Guardas: na sua primeira manutenção a partir do turno 5, cada oponente pula o próximo turno";
+            staticText = "Horda: a cada 3 manutenções suas, crie duas fichas Goblin 1/1 vermelhas";
         }
 
         private KrenkoManutencao(final KrenkoManutencao e) {
@@ -133,11 +160,6 @@ public class MesaChefeJogo extends CommanderFreeForAll {
             if (n % 3 == 0) {
                 new CreateTokenEffect(new GoblinToken(), 2).apply(game, source);
                 game.informPlayers("Krenko: Mais goblins! Eu SEMPRE tenho mais!");
-            }
-            if (game.getTurnNum() >= 5 && game.getState().getValue(chave + ":guardas") == null) {
-                game.getState().setValue(chave + ":guardas", Boolean.TRUE);
-                for (UUID op : game.getOpponents(eu)) game.getState().getTurnMods().add(new TurnMod(op).withSkipTurn());
-                game.informPlayers("Krenko: Guardas, segurem ele! (cada oponente pula o próximo turno)");
             }
             return true;
         }

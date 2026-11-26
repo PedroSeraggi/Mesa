@@ -824,6 +824,14 @@ body.modoEspectador #prompt,body.modoEspectador #mao{display:none!important}
 .embQtd{position:absolute;top:5px;right:5px;z-index:1;font-style:normal;font-family:var(--ff-titulo);font-size:12px;font-weight:700;color:#1a1008;background:linear-gradient(#ffe08a,#c9a24a);border-radius:999px;padding:1px 8px;box-shadow:0 1px 4px #000a}
 .emblemaTile span{font-family:var(--ff-titulo);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ouro)}
 .emblemaTile b{font-size:12px;color:#f3e6c8;line-height:1.15}
+.emblemaTile.embChefe{overflow:visible;border-color:#ff6a2a;box-shadow:0 0 16px #ff6a2a66,0 4px 12px #000a;background-position:center 25%}
+.emblemaTile.embChefe::before{border-radius:9px}
+.emblemaTile .embDica{position:absolute;right:calc(100% + 10px);top:0;z-index:50;width:260px;padding:12px 14px;border-radius:10px;background:#1a0c06f5;border:1px solid #ff6a2a99;box-shadow:0 10px 30px #000c;
+  opacity:0;pointer-events:none;transform:translateX(6px);transition:opacity .2s,transform .2s;text-align:left}
+.emblemaTile.embChefe:hover .embDica{opacity:1;transform:none}
+.emblemaTile .embDica b{display:block;font-family:var(--ff-titulo);font-size:14px;color:#ffb070;margin-bottom:6px}
+.emblemaTile .embDica p{margin:0 0 6px;font-size:13px;line-height:1.3;color:#f3e6c8}
+.emblemaTile .embDica i{font-style:normal;font-weight:700;color:#ffd08a;margin-right:5px}
 .contaGal{font-family:'EB Garamond',serif;font-size:13px;letter-spacing:0;text-transform:none;color:var(--txt2);margin-left:8px}
 .galeriaChefes{display:flex;flex-wrap:wrap;gap:14px;padding:4px 2px 8px}
 .medalha{position:relative;width:64px;height:64px;border-radius:50%;padding:4px;box-sizing:border-box;flex:none;cursor:default}
@@ -5600,6 +5608,13 @@ function jogaveisOcultos(){
   }).join('');
 }
 const PROT_PT = {white:'branco', blue:'azul', black:'preto', red:'vermelho', green:'verde', everything:'tudo', creatures:'criaturas', 'each color':'todas as cores', 'all colors':'todas as cores', 'monocolored':'monocoloridos', 'multicolored':'multicoloridos', instants:'mágicas instantâneas', sorceries:'feitiços', artifacts:'artefatos', enchantments:'encantamentos', 'the chosen color':'a cor escolhida', 'the chosen player':'o jogador escolhido'};
+// emblemas dos chefes da campanha (plugin da Mesa): arte própria e as regras em português ao passar o mouse
+const EMBLEMAS_CHEFE = {
+  'Emblema do Chefe: Krenko': {nome: 'Krenko', img: 'campanha/artes/krenko.jpg', regras: [
+    ['Horda', 'A cada 3 manutenções do Krenko, ele cria duas fichas Goblin 1/1.'],
+    ['Guardas', 'No seu primeiro turno a partir do turno 5, os guardas te seguram: você perde esse turno.'],
+    ['Fúria', 'Enquanto o Krenko tiver menos de 20 de vida, os Goblins dele recebem +1/+0.']]},
+};
 // emblemas iguais (mesmo nome e mesmo texto) viram um quadro só com ×N
 function emblemasAgrupados(l){
   const m = new Map();
@@ -5669,6 +5684,9 @@ function tabuleiro(p, estilo){
   const ladoCmd = (cmds.length || embl.length) ? `<div class="ladoCmd">${cmds.length?`<div class="rotCmdLado">Comandante</div>${cmds.map(c=>{ const n = (p.taxaCmd||{})[c.nome] || 0;
       return n ? `<div class="cmdComTaxa" title="Conjurado ${n} vez(es): custa ${2*n} a mais">${cartaHtml(c)}<span class="taxaCmd">Taxa +${2*n}</span></div>` : cartaHtml(c); }).join('')}`:''}
     ${emblemasAgrupados(embl).map(([e, qtd])=>{ cacheCartas.set(e.id, e); const nm = String(e.nome||'').replace(/^emblem\s*/i,''); const anel = /^the ring$/i.test(e.nome||'');
+      const chefe = EMBLEMAS_CHEFE[e.nome];
+      if (chefe) return `<div class="emblemaTile embChefe" data-cid="${e.id}" style="background-image:url('${chefe.img}')"><span>Emblema do chefe</span><b>${esc(chefe.nome)}</b>
+        <div class="embDica"><b>${esc(chefe.nome)}</b>${chefe.regras.map(([t,x])=>`<p><i>${t}</i>${x}</p>`).join('')}</div></div>`;
       return `<div class="emblemaTile" data-cid="${e.id}" style="background-image:url('${imgCarta(e,'art')}')">${qtd>1?`<em class="embQtd" title="${qtd} emblemas iguais: o efeito acontece ${qtd} vezes">×${qtd}</em>`:''}${anel && nivelAnel(p)?`<em class="embQtd">nível ${nivelAnel(p)}/4</em>`:''}<span>${anel?'O Anel':'Emblema'}</span><b>${esc(nm)}</b></div>`; }).join('')}</div>` : '';
   const alvoJ = alvos.has(p.id) ? `<div class="faixaAlvoJog" data-jog="${p.id}">${ICO.alvo} Clique aqui para escolher <b>${esc(p.nome)}</b> como alvo</div>` : '';
   return `<div class="tab ${p.ativo?'ativo':''} ${p.saiu?'saiu':''} ${alvos.has(p.id)?'tabAlvo':''}" ${p.eu?'data-eu="1"':''} style="${estilo||''}">${cab}${alvoJ}<div class="corpoTab"><div class="campo">${corpo}</div>${ladoCmd}</div></div>`;

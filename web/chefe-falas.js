@@ -86,13 +86,66 @@ body.chefeFalando #chefeBal{opacity:1;transform:none}`;
     } catch(e){ terminar(Math.max(3500, f.texto.length * 70)); }
     setTimeout(() => terminar(0), 20000);   // garantia
   }
-  function proxima(){ if (falando || !fila.length) return; const [ch, f] = fila.shift(); falar(ch, f); }
+  // tela de VS do começo: as falas só começam 3 s depois que ela some
+  let vsSumiu = 0;
+  const vsAberto = () => { const v = document.querySelector('#vsChefe.on'); if (v){ vsSumiu = 0; return true; } if (!vsSumiu) vsSumiu = Date.now(); return Date.now() - vsSumiu < 3000; };
+
+  // ---------- raios do emblema: Horda (dois raios no campo do chefe) e Guardas (raio grande até você) ----------
+  const NS = 'http://www.w3.org/2000/svg';
+  const camada = document.createElementNS(NS, 'svg');
+  camada.setAttribute('style', 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9150');
+  camada.innerHTML = `<defs><filter id="raioBrilho" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <linearGradient id="raioCor" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff2c0"/><stop offset=".5" stop-color="#ff8a2a"/><stop offset="1" stop-color="#ff3a0a"/></linearGradient></defs>`;
+  const pôrCamada = () => { if (!camada.isConnected && document.body) document.body.appendChild(camada); };
+  document.addEventListener('DOMContentLoaded', pôrCamada); pôrCamada();
+  const centro = el => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+  function raio([x1, y1], [x2, y2], grosso, cor){
+    const dx = x2 - x1, dy = y2 - y1, mx = (x1 + x2) / 2 - dy * .18, my = (y1 + y2) / 2 + dx * .18;
+    // caminho em zigue-zague em volta da curva (cara de relâmpago)
+    let d = `M${x1},${y1}`; const n = 14;
+    for (let i = 1; i < n; i++){ const t = i / n, x = (1-t)*(1-t)*x1 + 2*(1-t)*t*mx + t*t*x2, y = (1-t)*(1-t)*y1 + 2*(1-t)*t*my + t*t*y2;
+      d += ` L${x + (Math.random() - .5) * grosso * 3},${y + (Math.random() - .5) * grosso * 3}`; }
+    d += ` L${x2},${y2}`;
+    const p = document.createElementNS(NS, 'path'); p.setAttribute('d', d); p.setAttribute('fill', 'none'); p.setAttribute('stroke', cor || 'url(#raioCor)');
+    p.setAttribute('stroke-width', grosso); p.setAttribute('stroke-linecap', 'round'); p.setAttribute('filter', 'url(#raioBrilho)');
+    camada.appendChild(p); const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L;
+    p.animate([{strokeDashoffset: L}, {strokeDashoffset: 0}], {duration: 380, easing: 'ease-in', fill: 'forwards'});
+    p.animate([{opacity: 1}, {opacity: 1, offset: .6}, {opacity: 0}], {duration: 1300, fill: 'forwards'});
+    const c = document.createElementNS(NS, 'circle'); c.setAttribute('cx', x2); c.setAttribute('cy', y2); c.setAttribute('r', grosso * 3); c.setAttribute('fill', '#ffd08a'); c.setAttribute('filter', 'url(#raioBrilho)'); c.style.opacity = 0;
+    camada.appendChild(c);
+    c.animate([{opacity: 0, r: grosso}, {opacity: 1, r: grosso * 6, offset: .45}, {opacity: 0, r: grosso * 12}], {duration: 1000, delay: 330, fill: 'forwards'});
+    setTimeout(() => { p.remove(); c.remove(); }, 1500);
+  }
+  function raiosHorda(){
+    const emb = document.querySelector('.emblemaTile.embChefe'), cab = chefeId && document.querySelector(`.cab[data-jog="${chefeId}"]`), tab = cab && cab.closest('.tab');
+    if (!emb || !tab) return; const campo = tab.querySelector('.campo') || tab, r = campo.getBoundingClientRect();
+    [0, 220].forEach((t, i) => setTimeout(() => raio(centro(emb), [r.left + r.width * (.3 + i * .25 + Math.random() * .1), r.top + r.height * (.3 + Math.random() * .2)], 5), t));
+  }
+  function raioGuardas(){
+    const emb = document.querySelector('.emblemaTile.embChefe'), meu = document.querySelector('.tab[data-eu] .cab') || document.querySelector('.tab[data-eu]');
+    if (!emb || !meu) return;
+    raio(centro(emb), centro(meu), 12); setTimeout(() => raio(centro(emb), centro(meu), 7, '#fff2c0'), 120);
+    setTimeout(() => { const m = document.getElementById('mesa'); if (m){ m.animate([{transform: 'translate(0,0)'}, {transform: 'translate(-8px,4px)'}, {transform: 'translate(7px,-5px)'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(0,0)'}], {duration: 420}); } }, 380);
+  }
+  let logsVistos = new Set(), logIni = false;
+  function olharLog(log){
+    for (const l of log){ const m = String(l.msg || ''), k = (l.turno || '') + '|' + m;
+      if (logsVistos.has(k)) continue; logsVistos.add(k);
+      if (!logIni) continue;   // o que já estava no log quando a página abriu não anima
+      if (m.includes('Mais goblins!')) raiosHorda();
+      if (m.includes('Guardas, segurem ele')) raioGuardas();
+    }
+    logIni = true;
+  }
+
+  function proxima(){ if (falando || !fila.length || vsAberto()) return; const [ch, f] = fila.shift(); falar(ch, f); }
   setInterval(() => {
     const E_ = (typeof E !== 'undefined') ? E : null;
     const js = (E_ && E_.jogo && E_.jogo.jogadores) || [], chaveDe = n => Object.keys(CHEFES).find(k => (n || '').endsWith(k)), chefeJ = js.find(j => chaveDe(j.nome));
     if (!chefeJ){ chefeAtual = chefeId = null; posicionar(); return; }
     const ch = CHEFES[chaveDe(chefeJ.nome)], gid = chefeJ.id;   // o id do jogador muda a cada partida
-    if (gid !== jogoAtual){ jogoAtual = gid; ditas = new Set(); fila = []; base = {cem: (chefeJ.cemiterio || []).length}; }
+    if (gid !== jogoAtual){ jogoAtual = gid; ditas = new Set(); fila = []; base = {cem: (chefeJ.cemiterio || []).length}; logsVistos = new Set(); logIni = false; }
+    olharLog(E_.log || []);
     if (chefeAtual !== ch){
       heroi.querySelector('.ft').style.backgroundImage = `url('${ch.retrato}')`; heroi.querySelector('.nm').textContent = ch.nome.toUpperCase();
     }
