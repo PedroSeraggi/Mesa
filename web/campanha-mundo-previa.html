@@ -7,9 +7,13 @@
 html,body{margin:0;height:100%;overflow:hidden;background:#070504;color:#eee;font-family:var(--fc)}
 /* fundo: arte do comandante selecionado, mexendo devagar (parallax) */
 #fundo{position:fixed;inset:-6%;display:flex;transition:opacity .6s;will-change:transform}
-#fundo div{flex:1;background:center 30%/cover no-repeat;animation:respiraFundo 18s ease-in-out infinite alternate}
-#fundo div+div{border-left:2px solid #000}
-@keyframes respiraFundo{from{transform:scale(1)}to{transform:scale(1.07)}}
+#fundo{inset:-3%}
+#fundo .borrado{position:absolute;inset:-40px;background:center/cover no-repeat;filter:blur(28px) brightness(.45) saturate(1.2)}
+#fundo .nitida{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:min(1050px,64vw);aspect-ratio:626/457;display:flex;
+  -webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 55%,transparent 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 55%,transparent 100%)}
+#fundo .nitida div{flex:1;background:center/cover no-repeat;animation:respiraFundo 18s ease-in-out infinite alternate}
+#fundo.tres .nitida{width:min(1250px,76vw);aspect-ratio:2/1}
+@keyframes respiraFundo{from{transform:scale(1)}to{transform:scale(1.03)}}
 #fundo.troca{opacity:0}
 #sombra{position:fixed;inset:0;pointer-events:none;background:
   linear-gradient(90deg,#070504f0 0%,#070504c0 26%,transparent 45%,transparent 62%,#070504b0 80%),
@@ -125,7 +129,7 @@ function desenharLista(){
 function mostrar(){
   const b = BAT[sel-1], tres = b.d.length > 1, f = document.getElementById('fundo');
   f.classList.add('troca');
-  setTimeout(()=>{ f.innerHTML = b.d.map(x=>`<div style="background-image:url('${art(x[1])}')"></div>`).join(''); f.classList.remove('troca'); }, 350);
+  setTimeout(()=>{ f.className = tres ? 'tres' : ''; f.innerHTML = `<div class="borrado" style="background-image:url('${art(b.d[0][1])}')"></div><div class="nitida">${b.d.map(x=>`<div style="background-image:url('${art(x[1])}')"></div>`).join('')}</div>`; f.classList.remove('troca'); }, 350);
   document.getElementById('nomeGrande').innerHTML = `<small>BATALHA ${b.n}${tres?' · TRÊS OPONENTES':''}</small><b>${tres?'Batalha dos três':b.d[0][1].split(',')[0]}</b>`;
   const ganho = tres ? 500 : 250, feita = b.n < ATUAL;
   document.getElementById('painel').innerHTML = `<div class="cap">BATALHA ${b.n} DE 15</div><h2>${tres?'Batalha dos três':b.d[0][0]}</h2>
@@ -144,7 +148,7 @@ function tam(){cv.width=innerWidth;cv.height=innerHeight} tam(); addEventListene
 for(let i=0;i<70;i++)B.push(nova(true));
 function nova(qq){return{x:Math.random()*innerWidth,y:qq?Math.random()*innerHeight:innerHeight+10,v:.4+Math.random()*1.1,r:.8+Math.random()*2.2,o:Math.random()*Math.PI*2,a:.4+Math.random()*.6}}
 (function loop(){
-  px+=(mx-px)*.04; py+=(my-py)*.04; fundo.style.transform=`translate(${-px*30}px,${-py*20}px)`;
+  px+=(mx-px)*.04; py+=(my-py)*.04; fundo.style.transform=`translate(${-px*18}px,${-py*12}px)`;
   g.clearRect(0,0,cv.width,cv.height);
   for(const b of B){ b.y-=b.v; b.o+=.02; b.x+=Math.sin(b.o)*.5; if(b.y<-10)Object.assign(b,nova(false));
     const al=b.a*Math.min(1,(b.y/innerHeight)*1.6); g.beginPath(); g.fillStyle=`rgba(255,${140+Math.floor(b.r*30)},60,${al})`; g.shadowColor='#ff8a2a'; g.shadowBlur=8; g.arc(b.x,b.y,b.r,0,7); g.fill(); }

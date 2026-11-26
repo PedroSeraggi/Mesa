@@ -1,0 +1,20 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia: fontes</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Cinzel+Decorative:wght@700;900&family=Marcellus+SC&family=Cormorant+SC:wght@600;700&family=IM+Fell+English+SC&family=Uncial+Antiqua&family=MedievalSharp&family=Almendra+SC&family=Pirata+One&family=Grenze+Gotisch:wght@600;800&family=Metamorphous&family=Forum&family=Spectral+SC:wght@600;800&family=Eagle+Lake&family=New+Rocker&family=Macondo&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0806;color:#eee;font-family:'EB Garamond',serif;padding:24px}
+h1{font-family:Cinzel,serif;color:#E4C874;margin:0 0 4px}p.d{color:#a8957d;margin:0 0 20px}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:16px}
+.f{background:linear-gradient(160deg,#1e1610,#120c08);border:1px solid #4a3a28;border-radius:14px;padding:18px 20px;position:relative}
+.f .n{position:absolute;top:10px;right:14px;font:13px 'EB Garamond';color:#E4C874;background:#000a;padding:2px 10px;border-radius:99px}
+.f .m{font-size:11px;letter-spacing:.3em;color:#a8957d}
+.f .t{font-size:30px;color:#E4C874;letter-spacing:.06em;line-height:1.1;margin:2px 0 10px;text-shadow:0 0 16px #c9a24a55}
+.f .b{font-size:21px;color:#fff;margin-bottom:4px}
+.f .c{font-size:15px;color:#d9c8b0;font-style:italic;font-family:'EB Garamond'}
+.f .bt{margin-top:12px;display:inline-block;padding:9px 26px;border-radius:10px;font-size:18px;letter-spacing:.16em;color:#1a1006;background:linear-gradient(180deg,#ffe08a,#e0a83a 55%,#b8802a)}
+</style></head><body>
+<h1>Escolha a fonte dos títulos</h1><p class="d">O texto corrido (história, descrições) continua em EB Garamond. Diga o número de que mais gostou.</p>
+<div class="g" id="g"></div>
+<script>
+const F=[['Cinzel (atual)',"'Cinzel'",900],['Cinzel Decorative',"'Cinzel Decorative'",900],['Marcellus SC',"'Marcellus SC'",400],['Cormorant SC',"'Cormorant SC'",700],['IM Fell English SC',"'IM Fell English SC'",400],['Uncial Antiqua',"'Uncial Antiqua'",400],['MedievalSharp',"'MedievalSharp'",400],['Almendra SC',"'Almendra SC'",400],['Pirata One',"'Pirata One'",400],['Grenze Gotisch',"'Grenze Gotisch'",800],['Metamorphous',"'Metamorphous'",400],['Forum',"'Forum'",400],['Spectral SC',"'Spectral SC'",800],['Eagle Lake',"'Eagle Lake'",400],['New Rocker',"'New Rocker'",400],['Macondo',"'Macondo'",400]];
+document.getElementById('g').innerHTML=F.map(([n,f,w],i)=>`<div class="f" style="font-family:${f};font-weight:${w}"><span class="n">${i+1} · ${n}</span><div class="m">MUNDO 1</div><div class="t">TERRAS DE ORIGEM</div><div class="b">Elfos da Floresta</div><div class="c">Dwynen, Gilt-Leaf Daen</div><div class="bt">COMEÇAR</div></div>`).join('');
+</script></body></html>
