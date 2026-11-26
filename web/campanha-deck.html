@@ -130,6 +130,27 @@ html,body{margin:0;height:100%;overflow:hidden;color:#2a1a0e;font-family:'EB Gar
 .carta .tabNovo{position:absolute;top:-12px;left:50%;transform:translateX(-50%);z-index:3;padding:2px 18px 3px;font-family:var(--ff);font-size:12px;color:#3a1a02;
   background:linear-gradient(180deg,#fff2b0,#ffc04a 55%,#e07a10);clip-path:polygon(10% 0,90% 0,100% 100%,0 100%);filter:drop-shadow(0 0 6px #ffb040);transition:opacity .4s}
 .carta.novo.visto .tabNovo{opacity:0}
+/* ---- menus de filtro (Raridade, Tipo) ---- */
+.menuF{position:relative}
+.menuF>button{display:flex;align-items:center;gap:10px;min-width:150px;justify-content:space-between;padding:7px 14px 7px 16px;border-radius:999px;cursor:pointer;font-family:var(--ff);font-size:15px;color:#f0e0c0;
+  background:linear-gradient(180deg,#2a1208,#1a0804);border:1px solid var(--ouro3);box-shadow:inset 0 2px 5px #000,0 1px 0 #ffffff14}
+.menuF>button:hover{border-color:var(--ouro)}
+.menuF>button .qt{font-family:var(--fn);font-size:11px;min-width:18px;height:18px;border-radius:9px;background:#c9a24a;color:#1a0e06;display:grid;place-items:center;padding:0 5px}
+.menuF>button .qt:empty{display:none}
+.menuF>button svg{width:12px;height:12px;transition:transform .2s}
+.menuF.aberto>button svg{transform:rotate(180deg)}
+.menuF .painel{position:absolute;bottom:calc(100% + 8px);left:0;z-index:30;display:none;padding:6px;border-radius:12px;min-width:230px;
+  background:linear-gradient(180deg,#1e140c,#120a06);border:1px solid #8a6a2a;box-shadow:0 -10px 30px #000c}
+.menuF.aberto .painel{display:grid;gap:3px}
+.menuF .painel.duas{grid-template-columns:1fr 1fr;min-width:300px}
+.menuF .op{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:15px;color:#d9c8b0;background:#ffffff06;border:1px solid transparent;user-select:none}
+.menuF .op:hover{background:#ffffff12;color:#fff}
+.menuF .op.on{background:#c9a24a26;border-color:#c9a24a99;color:#fff}
+.menuF .op i.ms{font-size:18px;width:22px;text-align:center;color:#c9b89a}
+.menuF .op.on i.ms{color:var(--ouro)}
+.menuF .op svg{width:22px;height:18px;flex:none}
+.menuF .limpar{grid-column:1/-1;text-align:center;font-family:var(--ff);font-size:12px;letter-spacing:.1em;color:#a8957d;padding:6px;cursor:pointer}
+.menuF .limpar:hover{color:var(--ouro)}
 .voando{position:fixed;z-index:20;pointer-events:none;border-radius:5%;box-shadow:0 10px 30px #000a;transition:all .5s cubic-bezier(.5,0,.3,1)}
 </style></head><body>
 <svg width="0" height="0" style="position:absolute"><filter id="chama" x="-30%" y="-30%" width="160%" height="160%">
@@ -143,6 +164,21 @@ html,body{margin:0;height:100%;overflow:hidden;color:#2a1a0e;font-family:'EB Gar
     <div id="paginas"><div class="pag" id="pE"></div><div class="pag" id="pD"></div>
       <button class="setaPag" id="ant">‹</button><button class="setaPag" id="prox">›</button></div>
     <div class="rodaLivro"><div class="custos" id="custos"></div>
+      <div class="menuF" id="mRar"><button>Raridade <span class="qt"></span><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 8l4-4 4 4"/></svg></button><div class="painel duas">
+        <div class="op" data-f="comum"><svg viewBox="0 0 28 22"><defs><linearGradient id="rc8c4bc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8c4bc"/><stop offset="1" stop-color="#5a5650"/></linearGradient></defs><path d="M2 20h24l-3-9-5 4-4-13-4 13-5-4z" fill="url(#rc8c4bc)" stroke="#000" stroke-width="1" stroke-linejoin="round"/></svg>Comum</div><div class="op" data-f="rara"><svg viewBox="0 0 28 22"><defs><linearGradient id="rffe48a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe48a"/><stop offset="1" stop-color="#b8862a"/></linearGradient></defs><path d="M2 20h24l-3-9-5 4-4-13-4 13-5-4z" fill="url(#rffe48a)" stroke="#000" stroke-width="1" stroke-linejoin="round"/></svg>Rara</div>
+        <div class="op" data-f="incomum"><svg viewBox="0 0 28 22"><defs><linearGradient id="rd8eaf8" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d8eaf8"/><stop offset="1" stop-color="#5a7a98"/></linearGradient></defs><path d="M2 20h24l-3-9-5 4-4-13-4 13-5-4z" fill="url(#rd8eaf8)" stroke="#000" stroke-width="1" stroke-linejoin="round"/></svg>Incomum</div><div class="op" data-f="mitica"><svg viewBox="0 0 28 22"><defs><linearGradient id="rffb04a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb04a"/><stop offset="1" stop-color="#c0301a"/></linearGradient></defs><path d="M2 20h24l-3-9-5 4-4-13-4 13-5-4z" fill="url(#rffb04a)" stroke="#000" stroke-width="1" stroke-linejoin="round"/></svg>Mítica</div>
+        <div class="limpar">Limpar</div></div></div>
+      <div class="menuF" id="mTipo"><button>Tipo <span class="qt"></span><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 8l4-4 4 4"/></svg></button><div class="painel">
+        <div class="op" data-t="Creature"><i class="ms ms-creature"></i>Criatura</div>
+        <div class="op" data-t="Planeswalker"><i class="ms ms-planeswalker"></i>Planeswalker</div>
+        <div class="op" data-t="Instant"><i class="ms ms-instant"></i>Mágica instantânea</div>
+        <div class="op" data-t="Sorcery"><i class="ms ms-sorcery"></i>Feitiço</div>
+        <div class="op" data-t="Enchantment"><i class="ms ms-enchantment"></i>Encantamento</div>
+        <div class="op" data-t="Artifact"><i class="ms ms-artifact"></i>Artefato</div>
+        <div class="op" data-t="Battle"><svg viewBox="0 0 24 24" fill="none" stroke="#c9b89a" stroke-width="2" stroke-linecap="round"><path d="M4 3l11 11M13 16l3-3M15 17l2 2M20 3L9 14M11 16l-3-3M9 17l-2 2"/></svg>Batalha</div>
+        <div class="op" data-t="Comandante"><svg viewBox="0 0 24 24" fill="none" stroke="#c9b89a" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/><path d="M8 13l1.5-4 2.5 2.5L14.5 9 16 13z" fill="#c9b89a"/></svg>Comandantes</div>
+        <div class="op" data-t="Land"><i class="ms ms-land"></i>Terreno</div>
+        <div class="limpar">Limpar</div></div></div>
       <label class="busca"><svg viewBox="0 0 24 24" fill="none" stroke="#d8b070" stroke-width="2.4" stroke-linecap="round"><circle cx="10" cy="10" r="6.5"/><path d="M15 15l6 6"/></svg><input id="busca" placeholder="Pesquisar carta..."></label><div class="npag" id="npag"></div></div>
   </div>
   <div id="lista">
@@ -158,7 +194,7 @@ document.documentElement.style.setProperty('--ruido', 'url("data:image/svg+xml,'
 
 const img = (c, v='normal') => `https://api.scryfall.com/cards/${c.set.toLowerCase()}/${encodeURIComponent(c.num)}?format=image&version=${v}`;
 const BASICO = {W:'Plains',U:'Island',B:'Swamp',R:'Mountain',G:'Forest'}, NOME_BAS = {W:'Planícies',U:'Ilhas',B:'Pântanos',R:'Montanhas',G:'Florestas'};
-let COL = [], DECK = [], CMD = null, COR = 'W', filtroCor = new Set(), filtroCusto = new Set(), pag = 0, sujo = false;
+let COL = [], DECK = [], CMD = null, COR = 'W', filtroCor = new Set(), filtroCusto = new Set(), filtroRar = new Set(), filtroTipo = new Set(), pag = 0, sujo = false;
 let NOVAS = new Set(); try { NOVAS = new Set(JSON.parse(localStorage.getItem('mesaCartasNovas') || '[]')); } catch(e){}
 const POR_PAG = 8, chave = c => c.nome + '|' + c.set + '|' + c.num;
 const pai = m => parent.postMessage(Object.assign({campanha: true}, m), '*');
@@ -169,6 +205,8 @@ function filtradas(){
   const q = document.getElementById('busca').value.trim().toLowerCase();
   return COL.filter(c => {
     if (q && !c.nome.toLowerCase().includes(q) && !(c.tipo||'').toLowerCase().includes(q)) return false;
+    if (filtroRar.size && !filtroRar.has(c.faixa)) return false;
+    if (filtroTipo.size && ![...filtroTipo].some(t => t === 'Comandante' ? (c.lendaria && (c.tipo||'').includes('Creature')) : (c.tipo||'').includes(t))) return false;
     if (filtroCusto.size){ const k = Math.min(7, Math.floor(c.cmc)); if (!filtroCusto.has(k)) return false; }
     if (filtroCor.size){ const id = c.identidade || ''; if (id === '') return filtroCor.has('C'); if (![...id].every(x => filtroCor.has(x))) return false; }
     return true;
@@ -241,6 +279,16 @@ document.getElementById('busca').oninput = () => { pag = 0; desenharLivro(); };
 addEventListener('keydown', e => { if (e.target.tagName === 'INPUT') return; if (e.key === 'ArrowRight' && !document.getElementById('prox').disabled) virar(1); if (e.key === 'ArrowLeft' && pag > 0) virar(-1); });
 document.getElementById('voltar').onclick = () => { if (sujo && !confirm('Sair sem salvar as mudanças do deck?')) return; pai({acao:'fecharDeck'}); };
 document.getElementById('pronto').onclick = () => { document.getElementById('pronto').disabled = true; pai({acao:'salvarDeck', deck: DECK.map(c => ({nome:c.nome, set:c.set, num:c.num}))}); };
+// menus Raridade e Tipo (vários marcados = qualquer um deles)
+function ligarMenu(id, conj, attr){
+  const m = document.getElementById(id), qt = m.querySelector('.qt');
+  const atual = () => { qt.textContent = conj.size || ''; m.querySelectorAll('.op').forEach(o => o.classList.toggle('on', conj.has(o.dataset[attr]))); pag = 0; desenharLivro(); };
+  m.querySelector('button').onclick = e => { e.stopPropagation(); document.querySelectorAll('.menuF.aberto').forEach(x => x !== m && x.classList.remove('aberto')); m.classList.toggle('aberto'); };
+  m.querySelectorAll('.op').forEach(o => o.onclick = e => { e.stopPropagation(); const v = o.dataset[attr]; conj.has(v) ? conj.delete(v) : conj.add(v); atual(); });
+  m.querySelector('.limpar').onclick = e => { e.stopPropagation(); conj.clear(); atual(); };
+}
+ligarMenu('mRar', filtroRar, 'f'); ligarMenu('mTipo', filtroTipo, 't');
+addEventListener('click', e => { if (!e.target.closest('.menuF')) document.querySelectorAll('.menuF.aberto').forEach(x => x.classList.remove('aberto')); });
 // filtros
 function montarFiltros(){
   document.getElementById('cores').innerHTML = ['W','U','B','R','G','C'].map(k => `<button data-c="${k}" class="${k !== 'C' && !COR.includes(k) ? 'off' : ''}" title="${{W:'Branco',U:'Azul',B:'Preto',R:'Vermelho',G:'Verde',C:'Incolor'}[k]}"><i class="ms ms-${k.toLowerCase()} ms-cost"></i></button>`).join('');

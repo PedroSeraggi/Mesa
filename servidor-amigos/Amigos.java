@@ -724,7 +724,7 @@ public class Amigos {
                 String tipo = str(x, "tipo");
                 if (tipo.contains("Basic") && tipo.contains("Land")) continue;
                 Map<String, Object> m = new LinkedHashMap<>();
-                for (String k : new String[]{"nome", "set", "num", "tipo", "faixa", "cores", "identidade"}) m.put(k, str(x, k));
+                for (String k : new String[]{"nome", "set", "num", "tipo", "faixa", "cores", "identidade", "lendaria"}) m.put(k, str(x, k));
                 m.put("cmc", x.has("cmc") ? x.get("cmc").getAsDouble() : 0);
                 m.put("qtd", e.getValue()); col.add(m);
             }
