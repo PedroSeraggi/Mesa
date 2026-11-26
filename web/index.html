@@ -9,6 +9,7 @@
 <script src="sons.js"></script>
 <script src="mundo.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Metamorphous&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=EB+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -1143,13 +1144,22 @@ html.fundoParado #cena .slide.ativo{animation:none}
 .marcaMenu p{margin:0;color:var(--txt2);font-style:italic;font-size:16px}
 .grupoMenu{display:flex;flex-direction:column;gap:12px}
 .subtituloMenu{font-family:var(--ff-titulo);letter-spacing:.2em;text-transform:uppercase;color:var(--txt2);font-size:13px}
-.btnCampanha{position:fixed;right:calc(50% - 560px);top:50%;transform:translateY(-50%);width:200px;height:300px;border-radius:16px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;padding:0 0 26px;
-  border:1px solid #c9a24a88;background:linear-gradient(180deg,#0000 30%,#000c),radial-gradient(ellipse at 50% 30%,#6a4a1a,#1a120a 70%);color:#E4C874;font-family:var(--ff-titulo);box-shadow:0 0 30px #c9a24a33,0 20px 40px #000c;transition:transform .3s,box-shadow .3s}
-.btnCampanha i{font-style:normal;font-size:64px;margin-bottom:auto;margin-top:60px;filter:drop-shadow(0 0 14px #f0c44a);animation:flutCamp 3s ease-in-out infinite}
-@keyframes flutCamp{50%{transform:translateY(-6px)}}
-.btnCampanha b{font-size:20px;letter-spacing:.2em}.btnCampanha small{font-family:var(--ff-corpo,serif);font-size:13px;color:#d9c8b0}
-.btnCampanha:hover{transform:translateY(-50%) scale(1.04);box-shadow:0 0 50px #f0c44a66,0 20px 40px #000c}
-@media (max-width:1200px){.btnCampanha{right:24px}}
+.btnCampanha{display:none;position:fixed;right:4vw;top:50%;transform:translateY(-50%);width:min(400px,30vw);height:min(600px,72vh);border-radius:18px;overflow:hidden;cursor:pointer;padding:0;
+  border:1px solid #c9a24a99;background:#0a0705;color:#eee;text-align:left;box-shadow:0 0 40px #c9a24a33,0 24px 60px #000d;transition:transform .35s,box-shadow .35s}
+#vMenu:has(#grupoJogar:not(.oculto)) .btnCampanha{display:block;animation:entraCamp .6s cubic-bezier(.2,.9,.3,1.1) both}
+@keyframes entraCamp{from{opacity:0;transform:translateY(-46%)}}
+.btnCampanha .cArte{position:absolute;inset:0;background:url('campanha/artes/kytheon.jpg') 40% 30%/cover;transition:transform 6s ease-out}
+.btnCampanha:hover .cArte{transform:scale(1.08)}
+.btnCampanha .cSombra{position:absolute;inset:0;background:linear-gradient(0deg,#070504 8%,#070504e0 38%,#07050455 60%,transparent 80%)}
+.btnCampanha .cTx{position:absolute;left:26px;right:26px;bottom:24px}
+.btnCampanha .cMundo{font-family:'Metamorphous',var(--ff-titulo);font-size:12px;letter-spacing:.3em;color:#c9a24a}
+.btnCampanha .cNome{font-family:'Metamorphous',var(--ff-titulo);font-size:28px;color:#E4C874;margin:2px 0 10px;text-shadow:0 0 18px #c9a24a66}
+.btnCampanha .cHist{font-size:16px;line-height:1.45;color:#e8dcc4;font-style:italic;margin:0 0 18px}
+.btnCampanha .cBt{display:block;text-align:center;padding:14px;border-radius:12px;font-family:'Metamorphous',var(--ff-titulo);font-size:22px;letter-spacing:.2em;color:#1a1006;background:linear-gradient(180deg,#ffe08a,#e0a83a 55%,#b8802a);box-shadow:0 5px 0 #6a4a14,0 10px 30px #f0c44a44}
+.btnCampanha .cSub{display:block;text-align:center;margin-top:12px;font-size:13px;color:#a8957d}
+.btnCampanha:hover{transform:translateY(-50%) scale(1.02);box-shadow:0 0 60px #f0c44a55,0 24px 60px #000d}
+.btnCampanha:hover .cBt{filter:brightness(1.1)}
+@media (max-width:1150px){#vMenu:has(#grupoJogar:not(.oculto)) .btnCampanha{display:none}}
 .btnMenu{position:relative;text-align:left;padding:15px 22px;font-family:var(--ff-titulo);font-size:19px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--txt);background:linear-gradient(90deg,#1e1712ee,#1e171299);border:1px solid #6E553780;border-left:3px solid var(--acento);border-radius:3px;
   box-shadow:0 8px 24px #0009;transition:transform .15s,background .15s,border-color .15s,color .15s}
@@ -1473,7 +1483,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
 #fim{position:fixed;inset:0;display:grid;place-items:center;background:#0a0705d9;z-index:45}
 #fim .caixa{background:var(--painel);border:1px solid var(--borda2);border-radius:18px;padding:28px;text-align:center;display:flex;flex-direction:column;gap:14px;min-width:340px}
 #fim h2{margin:0;font-size:30px;font-family:var(--ff-titulo);color:var(--ouro)}
-#avisos{position:fixed;right:316px;top:60px;display:flex;flex-direction:column;gap:8px;z-index:60}
+#avisos{position:fixed;right:316px;top:60px;display:flex;flex-direction:column;gap:8px;z-index:9400}
 .aviso{background:var(--painel2);border:1px solid var(--borda2);border-left:3px solid var(--ouro);border-radius:10px;padding:10px 14px;max-width:380px;box-shadow:0 8px 20px #0009;font-size:13px}
 #maisPassar{position:relative}
 #menuPassar{position:absolute;bottom:calc(100% + 6px);right:0;background:var(--painel2);border:1px solid var(--borda2);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:4px;min-width:220px;z-index:20;box-shadow:0 10px 30px #000a}
@@ -1555,7 +1565,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
         <button class="btnMenu voltar" id="mnVoltar">Voltar</button>
       </div>
       <div class="rodapeMenu" id="rodapePerfil"></div>
-      <button id="btnCampanha" class="btnCampanha" title="Campanha"><i>⚔</i><b>CAMPANHA</b><small id="campSub">Comece sua jornada</small></button>
+      <button id="btnCampanha" class="btnCampanha" title="Campanha"><div class="cArte"></div><div class="cSombra"></div><div class="cTx"><div class="cMundo">MUNDO 1</div><div class="cNome">Terras de Origem</div><p class="cHist">Um planeswalker desperta sem memória nos portões de Akros. Quinze campeões guardam o caminho, e cada vitória revela um pouco de quem você é.</p><span class="cBt">CAMPANHA</span><span class="cSub" id="campSub">Comece sua jornada</span></div></button>
       <div id="avisoVersao" class="avisoVersao oculto"></div>
       <div id="numVersao" class="numVersao"></div>
     </div>
@@ -4320,15 +4330,23 @@ function telaEscolhaInicial(){
   document.body.appendChild(fr);
 }
 const NOME_COR = {W:'Branco', U:'Azul', B:'Preto', R:'Vermelho', G:'Verde'};
-function mostrarCampanha(c){   // por enquanto: resumo (o mapa do Mundo 1 vem no próximo passo)
-  $('#campSub').textContent = `Mundo ${c.mundo} · Batalha ${c.batalha}`;
-  const cx = abrirModal('');
-  cx.innerHTML = `<h3>Campanha · Mundo ${c.mundo}</h3>
-    <p>Seu deck: <b>${NOME_COR[c.cor] || c.cor}</b>, comandante <b>${esc(c.comandante.nome)}</b> (${c.deck.length} cartas + terrenos básicos). As cartas já estão na sua coleção.</p>
-    <p>Próxima batalha: <b>${c.batalha}</b> de 15.</p>
-    <div class="dicaMenu">O mapa do Mundo 1 e as batalhas chegam no próximo passo.</div>
-    <div class="linhaBts"><button id="cpFechar">Fechar</button></div>`;
-  $('#cpFechar').onclick = ()=>fecharModal(true);
+// tela do mundo (campanha-mundo.html) por cima da Mesa: lista de batalhas, arte do comandante, história
+function mostrarCampanha(c){
+  $('#campSub').textContent = `Batalha ${Math.min(c.batalha,15)} de 15`;
+  let fr = $('#frameCampanha'); if (fr) fr.remove();
+  fr = document.createElement('iframe'); fr.id = 'frameCampanha'; fr.src = 'campanha-mundo.html';
+  fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9300;background:#070504';
+  const f = (amigos && amigos.foto) || {};
+  const ouvir = e=>{
+    if (!e.data || !e.data.campanha) return;
+    const a = e.data.acao;
+    if (a === 'pronta') fr.contentWindow.postMessage({estado: c, ouro: f.ouro || 0, nome: (perfilAtual && perfilAtual.nome) || ''}, '*');
+    if (a === 'fechar'){ window.removeEventListener('message', ouvir); fr.remove(); }
+    if (a === 'jogar') avisoLocal(`Batalha ${e.data.batalha}: as partidas da campanha chegam no próximo passo.`);
+    if (a === 'editar') avisoLocal('O editor de deck da campanha chega em breve.');
+  };
+  window.addEventListener('message', ouvir);
+  document.body.appendChild(fr);
 }
 async function abrirLoja(){
   const cx = abrirModal('<div class="dicaMenu">Abrindo a loja...</div>');
