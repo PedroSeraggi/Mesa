@@ -2538,7 +2538,8 @@ public class Ponte implements MageClient {
 
         GameTypeView tipo = null;
         for (GameTypeView g : session.getGameTypes()) {
-            if (g.getName().equals("Commander Free For All")) tipo = g;
+            if (g.getName().equals("Commander Free For All") && tipo == null) tipo = g;
+            if (g.getName().equals("Commander Chefe Mesa")) tipo = g;   // igual ao Free For All, mais as regras dos chefes da campanha (plugin da Mesa)
         }
         if (tipo == null) throw new IllegalStateException("Tipo de jogo Commander não encontrado no servidor");
         String deckType = "Variant Magic - Commander";

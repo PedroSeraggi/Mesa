@@ -11,6 +11,9 @@
         {id: 'perdeu',   quando: s => s.chefeCemiterio > s.chefeCemiterioIni, texto: 'Tudo bem, tudo bem! Eu tenho mais. Eu SEMPRE tenho mais!'},
         {id: 'ganhando', quando: s => s.minhaVida > 0 && s.minhaVida <= 15, texto: 'Tá cansado, herói? Eu nem comecei! Hehehe!'},
         {id: 'apanhando',quando: s => s.chefeVida > 0 && s.chefeVida <= 15, texto: 'Não, não, não! Guardas! GUARDAS! Alguém faz alguma coisa!'},
+        {id: 'guardas',  quando: s => s.log.includes('Guardas, segurem ele'), texto: 'Guardas, segurem ele! Esse turno é MEU!'},
+        {id: 'horda',    quando: s => s.log.includes('Mais goblins!'), texto: 'Mais goblins! Eu SEMPRE tenho mais! Hehehe!'},
+        {id: 'furia',    quando: s => s.chefeVida > 0 && s.chefeVida < 20, texto: 'Vocês ouviram, meninos? Agora é sério! ATAQUEM!'},
         {id: 'derrota',  quando: s => s.fim && s.venci, texto: 'O dragão... ele prometeu... que eu ia ser rei...'},
         {id: 'vitoria',  quando: s => s.fim && !s.venci, texto: 'HAHA! Eu sabia! Ninguém derrota o Krenko! Volta quando tiver mais goblins!'},
       ]
@@ -84,9 +87,9 @@ body.chefeFalando #chefeBal{opacity:1;transform:none}`;
   function proxima(){ if (falando || !fila.length) return; const [ch, f] = fila.shift(); falar(ch, f); }
   setInterval(() => {
     const E_ = (typeof E !== 'undefined') ? E : null;
-    const js = (E_ && E_.jogo && E_.jogo.jogadores) || [], chefeJ = js.find(j => CHEFES[j.nome]);
+    const js = (E_ && E_.jogo && E_.jogo.jogadores) || [], chaveDe = n => Object.keys(CHEFES).find(k => (n || '').endsWith(k)), chefeJ = js.find(j => chaveDe(j.nome));
     if (!chefeJ){ chefeAtual = chefeId = null; posicionar(); return; }
-    const ch = CHEFES[chefeJ.nome], gid = chefeJ.id;   // o id do jogador muda a cada partida
+    const ch = CHEFES[chaveDe(chefeJ.nome)], gid = chefeJ.id;   // o id do jogador muda a cada partida
     if (gid !== jogoAtual){ jogoAtual = gid; ditas = new Set(); fila = []; base = {cem: (chefeJ.cemiterio || []).length}; }
     if (chefeAtual !== ch){
       heroi.querySelector('.ft').style.backgroundImage = `url('${ch.retrato}')`; heroi.querySelector('.nm').textContent = ch.nome.toUpperCase();
@@ -94,7 +97,7 @@ body.chefeFalando #chefeBal{opacity:1;transform:none}`;
     chefeAtual = ch; chefeId = gid; posicionar();
     const eu = js.find(j => j.eu) || {};
     const s = {turno: E_.jogo.turno || 0, minhaVida: eu.vida, chefeVida: chefeJ.vida, chefeCemiterio: (chefeJ.cemiterio || []).length, chefeCemiterioIni: base.cem,
-               fim: E_.fase === 'fim' || !!E_.resultado, venci: !!(E_.resultado && E_.resultado.venceu)};
+               fim: E_.fase === 'fim' || !!E_.resultado, venci: !!(E_.resultado && E_.resultado.venceu), log: JSON.stringify(E_.log || [])};
     for (const f of ch.falas){
       if (ditas.has(f.id)) continue;
       if ((f.id === 'derrota' || f.id === 'vitoria') !== s.fim) continue;   // as falas de fim só no fim
