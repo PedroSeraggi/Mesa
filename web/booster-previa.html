@@ -15,17 +15,33 @@ body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color
 .encaixe.ativo{box-shadow:inset 0 0 0 3px #ffd04a,0 0 90px #ffb84a88}
 @keyframes gira{to{transform:rotate(360deg)}}
 .dica{position:absolute;left:0;right:0;bottom:8%;text-align:center;font-family:var(--ff);letter-spacing:.2em;font-size:13px;color:#d9c8e8b0;text-transform:uppercase}
-/* pacote */
-.pacote{position:absolute;width:150px;height:210px;border-radius:9px;cursor:grab;z-index:5;
-  background:linear-gradient(160deg,#6a2a7a,#2a1238 55%,#160a1e);box-shadow:inset 0 0 0 2px #c9a24aaa,0 16px 30px #000c;transition:transform .15s}
+/* pacote 3D: embalagem metalizada preta e dourada com a logo da Mesa; inclina seguindo o mouse */
+.pacote{position:absolute;width:170px;height:270px;z-index:5;cursor:grab;perspective:900px}
 .pacote:active{cursor:grabbing}
-.pacote::before{content:'';position:absolute;left:0;right:0;top:0;height:16px;border-radius:9px 9px 0 0;background:repeating-linear-gradient(90deg,#c9a24a 0 5px,#8a6a28 5px 10px)}
-.pacote::after{content:'M';position:absolute;inset:0;display:grid;place-items:center;font-family:var(--ff);font-weight:800;font-size:72px;color:#ffe08a;text-shadow:0 0 18px #ff9a3a}
-.pacote i{position:absolute;left:0;right:0;bottom:16px;text-align:center;font-style:normal;font-family:var(--ff);font-size:11px;letter-spacing:.22em;color:#e8d4f0}
-.pacote.flutua{animation:flutua 2.2s ease-in-out infinite}
-@keyframes flutua{50%{transform:translateY(-10px) rotate(-1deg)}}
-.pacote.explode{animation:explode .55s ease-in forwards;cursor:default}
-@keyframes explode{30%{transform:scale(1.12) rotate(-3deg)}60%{transform:scale(1.2) rotate(3deg);filter:brightness(1.6)}100%{transform:scale(1.7);opacity:0;filter:brightness(4)}}
+.pacote .pkt{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,-18deg));transition:transform .12s}
+.pacote.flutua .pkt{animation:flutua 2.6s ease-in-out infinite}
+@keyframes flutua{0%,100%{transform:rotateX(4deg) rotateY(-18deg) translateY(0)}50%{transform:rotateX(-2deg) rotateY(-10deg) translateY(-10px)}}
+.pkt .frente{position:absolute;inset:0;transform:translateZ(9px);
+  clip-path:polygon(0 3%,4% 0,8% 3%,12% 0,16% 3%,20% 0,24% 3%,28% 0,32% 3%,36% 0,40% 3%,44% 0,48% 3%,52% 0,56% 3%,60% 0,64% 3%,68% 0,72% 3%,76% 0,80% 3%,84% 0,88% 3%,92% 0,96% 3%,100% 0,100% 97%,96% 100%,92% 97%,88% 100%,84% 97%,80% 100%,76% 97%,72% 100%,68% 97%,64% 100%,60% 97%,56% 100%,52% 97%,48% 100%,44% 97%,40% 100%,36% 97%,32% 100%,28% 97%,24% 100%,20% 97%,16% 100%,12% 97%,8% 100%,4% 97%,0 100%);
+  background:
+    linear-gradient(105deg,transparent 30%,#fff7d055 var(--brilho,45%),transparent calc(var(--brilho,45%) + 14%)),
+    radial-gradient(ellipse at 50% 38%,#3a2a12 0%,#120c06 55%,#050302 100%);
+  box-shadow:inset 0 0 0 2px #c9a24a}
+.pkt .frente::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#0009,transparent 14%,transparent 86%,#0009),linear-gradient(#0008,transparent 10%,transparent 90%,#0008)}
+.pkt .borda{position:absolute;left:0;right:0;height:16px;background:repeating-linear-gradient(90deg,#d9b45a 0 3px,#7a5a20 3px 6px);transform:translateZ(9.5px)}
+.pkt .borda.cima{top:4px}.pkt .borda.baixo{bottom:4px}
+.pkt .logo{position:absolute;left:0;right:30px;top:34%;text-align:center;transform:translateZ(10px)}
+.pkt .logo b{display:block;font-family:var(--ff);font-weight:800;font-size:68px;line-height:1;color:transparent;background:linear-gradient(180deg,#fff4c8,#e8b84a 45%,#8a5a18);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 2px 0 #000) drop-shadow(0 0 10px #c9962e88)}
+.pkt .logo span{display:block;font-family:var(--ff);font-weight:800;font-size:16px;letter-spacing:.45em;margin-top:2px;margin-left:.45em;color:#e8c874}
+.pkt .info{position:absolute;left:14px;top:26px;font-family:var(--ff);font-size:8.5px;letter-spacing:.18em;color:#c9a24a;transform:translateZ(10px)}
+.pkt .faixa{position:absolute;right:10px;top:26px;bottom:26px;width:22px;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;
+  font-family:var(--ff);font-weight:800;font-size:10px;letter-spacing:.3em;color:#120c06;background:linear-gradient(90deg,#f1d98a,#b8862a);transform:translateZ(10px);border-radius:2px}
+.pkt .rodape{position:absolute;left:0;right:30px;bottom:30px;text-align:center;font-family:var(--ff);font-size:9px;letter-spacing:.3em;color:#e8c87499;transform:translateZ(10px)}
+.pkt .verso{position:absolute;inset:0;transform:rotateY(180deg) translateZ(9px);background:linear-gradient(160deg,#1a120a,#050302);box-shadow:inset 0 0 0 2px #8a6a28}
+.pkt .lado{position:absolute;top:3%;bottom:3%;width:18px;background:linear-gradient(90deg,#2a1d0e,#0a0703)}
+.pkt .lado.e{left:-9px;transform:rotateY(-90deg)}.pkt .lado.d{right:-9px;transform:rotateY(90deg)}
+.pacote.explode{pointer-events:none;animation:explode .55s ease-in forwards}
+@keyframes explode{30%{transform:scale(1.1) rotate(-3deg)}60%{transform:scale(1.18) rotate(3deg);filter:brightness(1.6)}100%{transform:scale(1.6);opacity:0;filter:brightness(4)}}
 .clarao{position:absolute;left:50%;top:46%;width:80vmin;height:80vmin;border-radius:50%;transform:translate(-50%,-50%) scale(.2);background:radial-gradient(circle,#fff6d0 0%,#ffcf6a88 25%,transparent 65%);animation:clarao .9s ease-out forwards;pointer-events:none}
 @keyframes clarao{20%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.8)}}
 /* cartas viradas */
@@ -86,32 +102,44 @@ function brilhoSom(nivel){   // "plim" que sobe com a raridade
 }
 function montar(){
   const palco = document.getElementById('palco');
-  palco.innerHTML = `<div class="encaixe" id="encaixe"></div><div class="pacote flutua" id="pacote" style="left:12%;top:60%"><i>MUNDO 1</i></div>
+  palco.innerHTML = `<div class="encaixe" id="encaixe"></div><div class="pacote flutua" id="pacote" style="left:10%;top:50%"><div class="pkt">
+      <div class="verso"></div><div class="lado e"></div><div class="lado d"></div>
+      <div class="frente"></div><div class="borda cima"></div><div class="borda baixo"></div>
+      <div class="info">15 CARTAS</div><div class="faixa">MUNDO 1</div>
+      <div class="logo"><b>M</b><span>MESA</span></div><div class="rodape">BOOSTER</div></div></div>
     <div class="dica" id="dica">Arraste o pacote até o círculo</div><button id="pronto">Pronto</button>`;
   const pac = document.getElementById('pacote'), enc = document.getElementById('encaixe');
   let arrastando = false, ox = 0, oy = 0;
   pac.onpointerdown = ev=>{ arrastando = true; pac.classList.remove('flutua'); const r = pac.getBoundingClientRect(); ox = ev.clientX - r.left; oy = ev.clientY - r.top; pac.setPointerCapture(ev.pointerId); };
-  pac.onpointermove = ev=>{ if (!arrastando) return; pac.style.left = (ev.clientX - ox) + 'px'; pac.style.top = (ev.clientY - oy) + 'px';
+  const pkt = pac.querySelector('.pkt');
+  palco.onmousemove = ev=>{ if (arrastando || !document.getElementById('pacote')) return; const r = pac.getBoundingClientRect();
+    const dx = (ev.clientX - (r.left + r.width/2)) / innerWidth, dy = (ev.clientY - (r.top + r.height/2)) / innerHeight;
+    pkt.style.setProperty('--ry', (-18 + dx*50) + 'deg'); pkt.style.setProperty('--rx', (-dy*30) + 'deg'); pkt.querySelector('.frente').style.setProperty('--brilho', (45 + dx*60) + '%'); };
+  pac.onpointermove = ev=>{ if (!arrastando) return;
+    pkt.style.setProperty('--ry', (ev.movementX * 2) + 'deg'); pkt.style.setProperty('--rx', (-ev.movementY * 2) + 'deg'); pac.style.left = (ev.clientX - ox) + 'px'; pac.style.top = (ev.clientY - oy) + 'px';
     const e = enc.getBoundingClientRect(), d = Math.hypot(ev.clientX - (e.left + e.width/2), ev.clientY - (e.top + e.height/2)); enc.classList.toggle('ativo', d < 130); };
   pac.onpointerup = ev=>{ arrastando = false; const e = enc.getBoundingClientRect(), d = Math.hypot(ev.clientX - (e.left + e.width/2), ev.clientY - (e.top + e.height/2));
-    if (d < 130){ pac.style.left = (e.left + e.width/2 - 75) + 'px'; pac.style.top = (e.top + e.height/2 - 105) + 'px'; abrir(); } else { enc.classList.remove('ativo'); pac.classList.add('flutua'); } };
-  pac.ondblclick = ()=>{ const e = enc.getBoundingClientRect(); pac.style.left = (e.left + e.width/2 - 75) + 'px'; pac.style.top = (e.top + e.height/2 - 105) + 'px'; abrir(); };
+    if (d < 130){ pac.style.left = (e.left + e.width/2 - 85) + 'px'; pac.style.top = (e.top + e.height/2 - 135) + 'px'; abrir(); } else { enc.classList.remove('ativo'); pac.classList.add('flutua'); } };
+  pac.ondblclick = ()=>{ const e = enc.getBoundingClientRect(); pac.style.left = (e.left + e.width/2 - 85) + 'px'; pac.style.top = (e.top + e.height/2 - 135) + 'px'; abrir(); };
 }
 function abrir(){
   const palco = document.getElementById('palco'), pac = document.getElementById('pacote');
   pac.onpointerdown = pac.onpointermove = pac.onpointerup = pac.ondblclick = null;
   document.getElementById('dica').textContent = '';
-  pac.classList.add('explode'); bum(1.2, .5);
+  pac.classList.add('explode'); bum(1.2, .5); palco.onmousemove = null;
+  setTimeout(()=>pac.remove(), 600);   // some de verdade: não fica por cima das cartas roubando o mouse
   setTimeout(()=>{
     palco.insertAdjacentHTML('beforeend', '<div class="clarao"></div>');
     palco.classList.remove('treme'); void palco.offsetWidth; palco.classList.add('treme');
     document.getElementById('encaixe').style.opacity = .25;
     // posições: as 10 comuns numa faixa em cima, as 5 melhores num arco embaixo (como no Hearthstone)
     const W = innerWidth, H = innerHeight;
-    const cartas = PACOTE.map((c,i)=>{
+    const ordem = [...PACOTE]; for (let i = ordem.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [ordem[i], ordem[j]] = [ordem[j], ordem[i]]; }
+    const cartas = ordem.map((c,i)=>{
       let x, y, r;
-      if (i < 10){ const k = i - 4.5; x = W/2 + k * Math.min(124, W/11); y = H*.24 + Math.abs(k)*3; r = k*1.2; }
-      else { const k = i - 12; x = W/2 + k * Math.min(160, W/6); y = H*.62 + Math.abs(k)*14; r = k*5; }
+      // 8 em cima e 7 embaixo; a ordem foi embaralhada (a rara pode estar em qualquer lugar, como num pacote de verdade)
+      if (i < 8){ const k = i - 3.5; x = W/2 + k * Math.min(128, W/9); y = H*.24 + Math.abs(k)*4; r = k*1.5; }
+      else { const k = i - 8 - 3; x = W/2 + k * Math.min(132, W/8.5); y = H*.64 + Math.abs(k)*8; r = k*3; }
       return `<div class="carta ${c.faixa}" style="--d:${i*.05}s;--r:${r}deg" data-x="${x}" data-y="${y}">
         <div class="aura"></div><div class="estouro"></div>
         <div class="gira"><div class="lado costas"></div><div class="lado frente" style="background-image:url('${img(c.nome)}')"></div></div>
@@ -123,7 +151,7 @@ function abrir(){
     els.forEach(el=>el.onclick = ()=>{
       if (el.classList.contains('virada')) return;
       el.classList.add('virada');
-      const nivel = PACOTE[els.indexOf(el)].faixa; brilhoSom(nivel);
+      const nivel = ordem[els.indexOf(el)].faixa; brilhoSom(nivel);
       if (nivel === 'mitica'){ bum(.85, .8); palco.classList.remove('treme'); void palco.offsetWidth; palco.classList.add('treme'); }
       else if (nivel === 'rara' || nivel === 'especial') bum(1.4, .35);
       if (nivel !== 'comum'){ const r = el.getBoundingClientRect(); const n = nivel === 'mitica' ? 40 : 18;
