@@ -151,6 +151,29 @@ html,body{margin:0;height:100%;overflow:hidden;color:#2a1a0e;font-family:'EB Gar
 .menuF .op svg{width:22px;height:18px;flex:none}
 .menuF .limpar{grid-column:1/-1;text-align:center;font-family:var(--ff);font-size:12px;letter-spacing:.1em;color:#a8957d;padding:6px;cursor:pointer}
 .menuF .limpar:hover{color:var(--ouro)}
+/* ---- trocar de comandante ---- */
+.cab{cursor:pointer}
+.cab .trocar{position:absolute;right:12px;top:10px;z-index:1;font-family:var(--ff);font-size:12px;letter-spacing:.08em;color:var(--ouro);background:#0009;border:1px solid #c9a24a88;border-radius:8px;padding:5px 10px;transition:border-color .2s,background .2s}
+.cab:hover .trocar{border-color:var(--ouro);background:#2a1a0ccc}
+#troca{position:fixed;inset:0;z-index:25;display:none;flex-direction:column;padding:22px 30px;background:#070403f2}
+#troca.on{display:flex}
+#troca .cabT{display:flex;align-items:center;gap:16px;margin-bottom:6px}
+#troca h2{margin:0;font-family:var(--ff);color:var(--ouro);font-size:24px}
+#troca .sub{color:#a8957d;font-size:16px;margin:0 0 14px}
+#troca .grade{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px;padding:6px 4px 90px;scrollbar-width:thin;scrollbar-color:#c9a24a77 transparent}
+#troca .op{position:relative;cursor:pointer;border-radius:10px;transition:transform .15s}
+#troca .op:hover{transform:translateY(-4px) scale(1.03)}
+#troca .op img{width:100%;display:block;border-radius:10px;box-shadow:0 8px 18px #000c}
+#troca .op .et{position:absolute;left:50%;top:-11px;transform:translateX(-50%);white-space:nowrap;font-family:var(--ff);font-size:11px;letter-spacing:.08em;padding:2px 12px;border-radius:6px;color:#2a1606;background:linear-gradient(180deg,#fff0b0,#e0b04a)}
+#troca .op.atual{cursor:default;opacity:.55}
+#troca .op.atual .et{background:linear-gradient(180deg,#d0d0d0,#8a8a8a)}
+#troca .op.sel img{box-shadow:0 0 0 3px #ffd060,0 0 30px #ffd060}
+#troca .vazioT{grid-column:1/-1;color:#a8957d;font-size:18px;font-style:italic;padding:30px 0}
+#troca .barraT{position:fixed;left:0;right:0;bottom:0;display:none;align-items:center;gap:18px;padding:16px 30px;background:linear-gradient(0deg,#120a06,#120a06ee);border-top:1px solid #8a6a2a}
+#troca .barraT.on{display:flex}
+#troca .barraT p{margin:0;flex:1;font-size:17px;color:#efe4cc}
+#troca .barraT p b{color:var(--ouro)}
+#troca .barraT p .sai{color:#ff9a7a}
 .voando{position:fixed;z-index:20;pointer-events:none;border-radius:5%;box-shadow:0 10px 30px #000a;transition:all .5s cubic-bezier(.5,0,.3,1)}
 </style></head><body>
 <svg width="0" height="0" style="position:absolute"><filter id="chama" x="-30%" y="-30%" width="160%" height="160%">
@@ -182,11 +205,15 @@ html,body{margin:0;height:100%;overflow:hidden;color:#2a1a0e;font-family:'EB Gar
       <label class="busca"><svg viewBox="0 0 24 24" fill="none" stroke="#d8b070" stroke-width="2.4" stroke-linecap="round"><circle cx="10" cy="10" r="6.5"/><path d="M15 15l6 6"/></svg><input id="busca" placeholder="Pesquisar carta..."></label><div class="npag" id="npag"></div></div>
   </div>
   <div id="lista">
-    <div class="cab" id="cab"><div><b id="cmdNome"></b><small>Deck da campanha</small></div></div>
+    <div class="cab" id="cab" title="Trocar de comandante"><span class="trocar">Trocar comandante</span><div><b id="cmdNome"></b><small>Deck da campanha</small></div></div>
     <div id="linhas"></div>
     <div class="pe"><div class="cont" id="cont"></div><button id="pronto">Concluído</button></div>
   </div>
 </div>
+<div id="troca"><div class="cabT"><button class="voltar" id="trocaVoltar">← Voltar</button><h2>Escolha o seu comandante</h2></div>
+  <p class="sub">Qualquer criatura lendária da sua coleção pode comandar o deck. As cartas que não forem das cores do novo comandante saem do deck, mas continuam na coleção.</p>
+  <div class="grade" id="trocaGrade"></div>
+  <div class="barraT" id="trocaBarra"><p id="trocaTxt"></p><button class="voltar" id="trocaOk" style="font-size:17px;padding:10px 24px">Trocar</button></div></div>
 <div id="msg"></div><img id="zoom" alt="">
 <script>
 // textura de ruído (couro, pergaminho, madeira): SVG feTurbulence como imagem
@@ -204,6 +231,7 @@ const noDeck = c => DECK.some(d => d.nome === c.nome);
 function filtradas(){
   const q = document.getElementById('busca').value.trim().toLowerCase();
   return COL.filter(c => {
+    if (CMD && c.nome === CMD.nome) return false;   // o comandante não vai no deck
     if (q && !c.nome.toLowerCase().includes(q) && !(c.tipo||'').toLowerCase().includes(q)) return false;
     if (filtroRar.size && !filtroRar.has(c.faixa)) return false;
     if (filtroTipo.size && ![...filtroTipo].some(t => t === 'Comandante' ? (c.lendaria && (c.tipo||'').includes('Creature')) : (c.tipo||'').includes(t))) return false;
@@ -238,7 +266,7 @@ function desenharLista(nova){
   const ord = [...DECK].sort((a,b) => (a.cmc - b.cmc) || a.nome.localeCompare(b.nome));
   const bas = 99 - DECK.length;
   document.getElementById('linhas').innerHTML = ord.map(c => `<div class="lin${nova === c.nome ? ' entra' : ''}" data-n="${encodeURIComponent(c.nome)}" style="--arte:url('${img(c,'art_crop')}')"><div class="cmc">${Math.floor(c.cmc)}</div><span>${c.nome}</span></div>`).join('')
-    + (bas > 0 ? `<div class="lin basico"><div class="cmc">${bas}</div><span>${NOME_BAS[COR]} (automático)</span></div>` : '');
+    + (bas > 0 ? `<div class="lin basico"><div class="cmc">${bas}</div><span>${COR.length === 1 ? NOME_BAS[COR] : 'Terrenos básicos'} (automático)</span></div>` : '');
   document.getElementById('cont').innerHTML = `${DECK.length + 1 + Math.max(0, bas)}/100<small>${DECK.length} cartas + ${Math.max(0,bas)} terrenos básicos</small>`;
   if (nova){ const e = document.querySelector('.lin.entra'); e && e.scrollIntoView({block:'nearest'}); }
 }
@@ -264,6 +292,34 @@ document.getElementById('linhas').addEventListener('click', e => {
   const el = e.target.closest('.lin'); if (!el || el.classList.contains('basico')) return;
   const n = decodeURIComponent(el.dataset.n); DECK = DECK.filter(d => d.nome !== n); sujo = true; desenharLista(); desenharLivro();
 });
+// trocar de comandante
+let CP = null, trocaSel = null;
+const ehComandante = c => c.lendaria && (c.tipo || '').includes('Creature') && (c.identidade || '') !== '';
+function opcoesComandante(){
+  const ini = CP.comandanteInicial || CP.comandante, l = [Object.assign({}, ini, {identidade: CP.corInicial || CP.cor, inicial: true})];
+  COL.filter(ehComandante).forEach(c => { if (c.nome !== ini.nome) l.push(c); });
+  return l;
+}
+function abrirTroca(){
+  trocaSel = null; document.getElementById('trocaBarra').classList.remove('on');
+  const ops = opcoesComandante();
+  document.getElementById('trocaGrade').innerHTML = ops.map((c, i) => { const atual = c.nome === CMD.nome;
+    return `<div class="op${atual ? ' atual' : ''}" data-i="${i}">${atual ? '<span class="et">Atual</span>' : c.inicial ? '<span class="et">Inicial</span>' : ''}<img loading="lazy" src="${img(c)}" alt="${c.nome}"></div>`; }).join('')
+    + (ops.length < 2 ? '<div class="vazioT">Você ainda não tem outra criatura lendária. Elas vêm nos boosters ou na escolha de rara e mítica da trilha de níveis.</div>' : '');
+  document.querySelectorAll('#trocaGrade .op:not(.atual)').forEach(el => el.onclick = () => {
+    trocaSel = ops[+el.dataset.i];
+    document.querySelectorAll('#trocaGrade .op').forEach(x => x.classList.toggle('sel', x === el));
+    const id = trocaSel.identidade || '', sai = DECK.filter(d => d.nome === trocaSel.nome || ![...(d.identidade || '')].every(x => id.includes(x))).length;
+    const cores = [...id].map(k => ({W:'branco',U:'azul',B:'preto',R:'vermelho',G:'verde'})[k]).join(', ');
+    document.getElementById('trocaTxt').innerHTML = `<b>${trocaSel.nome}</b> · ${cores}. ${sai ? `<span class="sai">${sai} carta${sai > 1 ? 's' : ''} ${sai > 1 ? 'saem' : 'sai'} do deck</span> (continua${sai > 1 ? 'm' : ''} na coleção).` : 'Nenhuma carta sai do deck.'} Os terrenos básicos trocam sozinhos.`;
+    document.getElementById('trocaBarra').classList.add('on');
+  });
+  document.getElementById('troca').classList.add('on');
+}
+document.getElementById('cab').onclick = () => { if (CP) abrirTroca(); };
+document.getElementById('trocaVoltar').onclick = () => document.getElementById('troca').classList.remove('on');
+document.getElementById('trocaOk').onclick = () => { if (!trocaSel) return; document.getElementById('trocaOk').disabled = true;
+  pai({acao:'trocarCmd', cmd: {nome: trocaSel.nome, set: trocaSel.set, num: trocaSel.num}, deck: DECK.map(c => ({nome:c.nome, set:c.set, num:c.num}))}); };
 // zoom da carta ao passar o mouse na lista
 const zoom = document.getElementById('zoom');
 document.getElementById('linhas').addEventListener('mousemove', e => {
@@ -300,7 +356,9 @@ function montarFiltros(){
 addEventListener('message', e => { const d = e.data; if (!d) return;
   if (d.dados){
     COL = d.dados.colecao.map(c => Object.assign(c, {cmc: +c.cmc || 0}));
-    const cp = d.dados.campanha; COR = cp.cor; CMD = cp.comandante;
+    const cp = d.dados.campanha; CP = cp; COR = cp.cor; CMD = cp.comandante; filtroCor.clear();
+    document.getElementById('troca').classList.remove('on'); document.getElementById('trocaOk').disabled = false;
+    if (d.trocou !== undefined){ sujo = false; aviso(`Novo comandante: ${CMD.nome.split(',')[0]}!` + (d.trocou ? ` ${d.trocou} carta${d.trocou > 1 ? 's saíram' : ' saiu'} do deck.` : '')); }
     const porChave = Object.fromEntries(COL.map(c => [chave(c), c]));
     DECK = cp.deck.map(c => porChave[chave(c)]).filter(Boolean);
     document.getElementById('cmdNome').textContent = CMD.nome.split(',')[0];
@@ -308,7 +366,7 @@ addEventListener('message', e => { const d = e.data; if (!d) return;
     montarFiltros(); desenharLivro(); desenharLista();
   }
   if (d.salvo){ sujo = false; document.getElementById('pronto').disabled = false; aviso('Deck salvo!'); setTimeout(() => pai({acao:'fecharDeck'}), 700); }
-  if (d.erro){ document.getElementById('pronto').disabled = false; aviso(d.erro); }
+  if (d.erro){ document.getElementById('pronto').disabled = false; document.getElementById('trocaOk').disabled = false; aviso(d.erro); }
 });
 pai({acao:'prontaDeck'});
 // brasas subindo devagar por cima de tudo

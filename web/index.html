@@ -4427,6 +4427,13 @@ async function abrirEditorDeck(){
       const r = await post('/api/campanha', {acao:'salvarDeck', deck: e.data.deck});
       fr.contentWindow.postMessage(r.erro ? {erro: r.erro} : {salvo: true}, '*');
     }
+    if (a === 'trocarCmd'){
+      const r = await post('/api/campanha', {acao:'trocarComandante', nome: e.data.cmd.nome, set: e.data.cmd.set, num: e.data.cmd.num, deck: e.data.deck});
+      if (r.erro){ fr.contentWindow.postMessage({erro: r.erro}, '*'); return; }
+      const novos = await post('/api/campanha', {acao:'editor'});
+      if (novos.erro){ fr.contentWindow.postMessage({erro: novos.erro}, '*'); return; }
+      fr.contentWindow.postMessage({dados: novos, trocou: r.sairam || 0}, '*');
+    }
     if (a === 'fecharDeck'){ window.removeEventListener('message', ouvir); fr.remove(); abrirCampanha(); }
   };
   window.addEventListener('message', ouvir);

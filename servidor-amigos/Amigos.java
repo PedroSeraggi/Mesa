@@ -696,7 +696,12 @@ public class Amigos {
         JsonArray d = cp.getAsJsonArray("deck");
         for (JsonElement e : d) { JsonObject x = e.getAsJsonObject(); sb.append("1 [").append(str(x, "set")).append(":").append(str(x, "num")).append("] ").append(str(x, "nome")).append("\n"); }
         int falta = 99 - d.size(); String cor = str(cp, "cor");
-        for (String[] b : BASICOS) if (b[0].equals(cor) && falta > 0) sb.append(falta).append(" [").append(b[2]).append(":").append(b[3]).append("] ").append(b[1]).append("\n");
+        List<String[]> bs = new ArrayList<>(); for (String[] b : BASICOS) if (cor.contains(b[0])) bs.add(b);
+        if (bs.isEmpty()) bs.add(BASICOS[0]);
+        for (int i = 0; i < bs.size() && falta > 0; i++) {   // divide os básicos entre as cores (a sobra vai para as primeiras)
+            int q = falta / bs.size() + (i < falta % bs.size() ? 1 : 0); String[] b = bs.get(i);
+            if (q > 0) sb.append(q).append(" [").append(b[2]).append(":").append(b[3]).append("] ").append(b[1]).append("\n");
+        }
         return sb.toString();
     }
     static Object campanha(JsonObject c) throws IOException {
@@ -709,7 +714,7 @@ public class Amigos {
             if (!"WUBRG".contains(cor) || cor.isEmpty()) throw new IllegalArgumentException("cor inválida");
             List<JsonObject> d = lerDck(pastaCampanha().resolve("mundo1").resolve("inicial-" + cor + ".dck"));
             JsonObject cp = new JsonObject(); cp.addProperty("cor", cor); cp.addProperty("mundo", 1); cp.addProperty("batalha", 1);
-            cp.add("comandante", d.get(0));
+            cp.add("comandante", d.get(0)); cp.add("comandanteInicial", d.get(0)); cp.addProperty("corInicial", cor);
             JsonArray deck = new JsonArray();
             for (int i = 1; i < d.size(); i++) { deck.add(d.get(i)); u.colecao.merge(chaveCarta(d.get(i)), 1, Integer::sum); }
             cp.add("deck", deck); cp.addProperty("desde", System.currentTimeMillis());
@@ -738,6 +743,7 @@ public class Amigos {
             JsonArray d = c.getAsJsonArray("deck");
             if (d == null || d.size() > 99) throw new IllegalArgumentException("O deck pode ter no máximo 99 cartas além do comandante.");
             String cor = str(u.campanha, "cor");
+            String nomeCmd = str(u.campanha.getAsJsonObject("comandante"), "nome");
             Set<String> nomes = new HashSet<>(); JsonArray novo = new JsonArray();
             for (JsonElement e : d) {
                 JsonObject x = e.getAsJsonObject(); String k = chaveCarta(x);
@@ -745,10 +751,40 @@ public class Amigos {
                 JsonObject info = cartaPorChave.get(k);
                 if (info == null) throw new IllegalArgumentException("Carta desconhecida: " + str(x, "nome"));
                 if (!nomes.add(str(info, "nome"))) throw new IllegalArgumentException("Só pode uma cópia de " + str(info, "nome") + ".");
+                if (str(info, "nome").equals(nomeCmd)) throw new IllegalArgumentException(nomeCmd + " já é o seu comandante.");
                 for (char ch : str(info, "identidade").toCharArray()) if (cor.indexOf(ch) < 0) throw new IllegalArgumentException(str(info, "nome") + " não é das cores do seu comandante.");
                 JsonObject y = new JsonObject(); y.addProperty("nome", str(info, "nome")); y.addProperty("set", str(info, "set")); y.addProperty("num", str(info, "num")); novo.add(y);
             }
             u.campanha.add("deck", novo); sujo = true;
+        }
+        if (acao.equals("trocarComandante")) {   // nova lendária da coleção (ou volta ao inicial); cartas fora das cores saem do deck
+            if (u.campanha == null) throw new IllegalArgumentException("Escolha o seu deck inicial primeiro.");
+            pool("mundo1");
+            JsonObject cp = u.campanha;
+            if (!cp.has("comandanteInicial")) { cp.add("comandanteInicial", cp.getAsJsonObject("comandante").deepCopy()); cp.addProperty("corInicial", str(cp, "cor")); }
+            JsonObject ini = cp.getAsJsonObject("comandanteInicial");
+            String k = texto(c, "nome", 200, "") + "|" + texto(c, "set", 10, "") + "|" + texto(c, "num", 10, "");
+            JsonObject novo; String corNova;
+            if (k.equals(chaveCarta(ini))) { novo = ini.deepCopy(); corNova = str(cp, "corInicial"); }
+            else {
+                JsonObject x = cartaPorChave.get(k);
+                if (x == null || u.colecao.getOrDefault(k, 0) < 1) throw new IllegalArgumentException("Você não tem essa carta.");
+                if (str(x, "lendaria").isEmpty() || !str(x, "tipo").contains("Creature")) throw new IllegalArgumentException("Só criaturas lendárias podem ser comandante.");
+                corNova = str(x, "identidade");
+                if (corNova.isEmpty()) throw new IllegalArgumentException("Comandantes incolores ainda não são aceitos na campanha.");
+                novo = new JsonObject(); novo.addProperty("nome", str(x, "nome")); novo.addProperty("set", str(x, "set")); novo.addProperty("num", str(x, "num"));
+            }
+            // o deck que estava na tela (com mudanças não salvas) ou o salvo
+            JsonArray base = c.has("deck") ? c.getAsJsonArray("deck") : cp.getAsJsonArray("deck");
+            JsonArray fica = new JsonArray(); int saiu = 0; Set<String> vistos = new HashSet<>();
+            for (JsonElement e : base) {
+                JsonObject y = e.getAsJsonObject(); String ky = chaveCarta(y); JsonObject info = cartaPorChave.get(ky);
+                boolean ok = info != null && u.colecao.getOrDefault(ky, 0) > 0 && !str(info, "nome").equals(str(novo, "nome")) && vistos.add(str(info, "nome"));
+                if (ok) for (char ch : str(info, "identidade").toCharArray()) if (corNova.indexOf(ch) < 0) ok = false;
+                if (ok) fica.add(y); else saiu++;
+            }
+            cp.add("comandante", novo); cp.addProperty("cor", corNova); cp.add("deck", fica); sujo = true;
+            Map<String, Object> r = new LinkedHashMap<>(); r.put("campanha", cp); r.put("sairam", saiu); return r;
         }
         if (acao.equals("batalha")) {   // os decks para jogar a batalha n (só as já liberadas)
             if (u.campanha == null) throw new IllegalArgumentException("Escolha o seu deck inicial primeiro.");
