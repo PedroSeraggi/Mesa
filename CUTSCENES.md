@@ -5,11 +5,16 @@ Formato (inspirado nas cutscenes de The Witcher): pinturas paradas com traço de
 numa velocidade diferente (parallax). Por cima: brasas ou neblina, legenda e narrador. Cada cutscene tem 30 a 70 segundos e
 pode ser pulada.
 
-## Estilo visual (o mesmo texto vai em todos os pedidos de imagem)
+## Estilo visual: PINTADO À MÃO (escolhido em 26/11)
 
-> Painted graphic-novel illustration, thick black ink outlines, flat muted colors with one strong accent color, rough brush
-> textures, dark fantasy, cinematic wide composition 21:9, misty atmosphere, no text, no logos. Style of a hand-painted
-> storybook for a card game.
+Pintura a óleo com pinceladas grossas e textura de tinta, como ilustração de livro de contos antigos. Referência:
+`web/cutscenes/abertura/q1b.jpg` (os magos). Texto de estilo dos pedidos:
+
+> Hand-painted oil painting on canvas, visible thick impasto brush strokes, rich textured paint, warm candlelit palette with
+> deep shadows and one glowing accent color, like an illustration from an ancient fairy tale book or an old museum painting of
+> a legend, dark fantasy, swirling misty atmosphere. No text, no letters, no logos.
+
+A primeira versão (graphic novel com tinta) ficou guardada em `web/cutscenes/abertura/original/`.
 
 Cor de destaque por mundo: Mundo 1 = verde e dourado · Mundo 2 = roxo doente e verde-ácido · Mundo 3 = vermelho-sangue no
 azul da noite · Mundo 4 = dourado e preto, céu rachado.
