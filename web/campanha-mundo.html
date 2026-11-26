@@ -165,6 +165,10 @@ function mostrar(){
 }
 const pai = m => parent.postMessage(Object.assign({campanha: true}, m), '*');
 document.querySelector('.voltar').onclick = () => pai({acao: 'fechar'});
+// som de passar o mouse (o mesmo dos botões do menu da Mesa, com a configuração de som de lá)
+const somUi = n => { try { parent.Sons && parent.Sons.tocar(n); } catch(e){} };
+let ultBat = null;
+document.addEventListener('mouseover', e => { const b = e.target.closest('.bat, .editar, #comecar'); if (b && b !== ultBat) somUi('hover'); ultBat = b; });
 document.querySelector('.editar').onclick = () => pai({acao: 'editar'});
 document.querySelector('.editar.bazar').onclick = () => pai({acao: 'bazar'});
 document.getElementById('painel').addEventListener('click', e => { if (e.target.id === 'comecar') pai({acao: 'jogar', batalha: sel, oponentes: BAT[sel-1].d}); });

@@ -2857,6 +2857,21 @@ const PONTAS_CURSOR = {"esqueleto-aberta": [12, 0], "esqueleto-apontando": [2, 0
 const TEMAS_CURSOR = [['esqueleto','Esqueleto'],['cavaleiro','Cavaleiro'],['maga','Maga'],['druida','Druida'],['dragao','Dragão'],['sistema','Padrão do Windows']];
 let cfgApp = Object.assign({cursor:'esqueleto', fundoAnimado:true, ataque:true, reduzir:false, musica:true, volume:35, somUi:true, somFx:true, volFx:50}, JSON.parse(localGet('cfgApp')||'{}'));
 if (!cfgApp.volFxV3){ cfgApp.volFx = 50; cfgApp.volFxV3 = true; localSet('cfgApp', JSON.stringify(cfgApp)); }   // novo padrão: 5%
+// telas em iframe (campanha, loja, booster, bazar...): usam o mesmo cursor escolhido nas configurações
+function cursorNoFrame(fr){
+  const aplicar = ()=>{ try {
+    const d = fr.contentDocument; if (!d || !d.documentElement || d.documentElement.dataset.cursorMesa) return; d.documentElement.dataset.cursorMesa = 1;
+    const cs = getComputedStyle(document.documentElement), N = cs.getPropertyValue('--cur-normal').trim(), C = cs.getPropertyValue('--cur-clique').trim();
+    if (!N || N === 'auto') return;
+    const st = d.createElement('style'); st.textContent = `html,body{cursor:${N}}`; d.head.appendChild(st);
+    // cada elemento ganha o cursor certo na primeira vez que o mouse passa: "mãozinha" onde a página usa pointer
+    d.addEventListener('mouseover', e => { const el = e.target; if (!el || !el.style || el.__cur) return; el.__cur = 1;
+      const c = getComputedStyle(el).cursor; if (c === 'pointer') el.style.cursor = C; else if (c === 'auto' || c === 'default') el.style.cursor = N; }, true);
+    d.querySelectorAll('iframe').forEach(cursorNoFrame);
+  } catch(e){} };
+  fr.addEventListener('load', aplicar); aplicar();
+}
+new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.tagName === 'IFRAME') cursorNoFrame(n); }))).observe(document.documentElement, {childList: true, subtree: true});
 function salvarCfgApp(){ localSet('cfgApp', JSON.stringify(cfgApp)); aplicarCfgApp(); }
 function aplicarCfgApp(){
   const r = document.documentElement.style, t = cfgApp.cursor;

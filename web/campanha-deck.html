@@ -277,7 +277,7 @@ function desenharLivro(){
 // virar a página: uma folha gira por cima e o conteúdo troca no meio do giro
 // sons do grimório: carta deslizando ao passar o mouse, página folheando ao virar
 let AC_ = null;
-function somCarta(){ try { const a = AC_ || (AC_ = new (window.AudioContext||window.webkitAudioContext)()), t = a.currentTime;
+function somCarta(){ try { if (parent !== window && parent.Sons){ parent.Sons.tocar('maoCarta'); return; } } catch(e){} try { const a = AC_ || (AC_ = new (window.AudioContext||window.webkitAudioContext)()), t = a.currentTime;
   const n = a.createBuffer(1, a.sampleRate * .09, a.sampleRate), d = n.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/d.length, 2);
   const s = a.createBufferSource(); s.buffer = n; const f = a.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = .9; f.frequency.setValueAtTime(2400, t); f.frequency.exponentialRampToValueAtTime(5200, t + .08);
   const g = a.createGain(); g.gain.value = .12; s.connect(f).connect(g).connect(a.destination); s.start(t); } catch(e){} }
