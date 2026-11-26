@@ -1,0 +1,32 @@
+{
+  "titulo": "A queda de Krenko",
+  "transicao": "preto",
+  "musica": "../abertura/musica.mp3",
+  "volumeMusica": 0.16,
+  "quadros": [
+    {
+      "img": "q1.jpg",
+      "mov": "esq",
+      "audio": "n1.mp3",
+      "texto": "Krenko caiu. A coroa de lata rolou pelos paralelepípedos, e o chefe que tinha feito milhares de goblins marcharem não passava agora de um corpo pequeno no fundo de um beco. Sem ele, a horda se espalhou como folhas ao vento."
+    },
+    {
+      "img": "q2.jpg",
+      "mov": "aprox",
+      "audio": "n2.mp3",
+      "texto": "Mas, presa na mão dele, havia uma coisa que nenhum goblin deveria ter. Um selo de ouro antigo, ainda quente, gravado com a cabeça de um dragão de chifres em coroa."
+    },
+    {
+      "img": "q3.jpg",
+      "mov": "afasta",
+      "audio": "n3.mp3",
+      "texto": "Quando você tocou o selo, o amuleto queimou no seu peito. E, por um instante, você lembrou. Uma pedra gravada com runas. Estrelas. Uma garra imensa descendo do céu. Não era tudo... mas era o bastante para saber: Krenko nunca trabalhou sozinho."
+    },
+    {
+      "img": "q4.jpg",
+      "mov": "sobe",
+      "audio": "n4.mp3",
+      "texto": "Naquela noite, o céu sobre as Terras de Origem se rasgou. Uma luz roxa, doente, escorreu da ferida, e algo do outro lado sussurrou. O selo apontava para lá. Para um mundo que já estava sendo devorado por dentro."
+    }
+  ]
+}

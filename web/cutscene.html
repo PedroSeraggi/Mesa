@@ -48,7 +48,7 @@ const pai = m => parent !== window && parent.postMessage(Object.assign({cutscene
 function tamanho(){ const W = innerWidth, H = innerHeight, r = 1584/672; let w = W * ESCALA, h = w / r; if (h < H * ESCALA){ h = H * ESCALA; w = h * r; } return {w, h, W, H}; }
 // posição da câmera dentro de um quadro: u vai de 0 a 1; a velocidade é maior no começo e no fim (chega rápido, desacelera sem parar, acelera para sair)
 function pose(q, u){
-  const {w, h, W, H} = tamanho(), fx = (w - W) / 2 * .8, fy = (h - H) / 2 * .8, k = .45;   // deriva suave
+  const {w, h, W, H} = tamanho(), fx = (w - W) / 2 * .8, fy = (h - H) / 2 * .8, k = R.transicao === 'preto' ? 0 : .45;   // deriva suave (no preto: velocidade constante)
   const s = u + k * Math.sin(2 * Math.PI * u) / (2 * Math.PI);   // velocidade 1 + k·cos: rápida nas pontas, lenta no meio (nunca para)
   const v = VEL[q.mov] || [0,0];
   let x = -v[0] * fx * (2 * s - 1), y = -v[1] * fy * (2 * s - 1), z = 1;
@@ -75,6 +75,19 @@ function loop(agora){
   // tremor (impacto)
   let tx = 0, ty = 0; if (tremor > 0){ tremor = Math.max(0, tremor - .012); tx = (Math.random() - .5) * 26 * tremor; ty = (Math.random() - .5) * 26 * tremor; }
   if (u < 1){ aplicar(el, pose(q, u), tx, ty); blur.setAttribute('stdDeviation', '0 0'); }
+  else if (R.transicao === 'preto'){
+    // passagem pelo preto: escurece (a imagem continua andando), troca no escuro e a próxima nasce do preto
+    const prox = Q[atual + 1]; if (!prox){ acabar(); return; }
+    const TP = 1.8, tt = Math.min(1, (u - 1) * d / (TP * 1000)), esc = document.getElementById('escuro');
+    esc.style.transition = 'none';
+    if (tt < .5){ esc.style.opacity = Math.min(1, tt * 2.2); aplicar(el, pose(q, 1 + (u - 1) * .25), tx, ty); }
+    else {
+      if (!prox._tocou){ els[atual + 1].style.display = 'block'; tocar(prox); legenda(prox.texto); prox._legendou = true; }
+      esc.style.opacity = Math.max(0, 1 - (tt - .5) * 2.2); el.style.display = 'none';
+      aplicar(els[atual + 1], pose(prox, 0), 0, 0);
+    }
+    if (tt >= 1){ esc.style.opacity = 0; esc.style.transition = ''; quadro(atual + 1); }
+  }
   else {
     // passagem para o próximo: os dois andam juntos na direção da câmera do próximo quadro, com borrão de movimento
     const prox = Q[atual + 1];

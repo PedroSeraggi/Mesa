@@ -1,0 +1,32 @@
+{
+  "titulo": "Terras de Origem",
+  "transicao": "preto",
+  "musica": "../abertura/musica.mp3",
+  "volumeMusica": 0.16,
+  "quadros": [
+    {
+      "img": "q1.jpg",
+      "mov": "dir",
+      "audio": "n1.mp3",
+      "texto": "As Terras de Origem. Florestas mais antigas que qualquer reino, cidades de pedra branca onde os sinos tocam ao entardecer. Por gerações, humanos, elfos e anões dividiram estas colinas em paz. Ninguém ali lembrava mais o que era a guerra."
+    },
+    {
+      "img": "q2.jpg",
+      "mov": "aprox",
+      "audio": "n2.mp3",
+      "texto": "Mas, nas últimas luas, as vilas começaram a queimar. Primeiro as mais distantes, depois as das estradas, depois as dos vales. Goblins. Aos milhares. E, pela primeira vez na história, eles marchavam organizados... como um exército que obedece a alguém."
+    },
+    {
+      "img": "q3.jpg",
+      "mov": "aprox",
+      "audio": "n3.mp3",
+      "texto": "Você não sabe quem é. Não sabe de onde veio, nem por que acordou naquela grama fria. Mas, quando fecha a mão, o amuleto no seu peito responde. E a magia vem até você como se sempre tivesse sido sua."
+    },
+    {
+      "img": "q4.jpg",
+      "mov": "sobe",
+      "audio": "n4.mp3",
+      "texto": "Nos portões de Akros, um jovem soldado cruza os braços e te encara de cima a baixo. Kytheon nunca deixou um estranho passar sem provar o próprio valor. Se quiser atravessar estas terras... vai ter que começar por ele."
+    }
+  ]
+}

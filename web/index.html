@@ -4422,7 +4422,7 @@ function telaEscolhaInicial(){
     if (e.data.acao === 'escolher'){
       const r = await post('/api/campanha', {acao:'escolher', cor: e.data.cor});
       if (r.erro){ fr.contentWindow.postMessage({erro: r.erro}, '*'); return; }
-      window.removeEventListener('message', ouvir); fr.remove(); tocarCutscene('abertura', ()=>mostrarCampanha(r.campanha));
+      window.removeEventListener('message', ouvir); fr.remove(); tocarCutscene('abertura', ()=>tocarCutscene('mundo1-entrada', ()=>mostrarCampanha(r.campanha)));
     }
   };
   window.addEventListener('message', ouvir);
