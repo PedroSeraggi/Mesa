@@ -128,6 +128,12 @@ fetch(base + 'roteiro.json').then(r => r.json()).then(async roteiro => {
   await Promise.all(Q.map(q => new Promise(ok => { const i = new Image(); i.onload = ok; i.onerror = () => { if (q.reserva) q.img = q.reserva; ok(); }; i.src = imgDe(q.img); })));
   els = Q.map(q => { const d = document.createElement('div'); d.className = 'quadro'; d.style.backgroundImage = `url('${imgDe(q.img)}')`; d.style.display = 'none'; cam.appendChild(d); return d; });
   const comecar = () => { if (musica){ musica.play().catch(()=>{}); fadeVol(musica, R.volumeMusica ?? .16, 3000); } document.getElementById('iniciar').style.display = 'none'; els[0].style.display = 'block'; document.getElementById('escuro').style.opacity = 0; quadro(0); requestAnimationFrame(loop); };
-  if ((Q.some(q => q.audio) || R.musica) && !navigator.userActivation?.hasBeenActive){ const b = document.getElementById('iniciar'); b.style.display = 'flex'; b.onclick = comecar; } else comecar();
+  const pedirClique = () => { const b = document.getElementById('iniciar'); b.style.display = 'flex'; b.onclick = comecar; };
+  const teste = musica || (Q.find(q => q._audio) || {})._audio;
+  if (!teste || navigator.userActivation?.hasBeenActive) comecar();
+  else {   // a Mesa já teve um clique (ou o Chrome libera o som): tenta tocar direto; se o navegador bloquear, pede o clique
+    const v = teste.volume; teste.volume = 0;
+    teste.play().then(() => { teste.pause(); teste.currentTime = 0; teste.volume = v; comecar(); }).catch(() => { teste.volume = v; pedirClique(); });
+  }
 });
 </script></body></html>

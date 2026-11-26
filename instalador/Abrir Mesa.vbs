@@ -42,7 +42,7 @@ For Each c In caminhos
   If navegador = "" And fso.FileExists(c) Then navegador = c
 Next
 If navegador <> "" Then
-  sh.Run """" & navegador & """ --app=" & url & " --start-maximized", 1, False
+  sh.Run """" & navegador & """ --app=" & url & " --start-maximized --autoplay-policy=no-user-gesture-required", 1, False
 Else
   sh.Run url
 End If

@@ -256,6 +256,20 @@ html.modoDesenho #mesa,html.modoDesenho #mesa *{cursor:crosshair!important}
 .corpoTab.pmAnim{position:relative;isolation:isolate}.corpoTab.pmAnim>.pmFx{z-index:-1}
 .comMoldura{margin-right:22px;margin-left:8px}.comMoldura[data-mld='40'],.comMoldura[data-mld='50']{margin-right:34px;margin-left:16px}
 #convitesTroca{position:fixed;right:18px;bottom:70px;z-index:9400;display:flex;flex-direction:column;gap:8px}
+#tituloMundo{position:fixed;inset:0;z-index:9600;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;color:#f3e6c8}
+#tituloMundo>*{opacity:0;transform:translateY(14px);transition:opacity 1.6s ease,transform 1.6s ease}
+#tituloMundo.on>*{opacity:1;transform:none}
+#tituloMundo.on .tmCap{transition-delay:.4s}#tituloMundo.on h1{transition-delay:1s}#tituloMundo.on .tmOrn{transition-delay:1.6s}#tituloMundo.on p{transition-delay:2.2s}#tituloMundo.on .tmBt{transition-delay:3s}
+#tituloMundo.sai>*{opacity:0!important;transition:opacity 1s ease!important;transition-delay:0s!important}
+#tituloMundo .tmCap{font-family:'Cinzel',serif;font-size:14px;letter-spacing:.5em;color:#c9a24a}
+#tituloMundo h1{margin:0;font-family:'Metamorphous',serif;font-weight:400;font-size:clamp(40px,6vw,78px);letter-spacing:.06em;color:transparent;background:linear-gradient(180deg,#fff4c8,#e8b84a 55%,#9a6a1a);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 0 24px #e8b84a55)}
+#tituloMundo .tmOrn{display:flex;align-items:center;gap:14px}#tituloMundo .tmOrn i{width:min(20vw,220px);height:1px;background:linear-gradient(90deg,transparent,#e8b84a)}#tituloMundo .tmOrn i:last-child{transform:scaleX(-1)}
+#tituloMundo .tmOrn b{width:9px;height:9px;transform:rotate(45deg);border:1px solid #e8b84a;box-shadow:0 0 12px #e8b84a}
+#tituloMundo p{max-width:560px;margin:8px 0 18px;font-family:'EB Garamond',serif;font-style:italic;font-size:19px;color:#c9b48a}
+#tituloMundo .tmBt{font-family:'Metamorphous',serif;font-size:20px;letter-spacing:.12em;color:#2a1606;padding:14px 38px;border:0;border-radius:12px;cursor:pointer;
+  background:linear-gradient(180deg,#ffe9a8,#e8b84a 55%,#b8862a);box-shadow:0 6px 0 #6a4410,0 0 30px #e8b84a55;transition:transform .2s,box-shadow .2s,filter .2s}
+#tituloMundo .tmBt:hover{filter:brightness(1.08);box-shadow:0 6px 0 #6a4410,0 0 50px #e8b84a99}
+#tituloMundo .tmBt:active{transform:translateY(4px);box-shadow:0 2px 0 #6a4410,0 0 30px #e8b84a55}
 .mundoFim{text-align:center;max-width:520px;margin:0 auto}
 .mundoFim .mfArte{position:relative;height:190px;border-radius:12px;overflow:hidden;margin-bottom:14px;box-shadow:inset 0 0 0 1px #c9a24a55,0 10px 30px #000a}
 .mundoFim .mfKrenko{position:absolute;inset:0;background:url('cutscenes/mundo1-vitoria/q1.jpg') center/cover;filter:saturate(.8) brightness(.8)}
@@ -4436,11 +4450,20 @@ function telaEscolhaInicial(){
     if (e.data.acao === 'escolher'){
       const r = await post('/api/campanha', {acao:'escolher', cor: e.data.cor});
       if (r.erro){ fr.contentWindow.postMessage({erro: r.erro}, '*'); return; }
-      window.removeEventListener('message', ouvir); fr.remove(); tocarCutscene('abertura', ()=>tocarCutscene('mundo1-entrada', ()=>mostrarCampanha(r.campanha)));
+      window.removeEventListener('message', ouvir); fr.remove(); tocarCutscene('abertura', ()=>telaTituloMundo(()=>tocarCutscene('mundo1-entrada', ()=>mostrarCampanha(r.campanha))));
     }
   };
   window.addEventListener('message', ouvir);
   document.body.appendChild(fr);
+}
+// entre a abertura e o Mundo 1: título do mundo saindo do preto e o botão para entrar
+function telaTituloMundo(depois){
+  const t = document.createElement('div'); t.id = 'tituloMundo';
+  t.innerHTML = `<div class="tmCap">MUNDO 1</div><h1>Terras de Origem</h1><div class="tmOrn"><i></i><b></b><i></i></div>
+    <p>Florestas antigas, cidades de pedra branca e um céu dourado. Mas há fumaça no horizonte.</p>
+    <button class="tmBt">Começar nas Terras de Origem</button>`;
+  document.body.appendChild(t); requestAnimationFrame(()=>t.classList.add('on'));
+  t.querySelector('.tmBt').onclick = ()=>{ t.classList.add('sai'); setTimeout(()=>{ t.remove(); depois(); }, 1200); };
 }
 // cutscene (cutscene.html por cima de tudo); 'depois' roda quando ela termina ou é pulada
 function tocarCutscene(nome, depois){

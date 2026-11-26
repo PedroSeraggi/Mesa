@@ -156,7 +156,10 @@ document.querySelectorAll('.est').forEach(el=>el.onclick = ()=>{
 let escolhida = null, ocupado = false;
 const pai = m => parent.postMessage(Object.assign({campanha: true}, m), '*');
 document.getElementById('fechar').onclick = () => pai({acao: 'fechar'});
-document.getElementById('jVolta').onclick = () => { if (ocupado) return; ocupado = true; document.getElementById('jVolta').textContent = 'Preparando...'; pai({acao: 'escolher', cor: escolhida}); };
+document.getElementById('jVolta').onclick = () => { if (ocupado) return; ocupado = true; document.getElementById('jVolta').textContent = 'Preparando...';
+  const preto = document.createElement('div'); preto.style.cssText = 'position:fixed;inset:0;background:#000;z-index:20;opacity:0;transition:opacity 1.4s ease';
+  document.body.appendChild(preto); requestAnimationFrame(() => preto.style.opacity = 1);
+  setTimeout(() => pai({acao: 'escolher', cor: escolhida}), 1450); };
 document.querySelectorAll('.est').forEach(el => el.addEventListener('click', () => { escolhida = el.dataset.k; document.getElementById('fechar').style.display = 'none'; }));
 // mudou de ideia: a câmera volta para os estandartes
 document.getElementById('jTroca').onclick = () => { if (ocupado) return;
@@ -164,6 +167,6 @@ document.getElementById('jTroca').onclick = () => { if (ocupado) return;
   const cena = document.getElementById('cena'); cena.style.transform = ''; cena.classList.remove('zoom');
   document.getElementById('fechar').style.display = ''; escolhida = null; };
 // o Mesa responde se deu errado: volta para a escolha
-window.addEventListener('message', e => { if (e.data && e.data.erro){ ocupado = false; document.getElementById('jVolta').textContent = 'Começar'; document.getElementById('jTxt').textContent = e.data.erro; } });
+window.addEventListener('message', e => { if (e.data && e.data.erro){ document.querySelectorAll('body > div[style*="z-index:20"]').forEach(x => x.remove()); ocupado = false; document.getElementById('jVolta').textContent = 'Começar'; document.getElementById('jTxt').textContent = e.data.erro; } });
 </script>
 </body></html>
