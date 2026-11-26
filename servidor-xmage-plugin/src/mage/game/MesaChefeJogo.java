@@ -46,6 +46,13 @@ public class MesaChefeJogo extends CommanderFreeForAll {
 
     @Override
     protected void init(UUID choosingPlayerId) {
+        // contra o Krenko o jogador sempre começa: assim o turno 5 é dele (é nele que os Guardas agem)
+        boolean temChefe = false; UUID humano = null;
+        for (Player p : getPlayers().values()) {
+            if (p.getName() != null && p.getName().contains("Krenko")) temChefe = true;
+            else if (p.isHuman() && humano == null) humano = p.getId();
+        }
+        if (temChefe && humano != null && startingPlayerId == null) startingPlayerId = humano;
         super.init(choosingPlayerId);
         for (Player p : getPlayers().values()) {
             if (p.getName() == null || !p.getName().contains("Krenko")) continue;
