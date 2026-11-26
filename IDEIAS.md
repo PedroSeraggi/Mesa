@@ -52,3 +52,8 @@ Lista combinada para não esquecer. Nada disto está feito ainda.
 - **Níveis com desbloqueios:** cursores, molduras de avatar, títulos, sleeves e playmats liberados por nível.
 - **Variantes:** Planechase e draft de cubo (o XMage já tem os dois).
 - **Ranking do grupo:** vitórias, aproveitamento e rivalidades de todos.
+
+## Pendente da trilha de níveis
+- Costas de carta personalizadas (prêmio do nível 20): escolher a versão da Mesa ou subir uma imagem; mostrar para todos na mesa.
+- Entrada do comandante em chamas douradas (prêmio do nível 40).
+- Molduras de avatar também no lobby, no chip do topo e na mesa (hoje só nos perfis).
