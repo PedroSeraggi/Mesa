@@ -51,11 +51,21 @@ html,body{margin:0;height:100%;overflow:hidden;color:#2a1a0e;font-family:'EB Gar
 .faixa::before{left:12px}.faixa::after{right:12px;transform:translateY(-50%) scaleX(-1)}
 .rodape{grid-column:1/-1;justify-self:center;font-family:var(--ff);font-size:13px;color:#8a6a3a;letter-spacing:.1em}
 .carta{position:relative;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
-.carta .mold{position:relative;height:calc(100% - 26px);max-width:100%;aspect-ratio:488/680}
+.carta .mold{position:relative;isolation:isolate;height:calc(100% - 26px);max-width:100%;aspect-ratio:488/680}
 .carta img{width:100%;height:100%;display:block;object-fit:contain;border-radius:4.5%;
   box-shadow:0 1px 1px #0006,0 6px 10px #3a1a0866,0 14px 18px -6px #3a1a0855;transition:transform .2s,box-shadow .2s,filter .2s}
-.carta:hover img{transform:translateY(-6px) scale(1.05) rotate(-.6deg);box-shadow:0 0 0 2px var(--raro),0 0 22px var(--raro),0 18px 26px #3a1a0888}
-.carta[data-f=comum]{--raro:#d8d0c0}.carta[data-f=incomum]{--raro:#9fd0ff}.carta[data-f=rara]{--raro:#ffd060}.carta[data-f=mitica]{--raro:#ff7a2a}.carta[data-f=especial]{--raro:#c890ff}
+.carta .mold{transition:transform .2s}
+.carta:hover .mold{transform:translateY(-6px) scale(1.05) rotate(-.6deg)}
+.carta:hover img{box-shadow:0 18px 26px #3a1a0888}
+.carta .aura{position:absolute;inset:-14px;border-radius:16px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:-1;
+  background:radial-gradient(ellipse 62% 60% at 50% 50%,transparent 58%,var(--brilhoCor) 72%,transparent 100%),radial-gradient(ellipse 58% 56% at 50% 50%,var(--brilhoCor) 60%,transparent 90%);filter:url(#chama)}
+.carta .aura::after{content:'';position:absolute;inset:8px;border-radius:12px;background:var(--brilhoCor);filter:blur(10px);opacity:.8}
+.carta{--brilhoCor:var(--raro)}
+.carta:not(.fora):hover .aura{opacity:1}
+.carta.novo:not(.visto){--brilhoCor:#ffa020}
+.carta.novo:not(.visto) .aura{opacity:.95;animation:pulsaN 2.4s ease-in-out infinite}
+@keyframes pulsaN{50%{transform:scale(1.05);opacity:.75}}
+.carta[data-f=comum]{--raro:#fff4dc}.carta[data-f=incomum]{--raro:#8ac8ff}.carta[data-f=rara]{--raro:#ffc830}.carta[data-f=mitica]{--raro:#ff6a1a}.carta[data-f=especial]{--raro:#b47aff}
 .placa{margin-top:5px;height:20px;white-space:nowrap;min-width:46px;padding:0 10px;display:flex;align-items:center;justify-content:center;font-family:var(--fn);font-weight:700;font-size:12px;color:#3a2410;
   background:linear-gradient(180deg,#e8d2a0,#b8945a);border:1px solid #6a4a20;border-radius:4px;box-shadow:inset 0 1px 0 #fff8,0 2px 3px #5a3a1a66}
 .placa:empty{visibility:hidden}
@@ -119,11 +129,12 @@ html,body{margin:0;height:100%;overflow:hidden;color:#2a1a0e;font-family:'EB Gar
 #zoom{position:fixed;width:300px;border-radius:14px;pointer-events:none;display:none;z-index:8;box-shadow:0 20px 50px #000}
 .carta .tabNovo{position:absolute;top:-12px;left:50%;transform:translateX(-50%);z-index:3;padding:2px 18px 3px;font-family:var(--ff);font-size:12px;color:#3a1a02;
   background:linear-gradient(180deg,#fff2b0,#ffc04a 55%,#e07a10);clip-path:polygon(10% 0,90% 0,100% 100%,0 100%);filter:drop-shadow(0 0 6px #ffb040);transition:opacity .4s}
-.carta.novo img{box-shadow:0 0 0 2px #ffb040,0 0 18px 4px #ff9a20cc,0 8px 14px #3a1a0866;animation:novaBrilho 2.2s ease-in-out infinite}
-@keyframes novaBrilho{50%{box-shadow:0 0 0 2px #ffd070,0 0 28px 8px #ffa830ee,0 8px 14px #3a1a0866}}
-.carta.novo.visto .tabNovo{opacity:0}.carta.visto img{animation:none}
+.carta.novo.visto .tabNovo{opacity:0}
 .voando{position:fixed;z-index:20;pointer-events:none;border-radius:5%;box-shadow:0 10px 30px #000a;transition:all .5s cubic-bezier(.5,0,.3,1)}
 </style></head><body>
+<svg width="0" height="0" style="position:absolute"><filter id="chama" x="-30%" y="-30%" width="160%" height="160%">
+  <feTurbulence type="fractalNoise" baseFrequency="0.018 0.035" numOctaves="2" seed="3" result="r"><animate attributeName="baseFrequency" dur="7s" values="0.018 0.035;0.026 0.05;0.018 0.035" repeatCount="indefinite"/></feTurbulence>
+  <feDisplacementMap in="SourceGraphic" in2="r" scale="26" xChannelSelector="R" yChannelSelector="G"/><feGaussianBlur stdDeviation="3.5"/></filter></svg>
 <div id="cena"><div class="arte"></div><div class="madeira"></div><div class="ruido"></div><div class="vela"></div><div class="vinheta"></div></div><canvas id="brasas"></canvas>
 <div id="tudo">
   <div id="livro"><svg class="canto a" viewBox="0 0 62 62"><defs><linearGradient id="goa" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0b0"/><stop offset=".45" stop-color="#d0a040"/><stop offset="1" stop-color="#6a4a14"/></linearGradient></defs><path d="M2 2h44c-6 4-10 8-12 14-8-2-14 2-16 10-6 2-10 6-14 12z" fill="url(#goa)" stroke="#3a2408" stroke-width="1.2"/><circle cx="12" cy="12" r="4" fill="#3a2408"/><circle cx="12" cy="12" r="2.4" fill="#fff0b0"/><path d="M18 6c8 0 14 2 18 6M6 18c0 8 2 14 6 18" fill="none" stroke="#3a2408" stroke-width="1"/></svg><svg class="canto b" viewBox="0 0 62 62"><defs><linearGradient id="gob" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0b0"/><stop offset=".45" stop-color="#d0a040"/><stop offset="1" stop-color="#6a4a14"/></linearGradient></defs><path d="M2 2h44c-6 4-10 8-12 14-8-2-14 2-16 10-6 2-10 6-14 12z" fill="url(#gob)" stroke="#3a2408" stroke-width="1.2"/><circle cx="12" cy="12" r="4" fill="#3a2408"/><circle cx="12" cy="12" r="2.4" fill="#fff0b0"/><path d="M18 6c8 0 14 2 18 6M6 18c0 8 2 14 6 18" fill="none" stroke="#3a2408" stroke-width="1"/></svg><svg class="canto c" viewBox="0 0 62 62"><defs><linearGradient id="goc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0b0"/><stop offset=".45" stop-color="#d0a040"/><stop offset="1" stop-color="#6a4a14"/></linearGradient></defs><path d="M2 2h44c-6 4-10 8-12 14-8-2-14 2-16 10-6 2-10 6-14 12z" fill="url(#goc)" stroke="#3a2408" stroke-width="1.2"/><circle cx="12" cy="12" r="4" fill="#3a2408"/><circle cx="12" cy="12" r="2.4" fill="#fff0b0"/><path d="M18 6c8 0 14 2 18 6M6 18c0 8 2 14 6 18" fill="none" stroke="#3a2408" stroke-width="1"/></svg><svg class="canto d" viewBox="0 0 62 62"><defs><linearGradient id="god" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0b0"/><stop offset=".45" stop-color="#d0a040"/><stop offset="1" stop-color="#6a4a14"/></linearGradient></defs><path d="M2 2h44c-6 4-10 8-12 14-8-2-14 2-16 10-6 2-10 6-14 12z" fill="url(#god)" stroke="#3a2408" stroke-width="1.2"/><circle cx="12" cy="12" r="4" fill="#3a2408"/><circle cx="12" cy="12" r="2.4" fill="#fff0b0"/><path d="M18 6c8 0 14 2 18 6M6 18c0 8 2 14 6 18" fill="none" stroke="#3a2408" stroke-width="1"/></svg>
@@ -170,7 +181,7 @@ function desenharLivro(){
   const fatia = l.slice(pag * POR_PAG, pag * POR_PAG + POR_PAG);
   const html = c => { const st = !cabe(c) ? 'fora' : noDeck(c) ? 'no' : '';
     const nv = NOVAS.has(chave(c));
-    return `<div class="carta ${st}${nv?' novo':''}" data-f="${c.faixa}" data-k="${encodeURIComponent(chave(c))}">${nv?'<span class="tabNovo">Novo</span>':''}<div class="mold"><img loading="lazy" src="${img(c)}" alt="${c.nome}">${st==='no' ? '<div class="selo">✓</div>' : ''}</div><div class="placa">${st==='fora' ? 'Fora das cores' : st==='no' ? 'No deck' : c.qtd > 1 ? `x${c.qtd}` : ''}</div></div>`; };
+    return `<div class="carta ${st}${nv?' novo':''}" data-f="${c.faixa}" data-k="${encodeURIComponent(chave(c))}">${nv?'<span class="tabNovo">Novo</span>':''}<div class="mold"><div class="aura"></div><img loading="lazy" src="${img(c)}" alt="${c.nome}">${st==='no' ? '<div class="selo">✓</div>' : ''}</div><div class="placa">${st==='fora' ? 'Fora das cores' : st==='no' ? 'No deck' : c.qtd > 1 ? `x${c.qtd}` : ''}</div></div>`; };
   const k = filtroCor.size === 1 ? [...filtroCor][0] : COR;
   const marca = `<i class="marca ms ms-${k.toLowerCase()}"></i>`, t = tituloPagina();
   document.getElementById('pE').innerHTML = marca + `<div class="faixa">${t}</div>` + (l.length ? fatia.slice(0,4).map(html).join('') : '<div class="vazio">Nenhuma carta com esses filtros.</div>') + `<div class="rodape" style="grid-row:4">Página ${pag*2+1}</div>`;

@@ -57,10 +57,13 @@ body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color
 .carta .costas{background-image:url('https://backs.scryfall.io/large/0/a/0aeebaf5-8c7d-4636-9e82-8c27447861f7.jpg')}
 .carta .frente{transform:rotateY(180deg)}
 /* brilho da raridade: aparece ao passar o mouse na carta virada para baixo (como no Hearthstone) */
-.carta .aura{position:absolute;inset:-6px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none;box-shadow:0 0 0 2px var(--cor),0 0 26px 8px var(--cor)}
+.carta .aura{position:absolute;inset:-16px;border-radius:18px;opacity:0;transition:opacity .35s;pointer-events:none;
+  background:radial-gradient(ellipse 62% 60% at 50% 50%,transparent 58%,var(--cor) 72%,transparent 100%),radial-gradient(ellipse 58% 56% at 50% 50%,var(--cor) 60%,transparent 90%);
+  filter:url(#chama);mix-blend-mode:screen}
+.carta .aura::after{content:'';position:absolute;inset:8px;border-radius:12px;background:var(--cor);filter:blur(10px);opacity:.8}
 .carta:not(.virada):hover .aura{opacity:1;animation:pulsa 1s ease-in-out infinite}
 .carta:not(.virada):hover{z-index:3}
-@keyframes pulsa{50%{box-shadow:0 0 0 2px var(--cor),0 0 40px 14px var(--cor)}}
+@keyframes pulsa{50%{transform:scale(1.05);opacity:.75}}
 .carta.rara:not(.virada) .aura,.carta.mitica:not(.virada) .aura,.carta.especial:not(.virada) .aura{opacity:1;animation:pulsa 1.6s ease-in-out infinite}
 .carta .raios{position:absolute;left:50%;top:50%;width:230%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;opacity:0;
   background:repeating-conic-gradient(from 0deg,var(--cor) 0deg 5deg,transparent 5deg 22deg);-webkit-mask-image:radial-gradient(circle,#000 18%,transparent 62%);mask-image:radial-gradient(circle,#000 18%,transparent 62%);
@@ -80,7 +83,7 @@ body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color
 .carta.revela .raios{opacity:1;animation:explodeRaios 1.2s ease-out forwards}
 @keyframes explodeRaios{0%{transform:translate(-50%,-50%) scale(.4) rotate(0)}100%{transform:translate(-50%,-50%) scale(2.2) rotate(90deg);opacity:0}}
 .carta.revela{z-index:6}
-.carta.comum{--cor:#ffffff44}.carta.incomum{--cor:#9fd0ffaa}.carta.rara{--cor:#ffd04acc}.carta.mitica{--cor:#ff6a1add}.carta.especial{--cor:#b07ae0cc}
+.carta.comum{--cor:#ffffff66}.carta.incomum{--cor:#8ac8ff}.carta.rara{--cor:#ffc830}.carta.mitica{--cor:#ff6a1a}.carta.especial{--cor:#b47aff}
 /* explosão ao virar */
 .carta .estouro{position:absolute;left:50%;top:50%;width:260px;height:260px;border-radius:50%;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;background:radial-gradient(circle,var(--cor) 0%,transparent 65%)}
 .carta.virada .estouro{animation:estouro .7s ease-out}
@@ -98,8 +101,8 @@ body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color
 .carta .nova{position:absolute;top:-13px;left:50%;transform:translateX(-50%);z-index:3;padding:2px 16px 3px;font-family:var(--ff);font-weight:800;font-size:10.5px;letter-spacing:.06em;color:#3a1a02;
   background:linear-gradient(180deg,#fff2b0,#ffc04a 55%,#e07a10);clip-path:polygon(10% 0,90% 0,100% 100%,0 100%);opacity:0;filter:drop-shadow(0 0 6px #ffb040)}
 .carta.virada .nova{opacity:1;transition:opacity .3s .4s}
-.carta.ehNova.virada .frente{box-shadow:0 0 0 2px #ffb040,0 0 18px 4px #ff9a20cc,0 8px 16px #000c;animation:novaBrilho 2.2s ease-in-out infinite}
-@keyframes novaBrilho{50%{box-shadow:0 0 0 2px #ffd070,0 0 28px 8px #ffa830ee,0 8px 16px #000c}}
+.carta.ehNova.virada{--cor:#ffa020}
+.carta.ehNova.virada .aura{opacity:.95;animation:pulsa 2.4s ease-in-out infinite}
 .faisca{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--cor);box-shadow:0 0 8px var(--cor);pointer-events:none;animation:faisca .9s ease-out forwards}
 @keyframes faisca{from{opacity:1;transform:translate(0,0)}to{opacity:0;transform:translate(var(--x),var(--y))}}
 #zoom{position:fixed;inset:0;z-index:20;background:#06030ad0;display:flex;align-items:center;justify-content:center;cursor:zoom-out;animation:zIn .2s ease-out}
@@ -109,6 +112,10 @@ body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color
 #novo{position:fixed;left:14px;top:12px;font-family:var(--ff);background:#3a2a18;border:1px solid #E4C874;color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer;z-index:10}
 </style></head><body>
 
+<svg width="0" height="0" style="position:absolute"><filter id="chama" x="-30%" y="-30%" width="160%" height="160%">
+  <feTurbulence type="fractalNoise" baseFrequency="0.018 0.035" numOctaves="2" seed="3" result="r"><animate attributeName="baseFrequency" dur="7s" values="0.018 0.035;0.026 0.05;0.018 0.035" repeatCount="indefinite"/></feTurbulence>
+  <feDisplacementMap in="SourceGraphic" in2="r" scale="26" xChannelSelector="R" yChannelSelector="G"/>
+  <feGaussianBlur stdDeviation="3.5"/></filter></svg>
 <div id="palco"></div>
 <script>
 // o pacote vem da Mesa (que abriu esta tela por cima dela)
