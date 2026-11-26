@@ -166,6 +166,15 @@ public class Ponte implements MageClient {
                 json(ex, 200, Collections.singletonMap("erro", e instanceof IOException ? "Sem conexão com o servidor do grupo." : String.valueOf(e.getMessage())));
             }
         });
+        srv.createContext("/api/bazar", ex -> {   // o Bazar: mercadoria do dia, lista de desejos, desmanchar (no Zera)
+            try {
+                JsonObject c = "POST".equals(ex.getRequestMethod()) ? corpo(ex) : new JsonObject();
+                c.addProperty("id", idMesa());
+                json(ex, 200, postAmigos("bazar", c));
+            } catch (Exception e) {
+                json(ex, 200, Collections.singletonMap("erro", e instanceof IOException ? "Sem conexão com o servidor do grupo." : String.valueOf(e.getMessage())));
+            }
+        });
         srv.createContext("/api/nivel", ex -> {   // trilha de níveis: prêmios, molduras, carta à escolha (no Zera)
             try {
                 JsonObject c = "POST".equals(ex.getRequestMethod()) ? corpo(ex) : new JsonObject();
@@ -229,7 +238,7 @@ public class Ponte implements MageClient {
                 Path dir = CACHE.resolve("playmats"); Files.createDirectories(dir);
                 Path f = dir.resolve(cod + "_" + ver + ".jpg");
                 if (!Files.exists(f)) {
-                    HttpURLConnection hc = (HttpURLConnection) new URL("http://" + enderecoZeraReal() + ":" + PORTA_AMIGOS + "/playmatImg?c=" + cod).openConnection();
+                    HttpURLConnection hc = (HttpURLConnection) new URL("http://" + enderecoAmigos() + "/playmatImg?c=" + cod).openConnection();
                     hc.setConnectTimeout(4000); hc.setReadTimeout(15000);
                     if (hc.getResponseCode() != 200) { ex.sendResponseHeaders(404, -1); ex.close(); return; }
                     byte[] d; try (InputStream in = hc.getInputStream()) { d = lerTudo(in); }
@@ -1218,6 +1227,11 @@ public class Ponte implements MageClient {
         if (dev != null && !dev.isEmpty()) return dev;
         return enderecoZeraReal();
     }
+    /** Servidor de amigos: o Zera (ou -Dmesa.amigos=host:porta, para testes com uma cópia local). */
+    String enderecoAmigos() {
+        String dev = System.getProperty("mesa.amigos");
+        return dev != null && !dev.isEmpty() ? dev : enderecoZeraReal() + ":" + PORTA_AMIGOS;
+    }
     String enderecoZeraReal() {
         if (zeraEscolhido != null && System.currentTimeMillis() - zeraQuando < 60_000) return zeraEscolhido;
         String achou = null;
@@ -1525,7 +1539,7 @@ public class Ponte implements MageClient {
     }
     JsonObject postAmigos(String rota, JsonObject corpo) throws IOException {
         String senha = senhaGrupo();
-        HttpURLConnection c = (HttpURLConnection) new URL("http://" + enderecoZeraReal() + ":" + PORTA_AMIGOS + "/" + rota).openConnection();
+        HttpURLConnection c = (HttpURLConnection) new URL("http://" + enderecoAmigos() + "/" + rota).openConnection();
         c.setRequestMethod("POST"); c.setDoOutput(true);
         c.setConnectTimeout(4000); c.setReadTimeout(8000);
         c.setRequestProperty("Content-Type", "application/json; charset=utf-8");

@@ -174,6 +174,12 @@ html,body{margin:0;height:100%;overflow:hidden;color:#2a1a0e;font-family:'EB Gar
 #troca .barraT p{margin:0;flex:1;font-size:17px;color:#efe4cc}
 #troca .barraT p b{color:var(--ouro)}
 #troca .barraT p .sai{color:#ff9a7a}
+.carta .desejoBt{position:absolute;left:-8px;top:-8px;z-index:4;width:30px;height:30px;border-radius:50%;border:0;padding:0;cursor:pointer;display:grid;place-items:center;opacity:0;transition:opacity .2s,transform .15s;
+  background:radial-gradient(circle at 35% 30%,#5a3a1a,#1a0a04);box-shadow:0 0 0 2px #8a6a2a,0 3px 6px #000a}
+.carta .desejoBt svg{width:16px;height:16px}
+.carta:hover .desejoBt{opacity:1}
+.carta .desejoBt:hover{transform:scale(1.12)}
+.carta .desejoBt.on{opacity:1;background:radial-gradient(circle at 35% 30%,#fff2b0,#e0a020);box-shadow:0 0 0 2px #fff0b0,0 0 12px #ffb040,0 3px 6px #000a}
 .voando{position:fixed;z-index:20;pointer-events:none;border-radius:5%;box-shadow:0 10px 30px #000a;transition:all .5s cubic-bezier(.5,0,.3,1)}
 </style></head><body>
 <svg width="0" height="0" style="position:absolute"><filter id="chama" x="-30%" y="-30%" width="160%" height="160%">
@@ -222,6 +228,8 @@ document.documentElement.style.setProperty('--ruido', 'url("data:image/svg+xml,'
 const img = (c, v='normal') => `https://api.scryfall.com/cards/${c.set.toLowerCase()}/${encodeURIComponent(c.num)}?format=image&version=${v}`;
 const BASICO = {W:'Plains',U:'Island',B:'Swamp',R:'Mountain',G:'Forest'}, NOME_BAS = {W:'Planícies',U:'Ilhas',B:'Pântanos',R:'Montanhas',G:'Florestas'};
 let COL = [], DECK = [], CMD = null, COR = 'W', filtroCor = new Set(), filtroCusto = new Set(), filtroRar = new Set(), filtroTipo = new Set(), pag = 0, sujo = false;
+let DESEJOS = new Set();
+const ESTRELA_D = on => `<svg viewBox="0 0 24 24"><path d="M12 2l3 7 7 .6-5.3 4.7 1.6 7.2L12 17.8 5.7 21.5l1.6-7.2L2 9.6 9 9z" fill="${on ? '#3a1a02' : 'none'}" stroke="${on ? '#3a1a02' : '#e8c070'}" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
 let NOVAS = new Set(); try { NOVAS = new Set(JSON.parse(localStorage.getItem('mesaCartasNovas') || '[]')); } catch(e){}
 const POR_PAG = 8, chave = c => c.nome + '|' + c.set + '|' + c.num;
 const pai = m => parent.postMessage(Object.assign({campanha: true}, m), '*');
@@ -247,7 +255,7 @@ function desenharLivro(){
   const fatia = l.slice(pag * POR_PAG, pag * POR_PAG + POR_PAG);
   const html = c => { const st = !cabe(c) ? 'fora' : noDeck(c) ? 'no' : '';
     const nv = NOVAS.has(chave(c));
-    return `<div class="carta ${st}${nv?' novo':''}" data-f="${c.faixa}" data-k="${encodeURIComponent(chave(c))}">${nv?'<span class="tabNovo">Novo</span>':''}<div class="mold"><div class="aura"></div><img loading="lazy" src="${img(c)}" alt="${c.nome}">${st==='no' ? '<div class="selo">✓</div>' : ''}</div><div class="placa">${st==='fora' ? 'Fora das cores' : st==='no' ? 'No deck' : c.qtd > 1 ? `x${c.qtd}` : ''}</div></div>`; };
+    return `<div class="carta ${st}${nv?' novo':''}" data-f="${c.faixa}" data-k="${encodeURIComponent(chave(c))}">${nv?'<span class="tabNovo">Novo</span>':''}<div class="mold"><button class="desejoBt${DESEJOS.has(c.nome) ? ' on' : ''}" title="${DESEJOS.has(c.nome) ? 'Tirar da lista de desejos' : 'Pôr na lista de desejos (avisa quando aparecer no Bazar)'}" data-nome="${encodeURIComponent(c.nome)}">${ESTRELA_D(DESEJOS.has(c.nome))}</button><div class="aura"></div><img loading="lazy" src="${img(c)}" alt="${c.nome}">${st==='no' ? '<div class="selo">✓</div>' : ''}</div><div class="placa">${st==='fora' ? 'Fora das cores' : st==='no' ? 'No deck' : c.qtd > 1 ? `x${c.qtd}` : ''}</div></div>`; };
   const k = filtroCor.size === 1 ? [...filtroCor][0] : COR;
   const marca = `<i class="marca ms ms-${k.toLowerCase()}"></i>`, t = tituloPagina();
   document.getElementById('pE').innerHTML = marca + `<div class="faixa">${t}</div>` + (l.length ? fatia.slice(0,4).map(html).join('') : '<div class="vazio">Nenhuma carta com esses filtros.</div>') + `<div class="rodape" style="grid-row:4">Página ${pag*2+1}</div>`;
@@ -276,6 +284,8 @@ document.getElementById('paginas').addEventListener('mouseover', e => {   // pas
   try { localStorage.setItem('mesaCartasNovas', JSON.stringify([...NOVAS])); } catch(e){}
 });
 document.getElementById('paginas').addEventListener('click', e => {
+  const dz = e.target.closest('.desejoBt');
+  if (dz){ e.stopPropagation(); pai({acao:'desejo', nome: decodeURIComponent(dz.dataset.nome)}); return; }
   const el = e.target.closest('.carta'); if (!el) return;
   const c = COL.find(x => chave(x) === decodeURIComponent(el.dataset.k));
   if (!cabe(c)){ aviso(`${c.nome} não é das cores do seu comandante.`); return; }
@@ -356,6 +366,7 @@ function montarFiltros(){
 addEventListener('message', e => { const d = e.data; if (!d) return;
   if (d.dados){
     COL = d.dados.colecao.map(c => Object.assign(c, {cmc: +c.cmc || 0}));
+    DESEJOS = new Set(d.dados.desejos || []);
     const cp = d.dados.campanha; CP = cp; COR = cp.cor; CMD = cp.comandante; filtroCor.clear();
     document.getElementById('troca').classList.remove('on'); document.getElementById('trocaOk').disabled = false;
     if (d.trocou !== undefined){ sujo = false; aviso(`Novo comandante: ${CMD.nome.split(',')[0]}!` + (d.trocou ? ` ${d.trocou} carta${d.trocou > 1 ? 's saíram' : ' saiu'} do deck.` : '')); }
@@ -365,6 +376,7 @@ addEventListener('message', e => { const d = e.data; if (!d) return;
     document.getElementById('cab').style.backgroundImage = `url('${img(CMD,'art_crop')}')`;
     montarFiltros(); desenharLivro(); desenharLista();
   }
+  if (d.desejos){ DESEJOS = new Set(d.desejos); desenharLivro(); }
   if (d.salvo){ sujo = false; document.getElementById('pronto').disabled = false; aviso('Deck salvo!'); setTimeout(() => pai({acao:'fecharDeck'}), 700); }
   if (d.erro){ document.getElementById('pronto').disabled = false; document.getElementById('trocaOk').disabled = false; aviso(d.erro); }
 });

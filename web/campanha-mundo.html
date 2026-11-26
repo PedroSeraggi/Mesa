@@ -88,6 +88,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#070504;color:#eee;fon
 #nomeGrande b{display:block;font-family:var(--ff);font-weight:900;font-size:clamp(28px,3.4vw,52px);line-height:1.02;color:#fff;text-shadow:0 4px 30px #000}
 #nomeGrande small{font-family:var(--ff);font-size:14px;letter-spacing:.24em;color:var(--ouro)}
 .editar{position:fixed;left:28px;bottom:26px;z-index:3;font-family:var(--ff);font-weight:700;letter-spacing:.14em;font-size:15px;background:#140e09e8;border:1px solid var(--ouro2);color:var(--ouro);padding:12px 30px;border-radius:12px;cursor:pointer}
+.editar.bazar{left:220px}
 .editar:hover{background:#2a1e10;box-shadow:0 0 20px #c9a24a44}
 @media (max-width:1100px){#nomeGrande{display:none}#lista{width:300px}}
 </style></head><body>
@@ -102,7 +103,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#070504;color:#eee;fon
 <div id="lista"></div>
 <div id="nomeGrande"></div>
 <div id="painel"></div>
-<button class="editar">EDITAR DECK</button>
+<button class="editar">EDITAR DECK</button><button class="editar bazar">O BAZAR</button>
 <script>
 const artSf = n => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n).replace(/'/g,'%27')}&format=image&version=art_crop`;
 const artHd = n => `campanha/artes/${encodeURIComponent(n.split(',')[0].toLowerCase().replace(/[^a-z0-9]+/g,'-'))}.jpg`;
@@ -153,6 +154,7 @@ function mostrar(){
 const pai = m => parent.postMessage(Object.assign({campanha: true}, m), '*');
 document.querySelector('.voltar').onclick = () => pai({acao: 'fechar'});
 document.querySelector('.editar').onclick = () => pai({acao: 'editar'});
+document.querySelector('.editar.bazar').onclick = () => pai({acao: 'bazar'});
 document.getElementById('painel').addEventListener('click', e => { if (e.target.id === 'comecar') pai({acao: 'jogar', batalha: sel}); });
 // o Mesa manda o estado: {batalha, ouro, nome}
 addEventListener('message', e => { const d = e.data; if (!d || d.estado === undefined) return;

@@ -40,6 +40,8 @@ public class Amigos {
         Map<String, Integer> colecao = new LinkedHashMap<>();        // "nome|set|num" -> quantidade   // playmat: "" (padrão), nome de um modelo pronto ou "foto" (imagem em playmats/<código>.jpg)
         int nivelPremiado = 0; Set<String> desbloqueios = new LinkedHashSet<>();   // trilha de níveis: até que nível já recebeu prêmio; "pm:brasas", "moldura:10", "costas", ...
         String moldura = "", titulo = ""; int escolhaRara = 0, escolhaMitica = 0;   // moldura equipada (""/10/20/...), título, cartas à escolha pendentes
+        String bazarDia = ""; List<JsonObject> bazarCartas = new ArrayList<>(); Set<Integer> bazarVendidas = new HashSet<>(); int bazarRenovou = 0;   // o Bazar: mercadoria do dia
+        Set<String> desejos = new LinkedHashSet<>();   // lista de desejos (nomes de cartas)
         JsonObject campanha;   // {cor, mundo, batalha, comandante:{nome,set,num}, deck:[{nome,set,num}]} (null = ainda não escolheu)
         long xp = 0; String diaVitoria = ""; String diaMissoes = ""; Map<String, Integer> progresso = new HashMap<>(); Set<String> missoesFeitas = new HashSet<>();
         JsonObject recordes = new JsonObject(); List<JsonObject> historico = new ArrayList<>();
@@ -80,6 +82,7 @@ public class Amigos {
         srv.createContext("/loja", ex -> tratar(ex, Amigos::loja));
         srv.createContext("/campanha", ex -> tratar(ex, Amigos::campanha));
         srv.createContext("/nivel", ex -> tratar(ex, Amigos::nivel));
+        srv.createContext("/bazar", ex -> tratar(ex, Amigos::bazar));
         srv.createContext("/playmats", ex -> tratar(ex, Amigos::playmats));
         srv.createContext("/playmatImg", Amigos::playmatImg);
         srv.createContext("/decksChefe", ex -> tratar(ex, c -> {   // todos os decks de chefe que a pessoa já ganhou (a Mesa baixa os que faltam)
@@ -884,6 +887,94 @@ public class Amigos {
         r.put("escolhaRara", u.escolhaRara); r.put("escolhaMitica", u.escolhaMitica);
         r.put("ouro", u.ouro); r.put("boosters", u.boosters);
         if (!premios.isEmpty()) r.put("premiosNivel", premios);
+        return r;
+    }
+
+    // ---------------- O Bazar: 6 cartas por dia (cada jogador vê as suas), lista de desejos e desmanchar repetidas ----------------
+    static final Map<String, Integer> PRECO_BAZAR = new HashMap<>(), VALOR_DESMANCHE = new HashMap<>();
+    static {
+        PRECO_BAZAR.put("comum", 60); PRECO_BAZAR.put("incomum", 150); PRECO_BAZAR.put("rara", 700); PRECO_BAZAR.put("mitica", 1600);
+        VALOR_DESMANCHE.put("comum", 10); VALOR_DESMANCHE.put("incomum", 25); VALOR_DESMANCHE.put("rara", 120); VALOR_DESMANCHE.put("mitica", 300);
+    }
+    static final int PRECO_RENOVAR = 100;
+    static JsonObject sortearCom(Random rnd, JsonObject pool, String faixa, Set<String> ja) {
+        JsonArray a = pool.getAsJsonArray(faixa);
+        for (int t = 0; t < 40; t++) { JsonObject c = a.get(rnd.nextInt(a.size())).getAsJsonObject(); if (!str(c, "tipo").contains("Land") && ja.add(str(c, "nome"))) return c; }
+        return a.get(rnd.nextInt(a.size())).getAsJsonObject();
+    }
+    /** Monta a mercadoria: 3 comuns, 2 incomuns, 1 rara (1 em 6 vira mítica). */
+    static void montarBazar(Usuario u, long semente) throws IOException {
+        JsonObject p = pool("mundo1"); Random rnd = new Random(semente); Set<String> ja = new HashSet<>();
+        List<JsonObject> l = new ArrayList<>();
+        for (int i = 0; i < 3; i++) l.add(sortearCom(rnd, p, "comum", ja));
+        for (int i = 0; i < 2; i++) l.add(sortearCom(rnd, p, "incomum", ja));
+        l.add(sortearCom(rnd, p, rnd.nextInt(6) == 0 ? "mitica" : "rara", ja));
+        u.bazarCartas = new ArrayList<>();
+        for (JsonObject c : l) { JsonObject y = new JsonObject(); for (String k : new String[]{"nome", "set", "num", "faixa"}) y.addProperty(k, str(c, k)); u.bazarCartas.add(y); }
+        u.bazarVendidas = new HashSet<>();
+    }
+    static Object bazar(JsonObject c) throws IOException {
+        Usuario u = usuario(c);
+        darBoasVindas(u);
+        if (u.desejos == null) u.desejos = new LinkedHashSet<>();
+        if (u.bazarVendidas == null) u.bazarVendidas = new HashSet<>();
+        if (!hoje().equals(u.bazarDia) || u.bazarCartas == null || u.bazarCartas.isEmpty()) {   // virou o dia: mercadoria nova
+            u.bazarDia = hoje(); u.bazarRenovou = 0; montarBazar(u, (u.codigo + "|" + hoje()).hashCode()); sujo = true;
+        }
+        pool("mundo1");
+        String acao = texto(c, "acao", 20, "estado");
+        Map<String, Object> r = new LinkedHashMap<>();
+        switch (acao) {
+            case "comprar": {
+                int i = c.get("i").getAsInt();
+                if (i < 0 || i >= u.bazarCartas.size() || u.bazarVendidas.contains(i)) throw new IllegalArgumentException("Essa carta já foi vendida.");
+                JsonObject x = u.bazarCartas.get(i); int preco = PRECO_BAZAR.getOrDefault(str(x, "faixa"), 9999);
+                if (u.ouro < preco) throw new IllegalArgumentException("Ouro insuficiente.");
+                u.ouro -= preco; u.bazarVendidas.add(i); u.colecao.merge(chaveCarta(x), 1, Integer::sum); sujo = true;
+                r.put("comprou", str(x, "nome"));
+                break;
+            }
+            case "renovar": {
+                if (u.ouro < PRECO_RENOVAR) throw new IllegalArgumentException("Ouro insuficiente.");
+                u.ouro -= PRECO_RENOVAR; u.bazarRenovou++; montarBazar(u, System.nanoTime()); sujo = true;
+                break;
+            }
+            case "desejo": {   // marca ou desmarca uma carta na lista de desejos
+                String nome = texto(c, "nome", 200, "");
+                if (!u.desejos.remove(nome)) { if (u.desejos.size() >= 60) throw new IllegalArgumentException("A lista de desejos já tem 60 cartas."); u.desejos.add(nome); }
+                sujo = true;
+                break;
+            }
+            case "desmanchar": {   // [{nome,set,num,qtd}]: vende cópias extras (sempre fica pelo menos uma)
+                int ganho = 0;
+                for (JsonElement e : c.getAsJsonArray("cartas")) {
+                    JsonObject y = e.getAsJsonObject(); String k = chaveCarta(y); JsonObject info = cartaPorChave.get(k);
+                    int tem = u.colecao.getOrDefault(k, 0), q = Math.min(y.get("qtd").getAsInt(), tem - 1);
+                    if (info == null || q <= 0) continue;
+                    u.colecao.put(k, tem - q); ganho += q * VALOR_DESMANCHE.getOrDefault(str(info, "faixa"), 0);
+                }
+                u.ouro += ganho; sujo = true; r.put("ganhou", ganho);
+                break;
+            }
+            default: break;
+        }
+        List<Map<String, Object>> cartas = new ArrayList<>();
+        for (int i = 0; i < u.bazarCartas.size(); i++) {
+            JsonObject x = u.bazarCartas.get(i); Map<String, Object> m = new LinkedHashMap<>();
+            for (String k : new String[]{"nome", "set", "num", "faixa"}) m.put(k, str(x, k));
+            m.put("preco", PRECO_BAZAR.get(str(x, "faixa"))); m.put("vendida", u.bazarVendidas.contains(i)); m.put("tenho", u.colecao.getOrDefault(chaveCarta(x), 0));
+            cartas.add(m);
+        }
+        List<Map<String, Object>> rep = new ArrayList<>();   // cópias que sobram para desmanchar
+        for (Map.Entry<String, Integer> e : u.colecao.entrySet()) {
+            JsonObject x = cartaPorChave.get(e.getKey()); if (x == null || e.getValue() < 2) continue;
+            Map<String, Object> m = new LinkedHashMap<>(); for (String k : new String[]{"nome", "set", "num", "faixa"}) m.put(k, str(x, k));
+            m.put("extra", e.getValue() - 1); m.put("valor", VALOR_DESMANCHE.get(str(x, "faixa"))); rep.add(m);
+        }
+        java.time.LocalDateTime agora = java.time.LocalDateTime.now();
+        r.put("cartas", cartas); r.put("repetidas", rep); r.put("desejos", u.desejos); r.put("ouro", u.ouro); r.put("boosters", u.boosters);
+        r.put("precoRenovar", PRECO_RENOVAR); r.put("segundosParaVirar", java.time.Duration.between(agora, agora.toLocalDate().plusDays(1).atStartOfDay()).getSeconds());
+        r.put("valores", VALOR_DESMANCHE);
         return r;
     }
 

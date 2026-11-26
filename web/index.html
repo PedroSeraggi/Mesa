@@ -4412,10 +4412,33 @@ function telaEscolhaInicial(){
 }
 const NOME_COR = {W:'Branco', U:'Azul', B:'Preto', R:'Vermelho', G:'Verde'};
 // tela do mundo (campanha-mundo.html) por cima da Mesa: lista de batalhas, arte do comandante, história
+// o Bazar (bazar.html por cima da Mesa): mercadoria do dia, lista de desejos, desmanchar repetidas
+async function abrirBazar(){
+  let dados = await post('/api/bazar', {acao:'estado'});
+  if (dados.erro){ avisoLocal(dados.erro); return; }
+  let fr = $('#frameBazar'); if (fr) fr.remove();
+  fr = document.createElement('iframe'); fr.id = 'frameBazar'; fr.src = 'bazar.html';
+  fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9310;background:#060302';
+  const mandar = m => fr.contentWindow.postMessage(Object.assign({bazar2r: true}, m), '*');
+  const ouvir = async e=>{
+    if (!e.data || !e.data.bazar2) return;
+    if (!fr.isConnected || e.source !== fr.contentWindow){ if (!fr.isConnected) window.removeEventListener('message', ouvir); return; }   // só a janela atual do Bazar
+    const a = e.data.acao;
+    if (a === 'pronta'){ mandar({dados}); return; }
+    if (a === 'fechar'){ window.removeEventListener('message', ouvir); fr.remove(); atualizarOuroMenu(dados); return; }
+    const corpo = Object.assign({}, e.data); delete corpo.bazar2;
+    const r = await post('/api/bazar', corpo);
+    if (r.erro){ mandar({erro: r.erro}); return; }
+    dados = r; atualizarOuroMenu(r); mandar({dados});
+  };
+  window.addEventListener('message', ouvir);
+  document.body.appendChild(fr);
+}
 // editor do deck da campanha (campanha-deck.html): coleção como um grimório, deck na direita
 async function abrirEditorDeck(){
   const dados = await post('/api/campanha', {acao:'editor'});
   if (dados.erro){ avisoLocal(dados.erro); return; }
+  try { const bz = await post('/api/bazar', {acao:'estado'}); dados.desejos = bz.desejos || []; } catch(e){ dados.desejos = []; }
   let fr = $('#frameDeckCamp'); if (fr) fr.remove();
   fr = document.createElement('iframe'); fr.id = 'frameDeckCamp'; fr.src = 'campanha-deck.html';
   fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9300;background:#0a0604';
@@ -4427,6 +4450,7 @@ async function abrirEditorDeck(){
       const r = await post('/api/campanha', {acao:'salvarDeck', deck: e.data.deck});
       fr.contentWindow.postMessage(r.erro ? {erro: r.erro} : {salvo: true}, '*');
     }
+    if (a === 'desejo'){ const r = await post('/api/bazar', {acao:'desejo', nome: e.data.nome}); fr.contentWindow.postMessage(r.erro ? {erro: r.erro} : {desejos: r.desejos}, '*'); }
     if (a === 'trocarCmd'){
       const r = await post('/api/campanha', {acao:'trocarComandante', nome: e.data.cmd.nome, set: e.data.cmd.set, num: e.data.cmd.num, deck: e.data.deck});
       if (r.erro){ fr.contentWindow.postMessage({erro: r.erro}, '*'); return; }
@@ -4453,6 +4477,7 @@ function mostrarCampanha(c){
     if (a === 'fechar'){ window.removeEventListener('message', ouvir); fr.remove(); }
     if (a === 'jogar'){ window.removeEventListener('message', ouvir); fr.remove(); post('/api/campanha', {acao:'jogar', n: e.data.batalha}).then(r=>{ if (r && r.erro) avisoLocal(r.erro); }); }
     if (a === 'editar'){ window.removeEventListener('message', ouvir); fr.remove(); abrirEditorDeck(); }
+    if (a === 'bazar') abrirBazar();
   };
   window.addEventListener('message', ouvir);
   document.body.appendChild(fr);
@@ -4472,6 +4497,8 @@ function desenharLoja(cx){
         <button class="pri" id="ljComprar" ${L.ouro >= L.precoBooster ? '' : 'disabled'}>Comprar por ${MOEDA} ${fmtOuro(L.precoBooster)}</button></div></div>
       <div class="lojaItem"><div class="pacote" style="filter:brightness(${L.boosters ? 1 : .45})"><i>${L.boosters || 0} FECHADO${L.boosters === 1 ? '' : 'S'}</i></div><div><b>Seus boosters</b><span>${L.boosters ? `Você tem ${L.boosters} para abrir.` : 'Nenhum para abrir. Compre um ou vença batalhas da campanha.'}</span>
         <button class="pri" id="ljAbrir" ${L.boosters ? '' : 'disabled'}>Abrir booster</button></div></div>
+      <div class="lojaItem"><div class="pacote" style="background:linear-gradient(180deg,#0008,transparent 40%,#000d),url('campanha/artes/pia-and-kiran-nalaar.jpg') 50% 30%/cover"><i>O BAZAR</i></div><div><b>O Bazar</b><span>6 cartas à venda por dia, escolhidas para você. Também compra de volta as suas cartas repetidas.</span>
+        <button id="ljBazar">Visitar o Bazar</button></div></div>
       <div class="lojaItem"><div class="pacote" style="background:linear-gradient(160deg,#3a2a14,#1a120a)"><i>COLEÇÃO</i></div><div><b>Sua coleção</b><span>${fmtOuro(L.cartasNaColecao)} cartas (${fmtOuro(L.cartasDiferentes)} diferentes). Elas vão montar o seu deck da campanha.</span>
         <button id="ljColecao">Ver coleção</button></div></div>
     </div>
@@ -4481,6 +4508,7 @@ function desenharLoja(cx){
   $('#ljComprar').onclick = async ()=>{ const r = await post('/api/loja', {acao:'comprarBooster'}); if (r.erro){ avisoLocal(r.erro); return; } lojaInfo = r; atualizarOuroMenu(r); desenharLoja(cx); avisoLocal('Booster comprado!'); };
   $('#ljAbrir').onclick = async ()=>{ const r = await post('/api/loja', {acao:'abrirBooster'}); if (r.erro){ avisoLocal(r.erro); return; } lojaInfo = r; atualizarOuroMenu(r); fecharModal(true); animarBooster(r.cartas || []); };
   $('#ljColecao').onclick = ()=>verColecao();
+  $('#ljBazar').onclick = ()=>{ fecharModal(true); abrirBazar(); };
 }
 function atualizarOuroMenu(r){ if (amigos && amigos.foto){ amigos.foto.ouro = r.ouro; amigos.foto.boosters = r.boosters; desenharBtnOuro(); } }
 // abrir booster: tela própria (booster.html) por cima da Mesa: pacote 3D, arrastar até o círculo, cartas com brilho da raridade
