@@ -117,6 +117,11 @@ html,body{margin:0;height:100%;overflow:hidden;color:#2a1a0e;font-family:'EB Gar
 #pronto:disabled{filter:grayscale(1);opacity:.6;cursor:wait}
 #msg{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1a0e08ee;border:1px solid var(--ouro2);color:#f0e0c0;padding:9px 18px;border-radius:10px;font-size:16px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9}
 #zoom{position:fixed;width:300px;border-radius:14px;pointer-events:none;display:none;z-index:8;box-shadow:0 20px 50px #000}
+.carta .tabNovo{position:absolute;top:-12px;left:50%;transform:translateX(-50%);z-index:3;padding:2px 18px 3px;font-family:var(--ff);font-size:12px;color:#3a1a02;
+  background:linear-gradient(180deg,#fff2b0,#ffc04a 55%,#e07a10);clip-path:polygon(10% 0,90% 0,100% 100%,0 100%);filter:drop-shadow(0 0 6px #ffb040);transition:opacity .4s}
+.carta.novo img{box-shadow:0 0 0 2px #ffb040,0 0 18px 4px #ff9a20cc,0 8px 14px #3a1a0866;animation:novaBrilho 2.2s ease-in-out infinite}
+@keyframes novaBrilho{50%{box-shadow:0 0 0 2px #ffd070,0 0 28px 8px #ffa830ee,0 8px 14px #3a1a0866}}
+.carta.novo.visto .tabNovo{opacity:0}.carta.visto img{animation:none}
 .voando{position:fixed;z-index:20;pointer-events:none;border-radius:5%;box-shadow:0 10px 30px #000a;transition:all .5s cubic-bezier(.5,0,.3,1)}
 </style></head><body>
 <div id="cena"><div class="arte"></div><div class="madeira"></div><div class="ruido"></div><div class="vela"></div><div class="vinheta"></div></div><canvas id="brasas"></canvas>
@@ -143,6 +148,7 @@ document.documentElement.style.setProperty('--ruido', 'url("data:image/svg+xml,'
 const img = (c, v='normal') => `https://api.scryfall.com/cards/${c.set.toLowerCase()}/${encodeURIComponent(c.num)}?format=image&version=${v}`;
 const BASICO = {W:'Plains',U:'Island',B:'Swamp',R:'Mountain',G:'Forest'}, NOME_BAS = {W:'Planícies',U:'Ilhas',B:'Pântanos',R:'Montanhas',G:'Florestas'};
 let COL = [], DECK = [], CMD = null, COR = 'W', filtroCor = new Set(), filtroCusto = new Set(), pag = 0, sujo = false;
+let NOVAS = new Set(); try { NOVAS = new Set(JSON.parse(localStorage.getItem('mesaCartasNovas') || '[]')); } catch(e){}
 const POR_PAG = 8, chave = c => c.nome + '|' + c.set + '|' + c.num;
 const pai = m => parent.postMessage(Object.assign({campanha: true}, m), '*');
 function aviso(t){ const m = document.getElementById('msg'); m.textContent = t; m.style.opacity = 1; clearTimeout(aviso.t); aviso.t = setTimeout(()=>m.style.opacity = 0, 2200); }
@@ -163,7 +169,8 @@ function desenharLivro(){
   const l = filtradas(), tot = Math.max(1, Math.ceil(l.length / POR_PAG)); pag = Math.min(pag, tot - 1);
   const fatia = l.slice(pag * POR_PAG, pag * POR_PAG + POR_PAG);
   const html = c => { const st = !cabe(c) ? 'fora' : noDeck(c) ? 'no' : '';
-    return `<div class="carta ${st}" data-f="${c.faixa}" data-k="${encodeURIComponent(chave(c))}"><div class="mold"><img loading="lazy" src="${img(c)}" alt="${c.nome}">${st==='no' ? '<div class="selo">✓</div>' : ''}</div><div class="placa">${st==='fora' ? 'Fora das cores' : st==='no' ? 'No deck' : c.qtd > 1 ? `x${c.qtd}` : ''}</div></div>`; };
+    const nv = NOVAS.has(chave(c));
+    return `<div class="carta ${st}${nv?' novo':''}" data-f="${c.faixa}" data-k="${encodeURIComponent(chave(c))}">${nv?'<span class="tabNovo">Novo</span>':''}<div class="mold"><img loading="lazy" src="${img(c)}" alt="${c.nome}">${st==='no' ? '<div class="selo">✓</div>' : ''}</div><div class="placa">${st==='fora' ? 'Fora das cores' : st==='no' ? 'No deck' : c.qtd > 1 ? `x${c.qtd}` : ''}</div></div>`; };
   const k = filtroCor.size === 1 ? [...filtroCor][0] : COR;
   const marca = `<i class="marca ms ms-${k.toLowerCase()}"></i>`, t = tituloPagina();
   document.getElementById('pE').innerHTML = marca + `<div class="faixa">${t}</div>` + (l.length ? fatia.slice(0,4).map(html).join('') : '<div class="vazio">Nenhuma carta com esses filtros.</div>') + `<div class="rodape" style="grid-row:4">Página ${pag*2+1}</div>`;
@@ -186,6 +193,11 @@ function desenharLista(nova){
   document.getElementById('cont').innerHTML = `${DECK.length + 1 + Math.max(0, bas)}/100<small>${DECK.length} cartas + ${Math.max(0,bas)} terrenos básicos</small>`;
   if (nova){ const e = document.querySelector('.lin.entra'); e && e.scrollIntoView({block:'nearest'}); }
 }
+document.getElementById('paginas').addEventListener('mouseover', e => {   // passou o mouse: deixa de ser "Novo"
+  const el = e.target.closest('.carta.novo:not(.visto)'); if (!el) return;
+  el.classList.add('visto'); NOVAS.delete(decodeURIComponent(el.dataset.k));
+  try { localStorage.setItem('mesaCartasNovas', JSON.stringify([...NOVAS])); } catch(e){}
+});
 document.getElementById('paginas').addEventListener('click', e => {
   const el = e.target.closest('.carta'); if (!el) return;
   const c = COL.find(x => chave(x) === decodeURIComponent(el.dataset.k));

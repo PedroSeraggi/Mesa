@@ -4400,6 +4400,11 @@ function animarBooster(cartas){
   let fr = $('#frameBooster'); if (fr) fr.remove();
   fr = document.createElement('iframe'); fr.id = 'frameBooster'; fr.src = 'booster.html';
   fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9300;background:transparent';
+  try {   // cartas novas ficam marcadas com "Novo" no grimório até passar o mouse nelas
+    const nv = new Set(JSON.parse(localStorage.getItem('mesaCartasNovas') || '[]'));
+    cartas.forEach(c=>{ if (c.nova) nv.add(c.nome + '|' + c.set + '|' + c.num); });
+    localStorage.setItem('mesaCartasNovas', JSON.stringify([...nv]));
+  } catch(e){}
   const dados = {mundo: 'Mundo 1', nomeMundo: 'Terras de Origem', arte: new URL('campanha/artes/krenko.jpg', location.href).href, foco: '42%', cartas: cartas.map(c=>({nome: c.nome, faixa: c.faixa, nova: !!c.nova, img: new URL(imgCarta(c), location.href).href}))};
   const ouvir = e=>{
     if (!e.data || !e.data.booster) return;

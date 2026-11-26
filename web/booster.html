@@ -61,6 +61,25 @@ body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color
 .carta:not(.virada):hover .aura{opacity:1;animation:pulsa 1s ease-in-out infinite}
 .carta:not(.virada):hover{z-index:3}
 @keyframes pulsa{50%{box-shadow:0 0 0 2px var(--cor),0 0 40px 14px var(--cor)}}
+.carta.rara:not(.virada) .aura,.carta.mitica:not(.virada) .aura,.carta.especial:not(.virada) .aura{opacity:1;animation:pulsa 1.6s ease-in-out infinite}
+.carta .raios{position:absolute;left:50%;top:50%;width:230%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;opacity:0;
+  background:repeating-conic-gradient(from 0deg,var(--cor) 0deg 5deg,transparent 5deg 22deg);-webkit-mask-image:radial-gradient(circle,#000 18%,transparent 62%);mask-image:radial-gradient(circle,#000 18%,transparent 62%);
+  animation:giraRaios 9s linear infinite;transition:opacity .4s}
+.carta.rara:not(.virada) .raios,.carta.especial:not(.virada) .raios{opacity:.45}
+.carta.mitica:not(.virada) .raios{opacity:.7;animation-duration:5s}
+.carta:not(.virada):hover .raios{opacity:.9}
+@keyframes giraRaios{to{transform:translate(-50%,-50%) rotate(360deg)}}
+/* 2) virada extravagante: a carta treme, junta luz, e explode em clarão */
+.carta.carrega{z-index:6}
+.carta.carrega .gira{animation:carrega .6s ease-in forwards}
+@keyframes carrega{0%{transform:none}20%{transform:translateY(-6px) rotate(-2deg) scale(1.05)}40%{transform:translateY(-10px) rotate(2deg) scale(1.1)}60%{transform:translateY(-14px) rotate(-3deg) scale(1.14)}80%{transform:translateY(-18px) rotate(3deg) scale(1.18)}100%{transform:translateY(-20px) scale(1.22);filter:brightness(2.2)}}
+.carta.carrega .raios{opacity:1;animation-duration:1.2s}
+.carta .luz{position:absolute;inset:-2px;border-radius:7px;background:radial-gradient(circle at 50% 45%,#fff 0%,#fff8d8 30%,var(--cor) 60%,transparent 80%);opacity:0;pointer-events:none;z-index:2}
+.carta.revela .luz{animation:luz 1.1s ease-out forwards}
+@keyframes luz{0%{opacity:1;transform:scale(1.3)}100%{opacity:0;transform:scale(1)}}
+.carta.revela .raios{opacity:1;animation:explodeRaios 1.2s ease-out forwards}
+@keyframes explodeRaios{0%{transform:translate(-50%,-50%) scale(.4) rotate(0)}100%{transform:translate(-50%,-50%) scale(2.2) rotate(90deg);opacity:0}}
+.carta.revela{z-index:6}
 .carta.comum{--cor:#ffffff44}.carta.incomum{--cor:#9fd0ffaa}.carta.rara{--cor:#ffd04acc}.carta.mitica{--cor:#ff6a1add}.carta.especial{--cor:#b07ae0cc}
 /* explosão ao virar */
 .carta .estouro{position:absolute;left:50%;top:50%;width:260px;height:260px;border-radius:50%;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;background:radial-gradient(circle,var(--cor) 0%,transparent 65%)}
@@ -76,8 +95,11 @@ body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color
 .rara .selo{background:linear-gradient(#ffe48a,#b8862a);color:#2a1a04}
 .mitica .selo{background:linear-gradient(#ffb04a,#d0401a);color:#fff;box-shadow:0 0 12px #ff6a1a}
 .especial .selo{background:linear-gradient(#d0a8f0,#7a4ab0);color:#fff}
-.carta .nova{position:absolute;top:-8px;right:-6px;background:#3f9a5a;color:#fff;font-family:var(--ff);font-size:9px;letter-spacing:.1em;padding:2px 7px;border-radius:999px;opacity:0}
+.carta .nova{position:absolute;top:-13px;left:50%;transform:translateX(-50%);z-index:3;padding:2px 16px 3px;font-family:var(--ff);font-weight:800;font-size:10.5px;letter-spacing:.06em;color:#3a1a02;
+  background:linear-gradient(180deg,#fff2b0,#ffc04a 55%,#e07a10);clip-path:polygon(10% 0,90% 0,100% 100%,0 100%);opacity:0;filter:drop-shadow(0 0 6px #ffb040)}
 .carta.virada .nova{opacity:1;transition:opacity .3s .4s}
+.carta.ehNova.virada .frente{box-shadow:0 0 0 2px #ffb040,0 0 18px 4px #ff9a20cc,0 8px 16px #000c;animation:novaBrilho 2.2s ease-in-out infinite}
+@keyframes novaBrilho{50%{box-shadow:0 0 0 2px #ffd070,0 0 28px 8px #ffa830ee,0 8px 16px #000c}}
 .faisca{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--cor);box-shadow:0 0 8px var(--cor);pointer-events:none;animation:faisca .9s ease-out forwards}
 @keyframes faisca{from{opacity:1;transform:translate(0,0)}to{opacity:0;transform:translate(var(--x),var(--y))}}
 #zoom{position:fixed;inset:0;z-index:20;background:#06030ad0;display:flex;align-items:center;justify-content:center;cursor:zoom-out;animation:zIn .2s ease-out}
@@ -140,10 +162,10 @@ function abrir(){
       // 8 em cima e 7 embaixo; a ordem foi embaralhada (a rara pode estar em qualquer lugar, como num pacote de verdade)
       if (i < 8){ const k = i - 3.5; x = W/2 + k * Math.min(128, W/9); y = H*.24 + Math.abs(k)*4; r = k*1.5; }
       else { const k = i - 8 - 3; x = W/2 + k * Math.min(132, W/8.5); y = H*.64 + Math.abs(k)*8; r = k*3; }
-      return `<div class="carta ${c.faixa}" style="--d:${i*.05}s;--r:${r}deg" data-x="${x}" data-y="${y}">
-        <div class="aura"></div><div class="estouro"></div>
+      return `<div class="carta ${c.faixa}${c.nova?' ehNova':''}" style="--d:${i*.05}s;--r:${r}deg" data-x="${x}" data-y="${y}">
+        <div class="raios"></div><div class="aura"></div><div class="estouro"></div><div class="luz"></div>
         <div class="gira"><div class="lado costas"></div><div class="lado frente" style="background-image:url('${img(c)}')"></div></div>
-        <span class="selo">${NOMES[c.faixa]}</span>${c.nova?'<span class="nova">NOVA</span>':''}</div>`;
+        <span class="selo">${NOMES[c.faixa]}</span>${c.nova?'<span class="nova">Novo</span>':''}</div>`;
     }).join('');
     palco.insertAdjacentHTML('beforeend', cartas);
     const els = [...palco.querySelectorAll('.carta')];
@@ -152,8 +174,12 @@ function abrir(){
       if (el.classList.contains('virada')){   // já virada: abre o zoom para ler
         const z = document.createElement('div'); z.id = 'zoom'; z.style.setProperty('--cor', getComputedStyle(el).getPropertyValue('--cor'));
         z.innerHTML = `<img src="${el.querySelector('.frente').style.backgroundImage.slice(5,-2)}">`; z.onclick = ()=>z.remove(); document.body.appendChild(z); return; }
-      el.classList.add('virada');
-      const nivel = ordem[els.indexOf(el)].faixa; brilhoSom(nivel);
+      const nivel = ordem[els.indexOf(el)].faixa;
+      if (el.classList.contains('carrega')) return;   // ainda juntando luz
+      if (nivel !== 'comum' && nivel !== 'incomum' && !el.classList.contains('revela')){   // rara/mítica/especial: suspense antes de virar
+        el.classList.add('carrega'); setTimeout(()=>{ el.classList.remove('carrega'); el.classList.add('revela'); el.click(); }, 620); return; }
+      if (el.classList.contains('virada')) return;
+      el.classList.add('virada'); brilhoSom(nivel);
       if (nivel === 'mitica'){ bum(.85, .8); palco.classList.remove('treme'); void palco.offsetWidth; palco.classList.add('treme'); }
       else if (nivel === 'rara' || nivel === 'especial') bum(1.4, .35);
       if (nivel !== 'comum'){ const r = el.getBoundingClientRect(); const n = nivel === 'mitica' ? 40 : 18;
