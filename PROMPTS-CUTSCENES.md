@@ -19,6 +19,17 @@ Wide cinematic 21:9 landscape image. Painted graphic-novel illustration, thick b
 Scene: The void between worlds: a sea of mist and stars. Far away, three worlds float like islands in the sky: one lush green with forests, one sickly purple and torn apart, one under a blood-red moon with a gothic castle. In the center, an enormous flat ancient stone slab carved with glowing golden runes floats in the mist. Accent color: gold.
 ```
 
+### Prompt 1b  →  salvar como  abertura\q1b.jpg
+(os magos fazendo o pacto — vai na parte 2 da narração)
+
+```
+Use exactly the same art style as the attached image.
+
+Wide cinematic 21:9 landscape image. Painted graphic-novel illustration, thick black ink outlines, flat muted colors with one strong accent color, rough brush textures, dark fantasy, misty atmosphere, like the hand-painted story cutscenes of The Witcher 3. No text, no letters, no logos, no watermark.
+
+Scene: Seven ancient wizards in long robes of different colors (white, blue, black, red, green, grey, gold), each from a different land, standing in a circle around the enormous rune-carved stone slab floating in the starry void. They lean over the stone, one of them carving glowing golden runes with a staff while the others raise their hands, sealing a pact. Serious faces, solemn moment. Golden light rising from the runes onto their faces. Accent color: gold.
+```
+
 ### Prompt 2  →  salvar como  abertura\q2.png
 (movimento: Câmera aproxima devagar.)
 

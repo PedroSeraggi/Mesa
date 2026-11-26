@@ -55,16 +55,16 @@ function pose(q, u){
 }
 function aplicar(el, p, dx, dy){ el.style.width = p.w + 'px'; el.style.height = p.h + 'px';
   el.style.transform = `translate(calc(-50% + ${p.x + dx}px), calc(-50% + ${p.y + dy}px)) scale(${p.z})`; }
-const dur = q => q.dur || (q._fala ? q._fala + 1.4 : Math.max(12, q.texto.length * 0.072));   // com narração: a fala + uma pausa; sem: tempo para ler com calma
+const dur = q => q.dur || (q._fala ? q._fala + .3 : Math.max(12, q.texto.length * 0.072));   // com narração: a fala + uma pausa; sem: tempo para ler com calma
 function legenda(txt){ leg.classList.remove('on'); setTimeout(() => { leg.textContent = txt; leg.classList.add('on'); }, 350); }
 let R = {}, musica = null, vento = null;
-function tocar(q){ if (audio) audio.pause(); audio = null; if (q._audio){ audio = q._audio; audio.currentTime = 0; setTimeout(() => audio && audio.play().catch(()=>{}), 450); } }
+function tocar(q){ if (q._tocou) return; q._tocou = true; if (audio) audio.pause(); audio = null; if (q._audio){ audio = q._audio; audio.currentTime = 0; audio.play().catch(()=>{}); } }
 // música de fundo: entra e sai devagar, sempre baixinha
 function fadeVol(a, alvo, ms){ if (!a) return; const v0 = a.volume, t = performance.now(); (function f(){ const k = Math.min(1, (performance.now() - t) / ms); a.volume = v0 + (alvo - v0) * k; if (k < 1) requestAnimationFrame(f); else if (!alvo) a.pause(); })(); }
 let ventoTocou = -1;
 function soprar(i){ if (!vento || ventoTocou === i) return; ventoTocou = i; const v = vento.cloneNode(); v.volume = R.volumeVento ?? .35; v.play().catch(()=>{}); }
 let tremor = 0;
-function quadro(i){ atual = i; t0 = performance.now(); legenda(Q[i].texto); tocar(Q[i]); tremor = Q[i].tremor ? 1 : 0; }
+function quadro(i){ atual = i; t0 = performance.now(); if (!Q[i]._legendou) legenda(Q[i].texto); tocar(Q[i]); tremor = Q[i].tremor ? 1 : 0; }
 function loop(agora){
   if (fim) return;
   const q = Q[atual], d = dur(q) * 1000, el = els[atual];
@@ -83,6 +83,7 @@ function loop(agora){
     const dist = dirv[0] ? W * 1.05 : H * 1.12;
     aplicar(el, pose(q, 1), -dirv[0] * dist * e, -dirv[1] * dist * e);
     const pn = els[atual + 1]; pn.style.display = 'block'; aplicar(pn, pose(prox, 0), dirv[0] * dist * (1 - e), dirv[1] * dist * (1 - e));
+    if (tt >= .5 && !prox._tocou){ tocar(prox); legenda(prox.texto); prox._legendou = true; }
     const b = Math.min(22, vel * 7); blur.setAttribute('stdDeviation', dirv[0] ? `${b} 0` : `0 ${b}`);
     if (tt >= 1){ el.style.display = 'none'; blur.setAttribute('stdDeviation', '0 0'); quadro(atual + 1); }
   }
@@ -109,8 +110,8 @@ fetch(base + 'roteiro.json').then(r => r.json()).then(async roteiro => {
     a.onloadedmetadata = () => { q._fala = a.duration; ok(); }; a.onerror = ok; }) : null));
   if (R.musica){ musica = new Audio(base + R.musica); musica.loop = true; musica.volume = 0; }
   if (R.vento){ vento = new Audio(base + R.vento); vento.preload = 'auto'; }
+  await Promise.all(Q.map(q => new Promise(ok => { const i = new Image(); i.onload = ok; i.onerror = () => { if (q.reserva) q.img = q.reserva; ok(); }; i.src = base + q.img; })));
   els = Q.map(q => { const d = document.createElement('div'); d.className = 'quadro'; d.style.backgroundImage = `url('${base}${q.img}')`; d.style.display = 'none'; cam.appendChild(d); return d; });
-  await Promise.all(Q.map(q => new Promise(ok => { const i = new Image(); i.onload = i.onerror = ok; i.src = base + q.img; })));
   const comecar = () => { if (musica){ musica.play().catch(()=>{}); fadeVol(musica, R.volumeMusica ?? .16, 3000); } document.getElementById('iniciar').style.display = 'none'; els[0].style.display = 'block'; document.getElementById('escuro').style.opacity = 0; quadro(0); requestAnimationFrame(loop); };
   if ((Q.some(q => q.audio) || R.musica) && !navigator.userActivation?.hasBeenActive){ const b = document.getElementById('iniciar'); b.style.display = 'flex'; b.onclick = comecar; } else comecar();
 });

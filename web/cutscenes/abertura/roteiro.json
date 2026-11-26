@@ -8,10 +8,11 @@
       "audio": "n1.mp3"
     },
     {
-      "img": "q1.jpg",
+      "img": "q1b.jpg",
       "mov": "aprox",
       "texto": "Eles tinham visto o que a mana fazia com quem a tinha demais. Reinos queimados, céus rasgados, mundos inteiros engolidos pela ambição de um só. Então, sobre aquela pedra, fizeram um pacto: dividiram a mana entre os mundos... para que nenhum ser jamais tivesse todo o poder.",
-      "audio": "n2.mp3"
+      "audio": "n2.mp3",
+      "reserva": "q1.jpg"
     },
     {
       "img": "q2.jpg",
