@@ -123,9 +123,24 @@ html,body{margin:0;height:100%;overflow:hidden;background:#060302;color:#eee;fon
 .etiqueta::before{left:4px}.etiqueta::after{right:4px}
 .etiqueta .moeda{width:19px;height:19px}
 .raridade{margin-top:9px;font-family:var(--ff);font-size:11.5px;letter-spacing:.18em;color:var(--r);text-shadow:0 1px 0 #000,0 0 10px color-mix(in srgb,var(--r) 50%,transparent)}
-.oferta .comprar{position:absolute;bottom:-58px;opacity:0;transform:translateY(-6px);transition:opacity .2s,transform .2s;font-size:13px;padding:7px 16px 9px;z-index:5;pointer-events:none}
-.oferta:hover .comprar{opacity:1;transform:none;pointer-events:auto}
-.desejo{position:absolute;top:-13px;left:50%;transform:translateX(-50%);z-index:3;display:flex;align-items:center;gap:5px;white-space:nowrap;padding:3px 14px 4px;font-family:var(--ff);font-size:11px;color:#3a1a02;
+.oferta:not(.vendida) .etiqueta{cursor:pointer;transition:transform .12s,filter .2s}
+.oferta:not(.vendida) .etiqueta:hover{filter:brightness(1.12);transform:translateY(-2px)}
+.oferta:not(.vendida) .etiqueta:active{transform:translateY(3px);box-shadow:inset 0 1px 0 #fff,0 0 0 1px #4a2c06,0 1px 0 #5a3a0a,0 2px 0 #2a1604,0 4px 6px #000b}
+/* pop-up de confirmação */
+#conf{position:fixed;inset:0;z-index:25;display:none;align-items:center;justify-content:center;background:#000b}
+#conf.on{display:flex;animation:aparece .2s ease-out}
+@keyframes aparece{from{opacity:0}}
+#conf .caixa{display:flex;gap:26px;align-items:center;padding:26px 30px;border-radius:14px;max-width:min(620px,92vw);animation:sobe .25s cubic-bezier(.2,.9,.3,1.2);
+  background:var(--ruido),radial-gradient(ellipse at 50% 0%,#3a2010,#1a0c06 70%);background-blend-mode:overlay,normal;box-shadow:inset 0 1px 0 #ffd8a022,0 0 0 2px #0a0402,0 0 0 5px #6a4a24,0 0 0 7px #1a0c04,0 30px 70px #000}
+@keyframes sobe{from{transform:translateY(20px) scale(.95)}}
+#conf img{width:200px;border-radius:10px;box-shadow:0 0 0 2px var(--r,#c9a24a),0 0 24px var(--r,#c9a24a),0 14px 26px #000c}
+#conf h3{margin:0 0 8px;font-family:var(--ff);font-size:22px;color:transparent;background:linear-gradient(180deg,#fff2c0,#e8b84a 50%,#a8782a);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 2px 0 #000)}
+#conf p{margin:0 0 6px;color:#e0d0b0;font-size:17px;line-height:1.4}
+#conf .preco{display:inline-flex;align-items:center;gap:6px;font-family:var(--fn);font-weight:900;color:#ffe08a;font-size:20px;margin:6px 0 4px}
+#conf .resto{color:#a8957d;font-size:14px}
+#conf .falta{color:#ff9a7a;font-size:15px}
+#conf .bts{display:flex;gap:14px;margin-top:18px}
+.desejo{position:absolute;top:-14px;left:50%;transform:translateX(-50%);z-index:3;display:flex;align-items:center;gap:5px;white-space:nowrap;padding:3px 14px 4px;font-family:var(--ff);font-size:11px;color:#3a1a02;
   background:linear-gradient(180deg,#fff2b0,#ffc04a 55%,#e07a10);clip-path:polygon(8% 0,92% 0,100% 100%,0 100%);filter:drop-shadow(0 0 8px #ffb040)}
 .desejo svg{width:11px;height:11px}
 .oferta.vendida .mold{filter:grayscale(.8) brightness(.45);cursor:default}
@@ -201,6 +216,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#060302;color:#eee;fon
   <div class="lista" id="listaRep"></div>
   <div class="pe"><span class="dica" id="desmDica">Clique nas cartas para escolher o que desmanchar.</span><span class="tot" id="desmTot"></span><button class="b3d" id="desmTodas">Marcar todas</button><button class="b3d ouro" id="desmOk" disabled>Desmanchar</button><button class="b3d" id="desmFechar">Fechar</button></div>
 </div></div>
+<div id="conf"><div class="caixa"><img id="confImg" alt=""><div><h3 id="confNome"></h3><p>Você quer mesmo comprar esta carta?</p><div class="preco" id="confPreco"></div><div id="confResto"></div><div class="bts"><button class="b3d ouro" id="confSim">Sim, comprar</button><button class="b3d" id="confNao">Não</button></div></div></div></div>
 <div id="msg"></div>
 <script>
 const DADOS = {"loja": [{"nome": "Vulshok Berserker", "set": "M11", "num": "159", "faixa": "comum"}, {"nome": "Ranger's Guile", "set": "M14", "num": "191", "faixa": "comum"}, {"nome": "Minotaur Abomination", "set": "M14", "num": "107", "faixa": "comum"}, {"nome": "Ember Hauler", "set": "M11", "num": "135", "faixa": "incomum"}, {"nome": "Voracious Wurm", "set": "M14", "num": "200", "faixa": "incomum"}, {"nome": "Krenko, Mob Boss", "set": "M13", "num": "138", "faixa": "rara"}], "repetidas": [{"nome": "Calculated Dismissal", "set": "ORI", "num": "48", "faixa": "comum", "extra": 1}, {"nome": "Sliver Construct", "set": "M14", "num": "218", "faixa": "comum", "extra": 1}, {"nome": "Ranger's Path", "set": "M13", "num": "186", "faixa": "comum", "extra": 3}, {"nome": "Seacoast Drake", "set": "M14", "num": "70", "faixa": "comum", "extra": 3}, {"nome": "Elvish Mystic", "set": "M14", "num": "169", "faixa": "comum", "extra": 3}, {"nome": "Viashino Spearhunter", "set": "M10", "num": "161", "faixa": "comum", "extra": 1}, {"nome": "Master of Diversion", "set": "M14", "num": "24", "faixa": "comum", "extra": 1}, {"nome": "Fireball", "set": "M10", "num": "136", "faixa": "incomum", "extra": 1}, {"nome": "Gather Courage", "set": "M15", "num": "175", "faixa": "incomum", "extra": 3}, {"nome": "Furnace Whelp", "set": "M13", "num": "133", "faixa": "incomum", "extra": 1}, {"nome": "Mizzium Meddler", "set": "ORI", "num": "64", "faixa": "rara", "extra": 1}]};
@@ -217,15 +233,28 @@ function desenhar(){
   document.getElementById('saldo').innerHTML = `${MOEDA}${fmt(ouro)}`;
   document.getElementById('cartas').innerHTML = DADOS.loja.map((c, i) => { const v = vendidas.has(i), p = PRECO[c.faixa];
     return `<div class="oferta${v ? ' vendida' : ''}" data-f="${c.faixa}" data-i="${i}">
-      ${DESEJOS.has(c.nome) && !v ? `<span class="desejo">${ESTRELA}Na sua lista de desejos</span>` : ''}
-      <div class="mold"><div class="aura"></div><img src="${img(c)}" alt="${c.nome}">${v ? '<span class="selo">VENDIDA</span>' : ''}</div>
+      <div class="mold">${DESEJOS.has(c.nome) && !v ? `<span class="desejo">${ESTRELA}Na sua lista de desejos</span>` : ''}<div class="aura"></div><img src="${img(c)}" alt="${c.nome}">${v ? '<span class="selo">VENDIDA</span>' : ''}</div>
       <div class="cavalete"></div><div class="sombra"></div>
       <div class="pend" style="--d:${(-i*.7).toFixed(1)}s"><div class="etiqueta">${MOEDA}${fmt(p)}</div><div class="raridade">${NOME_F[c.faixa]}</div></div>
-      ${v ? '' : `<button class="b3d ${ouro < p ? '' : 'ouro'} comprar" ${ouro < p ? 'disabled' : ''}>${ouro < p ? 'Ouro insuficiente' : 'Comprar'}</button>`}</div>`; }).join('');
-  document.querySelectorAll('.oferta:not(.vendida) .comprar').forEach(b => b.onclick = () => { const i = +b.closest('.oferta').dataset.i, c = DADOS.loja[i];
-    ouro -= PRECO[c.faixa]; vendidas.add(i); desenhar(); aviso(`${c.nome} foi para a sua coleção!`); });
+      </div>`; }).join('');
+  document.querySelectorAll('.oferta:not(.vendida) .etiqueta').forEach(b => b.onclick = () => perguntar(+b.closest('.oferta').dataset.i));
   document.getElementById('renovar').disabled = ouro < 100;
 }
+let escolhida = -1;
+const COR_R = {comum:'#fff4dc', incomum:'#8ac8ff', rara:'#ffc830', mitica:'#ff6a1a'};
+function perguntar(i){
+  const c = DADOS.loja[i], p = PRECO[c.faixa], ok = ouro >= p; escolhida = i;
+  document.getElementById('confImg').src = img(c); document.getElementById('confImg').style.setProperty('--r', COR_R[c.faixa]);
+  document.getElementById('confNome').textContent = c.nome;
+  document.getElementById('confPreco').innerHTML = `${MOEDA}${fmt(p)}`;
+  document.getElementById('confResto').innerHTML = ok ? `<span class="resto">Depois da compra você fica com ${fmt(ouro - p)} de Ouro.</span>` : `<span class="falta">Faltam ${fmt(p - ouro)} de Ouro.</span>`;
+  document.getElementById('confSim').disabled = !ok;
+  document.getElementById('conf').classList.add('on');
+}
+document.getElementById('confNao').onclick = () => document.getElementById('conf').classList.remove('on');
+document.getElementById('conf').onclick = e => { if (e.target.id === 'conf') document.getElementById('conf').classList.remove('on'); };
+document.getElementById('confSim').onclick = () => { const c = DADOS.loja[escolhida]; ouro -= PRECO[c.faixa]; vendidas.add(escolhida);
+  document.getElementById('conf').classList.remove('on'); desenhar(); aviso(`${c.nome} foi para a sua coleção!`); };
 function relogio(){ const a = new Date(), m = new Date(a); m.setHours(24,0,0,0); const s = Math.floor((m - a) / 1000);
   document.getElementById('tempo').textContent = [Math.floor(s/3600), Math.floor(s%3600/60), s%60].map(n => String(n).padStart(2,'0')).join(':'); }
 setInterval(relogio, 1000); relogio();
