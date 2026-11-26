@@ -256,6 +256,19 @@ html.modoDesenho #mesa,html.modoDesenho #mesa *{cursor:crosshair!important}
 .corpoTab.pmAnim{position:relative;isolation:isolate}.corpoTab.pmAnim>.pmFx{z-index:-1}
 .comMoldura{margin-right:22px;margin-left:8px}.comMoldura[data-mld='40'],.comMoldura[data-mld='50']{margin-right:34px;margin-left:16px}
 #convitesTroca{position:fixed;right:18px;bottom:70px;z-index:9400;display:flex;flex-direction:column;gap:8px}
+.mundoFim{text-align:center;max-width:520px;margin:0 auto}
+.mundoFim .mfArte{position:relative;height:190px;border-radius:12px;overflow:hidden;margin-bottom:14px;box-shadow:inset 0 0 0 1px #c9a24a55,0 10px 30px #000a}
+.mundoFim .mfKrenko{position:absolute;inset:0;background:url('cutscenes/mundo1-vitoria/q1.jpg') center/cover;filter:saturate(.8) brightness(.8)}
+.mundoFim .mfSelo{position:absolute;right:16px;bottom:14px;width:64px;height:64px;display:grid;place-items:center;font-family:var(--ff-titulo);font-size:28px;color:#ffe0d0;
+  background:radial-gradient(circle at 38% 32%,#d0402a,#8a1a10 60%,#5a0a06);border-radius:47% 53% 50% 50%/52% 48% 52% 48%;box-shadow:0 0 0 4px #a0281a,0 6px 14px #000c;transform:rotate(-12deg)}
+.mundoFim .mfCap{font-family:var(--ff-titulo);font-size:12px;letter-spacing:.3em;color:var(--ouro)}
+.mundoFim h2{margin:4px 0 8px;font-family:var(--ff-titulo);font-size:30px;color:#fff}
+.mundoFim p{color:#d9c8b0;font-size:16px;margin:0 0 16px}
+.mundoFim .mfConq{display:flex;align-items:center;gap:12px;justify-content:center;margin:0 auto 16px;padding:10px 16px;border-radius:12px;background:#0006;width:fit-content;text-align:left}
+.mundoFim .mfConq small{display:block;color:var(--ouro);font-size:12px;letter-spacing:.08em}
+.mundoFim .mfProx{display:flex;flex-direction:column;gap:2px;margin:0 auto 18px;padding:12px;border-radius:12px;width:fit-content;min-width:260px;
+  background:linear-gradient(160deg,#2a0e3a,#120618);box-shadow:inset 0 0 0 1px #8a4ab066,0 0 24px #8a4ab033}
+.mundoFim .mfProx b{font-family:var(--ff-titulo);color:#e0c8ff;font-size:17px}.mundoFim .mfProx span{color:#b090d0;font-size:13px;letter-spacing:.2em;text-transform:uppercase}
 .mldSobre{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:3}
 .pfNivelLinha.clicavel{cursor:pointer;border-radius:10px;padding:4px 6px;margin-left:-6px;transition:background .2s}
 .pfNivelLinha.clicavel:hover{background:#ffffff10}
@@ -1504,6 +1517,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
 <body>
 <script src="molduras.js"></script>
 <script src="playmats/brasas.js"></script>
+<script src="chefe-falas.js" defer></script>
 <div id="topo">
   <div id="logo">Me<b>sa</b></div>
   <div id="turnoInfo"></div>
@@ -4524,6 +4538,26 @@ async function abrirEditorDeck(){
   window.addEventListener('message', ouvir);
   document.body.appendChild(fr);
 }
+// vitória sobre o Krenko: toca a cutscene uma vez e mostra a tela de Mundo 1 concluído
+let fimMundoVisto = null;
+function verificarFimDoMundo(x){
+  if (!x || !x.campanha || !x.campanha.mundoConcluido) return;
+  const chave = ((E && E.jogo && (E.jogo.jogadores||[]).map(j=>j.id).join(',')) || '') + '|mundo1';
+  if (fimMundoVisto === chave) return; fimMundoVisto = chave;
+  setTimeout(fimDoMundo1, 1800);
+}
+function fimDoMundo1(){ tocarCutscene('mundo1-vitoria', telaMundoConcluido); }
+function telaMundoConcluido(){
+  const cx = abrirModal('');
+  cx.innerHTML = `<div class="mundoFim">
+    <div class="mfArte"><div class="mfKrenko"></div><div class="mfSelo">I</div></div>
+    <div class="mfCap">TERRAS DE ORIGEM</div><h2>Mundo 1 concluído</h2>
+    <p>Krenko caiu, e as Terras de Origem estão livres. Mas o selo do dragão aponta para outro lugar...</p>
+    <div class="mfConq">${typeof brasaoHtml === 'function' ? brasaoHtml({icone:'coroa', moldura:'ouro'}) : ''}<div><b>Libertador das Terras de Origem</b><small>Conquista desbloqueada</small></div></div>
+    <div class="mfProx"><b>Mundo 2 · O Abismo</b><span>Em breve</span></div>
+    <div class="linhaBts"><button class="pri" id="mfOk">Voltar à campanha</button></div></div>`;
+  $('#mfOk').onclick = ()=>{ fecharModal(true); voltarCampanha(); };
+}
 function voltarCampanha(){ post('/api/sair'); irPara('menu'); abrirCampanha(); }
 function mostrarCampanha(c){
   $('#campSub').textContent = `Batalha ${Math.min(c.batalha,15)} de 15`;
@@ -4660,6 +4694,7 @@ function desenharXpFim(r){
   if (!x){ box.innerHTML = `<div class="xpFim"><span class="dicaMenu" style="background:none;border:none">Calculando XP...</span></div>`; return; }
   if (xpMostrado === x) return; xpMostrado = x;
   if (x.repetida){ box.innerHTML = ''; return; }
+  verificarFimDoMundo(x);
   box.innerHTML = `<div class="xpFim">
     <div class="xpTopo"><b>+${x.total} XP</b>${x.subiu?`<span class="xpSubiu">Subiu para o nível ${x.nivel.nivel}!</span>`:''}</div>
     ${barraNivel(x.nivel)}
@@ -4670,7 +4705,7 @@ function desenharXpFim(r){
         <table class="xpTab">${x.ouro.ganhos.map(g=>`<tr><td>${esc(g.motivo)}</td><td class="q">${g.qtd!=null?`${g.qtd}×`:''}${g.max?' <small class="xpMax">MAX</small>':''}</td><td class="v">+${g.ouro}</td><td></td></tr>`).join('')}</table></div>` : ''}
       ${(x.conquistasNovas||[]).length ? `<div class="cqNovas"><div class="xpNota" style="color:var(--ouro)">Conquista desbloqueada!</div>${x.conquistasNovas.map(c=>conquistaHtml(Object.assign({quando:Date.now()}, c))).join('')}</div>` : ''}
       ${(x.premiosNivel||[]).length ? `<div class="deckGanho"><b>Recompensas de nível:</b> ${x.premiosNivel.map(p=>`nível ${p.nivel}: ${esc(p.itens.join(', '))}`).join(' · ')} <button class="peq" onclick="abrirTrilha()">Ver trilha</button></div>` : ''}
-      ${x.campanha ? `<div class="deckGanho">${x.campanha.venceu ? `<b>Batalha ${x.campanha.batalha} vencida!</b>${x.campanha.booster ? ' Você ganhou 1 booster.' : ''}${x.campanha.liberou && x.campanha.liberou <= 15 ? ` A batalha ${x.campanha.liberou} foi liberada.` : x.campanha.liberou > 15 ? ' Você completou o Mundo 1!' : ''}` : `Batalha ${x.campanha.batalha} perdida. Ajuste o deck e tente de novo quando quiser.`} <button class="peq" onclick="voltarCampanha()">Voltar à campanha</button></div>` : ''}
+      ${x.campanha ? `<div class="deckGanho">${x.campanha.venceu ? `<b>Batalha ${x.campanha.batalha} vencida!</b>${x.campanha.booster ? ' Você ganhou 1 booster.' : ''}${x.campanha.liberou && x.campanha.liberou <= 15 ? ` A batalha ${x.campanha.liberou} foi liberada.` : x.campanha.liberou > 15 ? ' Você completou o Mundo 1!' : ''}${x.campanha.mundoConcluido ? ` <button class="pri peq" onclick="fimDoMundo1()">Ver o que aconteceu</button>` : ''}` : `Batalha ${x.campanha.batalha} perdida. Ajuste o deck e tente de novo quando quiser.`} <button class="peq" onclick="voltarCampanha()">Voltar à campanha</button></div>` : ''}
       ${x.deckGanhoNome ? `<div class="deckGanho">Você ganhou o deck do chefe: <b>${esc(x.deckGanhoNome)}</b>. Ele está em Decks, na seção "Decks de chefe".</div>` : ''}
       ${x.multiplicador && x.multiplicador < 1 ? `<div class="xpNota">Partida com bots: os itens com % valem ${Math.round(x.multiplicador*100)}% (fácil 30%, normal 40%, difícil 50%, Chefe do dia 70%).</div>` : ''}`
       : '<div class="xpNota">Partida curta demais (menos de 3 turnos): sem XP.</div>'}

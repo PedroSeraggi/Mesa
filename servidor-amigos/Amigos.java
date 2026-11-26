@@ -384,6 +384,11 @@ public class Amigos {
                 if (primeira) { v.add(n); u.campanha.add("vencidas", v); u.boosters++; cr.put("booster", true); }
                 int atual = u.campanha.get("batalha").getAsInt();
                 if (n == atual && atual <= 15) { u.campanha.addProperty("batalha", atual + 1); cr.put("liberou", atual + 1); }
+                if (n == 15 && primeira) {   // venceu o chefe do mundo pela primeira vez: mundo concluído
+                    soma(u.recordes, "mundosConcluidos", 1); cr.put("mundoConcluido", 1);
+                    List<Map<String, Object>> novas = conferirConquistas(u);
+                    if (!novas.isEmpty()) { List<Map<String, Object>> todas = new ArrayList<>(conqNovas); todas.addAll(novas); r.put("conquistasNovas", todas); }
+                }
                 sujo = true;
             }
             cr.put("estado", u.campanha);
@@ -551,6 +556,7 @@ public class Amigos {
         {"chefe", "Caçador de chefes", "Derrote o Chefe do dia", "chifres", "prata", "chefesDerrotados", 1, "max"},
         {"deckdia", "Explorador", "Vença com o Deck do dia", "livro", "prata", "decksDoDia", 1, "max"},
         {"time", "Dupla dinâmica", "Vença uma partida 2 contra 2", "escudos", "prata", "vitoriasTime", 1, "max"},
+        {"mundo1", "Libertador das Terras de Origem", "Derrote o Krenko e conclua o Mundo 1 da campanha", "coroa", "ouro", "mundosConcluidos", 1, "max"},
     };
     static List<Map<String, Object>> conquistasJson(Usuario u) {
         List<Map<String, Object>> l = new ArrayList<>();
