@@ -977,9 +977,7 @@ public class Ponte implements MageClient {
     /** O importador do XMage se perde com "SB:" na primeira linha: põe o comandante no fim. */
     static String comandanteNoFim(String dck) {
         StringBuilder main = new StringBuilder(), sb = new StringBuilder();
-        for (String l : dck.split("?
-")) { if (l.trim().isEmpty()) continue; (l.startsWith("SB:") ? sb : main).append(l).append('
-'); }
+        for (String l : dck.split("\\r?\\n")) { if (l.trim().isEmpty()) continue; (l.startsWith("SB:") ? sb : main).append(l).append('\n'); }
         return main.toString() + sb;
     }
     void jogarCampanha(int n) throws Exception {
