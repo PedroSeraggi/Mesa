@@ -1023,10 +1023,11 @@ public class Ponte implements MageClient {
             ops.add("@chefe/" + arq);
         }
         int nivel = b.get("nivel").getAsInt();
-        criarPartida("@chefe/campanha-jogador.dck", ops, nivel);
+        criarPartida("@chefe/campanha-jogador.dck", ops, nivel, true);   // campanha roda no PC do jogador
         campanhaBatalha = n;
         ultimaCriacao = new LinkedHashMap<>();
         ultimaCriacao.put("tipo", "campanha"); ultimaCriacao.put("n", n);
+        if (gameId != null) salvarPartida();   // a partida pode ter começado antes desta marca: anota de novo, já como campanha
     }
 
     volatile boolean assistindo = false;
@@ -1729,6 +1730,7 @@ public class Ponte implements MageClient {
             o.addProperty("gameId", gameId == null ? "" : gameId.toString());
             o.addProperty("quando", System.currentTimeMillis());
             o.addProperty("dupla", modo2v2);   // 2v2: ao voltar, a Mesa precisa saber (vitória do time, barras, mão do parceiro)
+            if (campanhaBatalha > 0) o.addProperty("campanha", campanhaBatalha);   // campanha: a vitória depois de voltar ainda conta para o progresso
             Files.write(arqPartida(), GSON.toJson(o).getBytes(StandardCharsets.UTF_8));
         } catch (Exception ignored) { }
     }
@@ -1773,6 +1775,7 @@ public class Ponte implements MageClient {
                     usarPcLocal = "localhost".equals(o.get("servidor").getAsString());   // partida contra bot que caiu para o PC
                     usuarioForcado = o.get("usuario").getAsString();
                     modo2v2 = o.has("dupla") && o.get("dupla").getAsBoolean(); vitoriaTime = false; maoEnviada = ""; timesJogo = null;
+                    if (o.has("campanha")){ campanhaBatalha = o.get("campanha").getAsInt(); ultimaCriacao = new LinkedHashMap<>(); ultimaCriacao.put("tipo", "campanha"); ultimaCriacao.put("n", campanhaBatalha); }
                     tableId = mesa; gameId = null; int fotosAntes = fotos;
                     synchronized (trava) { if (!"jogo".equals(fase)) fase = "iniciando"; }
                     status("Voltando para a partida...");
@@ -2499,10 +2502,12 @@ public class Ponte implements MageClient {
         }).start();
     }
 
-    void criarPartida(String meuDeck, List<String> oponentes, int skill) throws Exception {
-        // bots e chefe: no Zera; se ele não responder, no próprio PC
-        usarPcLocal = false;
-        if (!portaAberta(enderecoZera(), PORTA_XMAGE)) { usarPcLocal = true; aviso("O servidor do grupo não respondeu: esta partida contra bots vai rodar no seu PC."); }
+    void criarPartida(String meuDeck, List<String> oponentes, int skill) throws Exception { criarPartida(meuDeck, oponentes, skill, false); }
+    /** noPc: a partida roda no XMage deste PC (campanha), mesmo com o Zera ligado. O resultado continua indo para o Zera. */
+    void criarPartida(String meuDeck, List<String> oponentes, int skill, boolean noPc) throws Exception {
+        // bots e chefe: no Zera; se ele não responder, no próprio PC. Campanha: sempre no PC (não pesa no servidor do grupo)
+        usarPcLocal = noPc;
+        if (!noPc && !portaAberta(enderecoZera(), PORTA_XMAGE)) { usarPcLocal = true; aviso("O servidor do grupo não respondeu: esta partida contra bots vai rodar no seu PC."); }
         synchronized (trava) {
             fase = "conectando";
             erro = null;
