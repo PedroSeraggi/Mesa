@@ -304,8 +304,10 @@ public class Amigos {
             // Ouro: base redonda; criaturas e cartas dão valores "quebrados"
             {
                 boolean ehChefe = !str(p, "chefe").isEmpty(), ehDeckDia = !str(p, "deckDia").isEmpty();
+                int campN = p.has("campanha") ? p.get("campanha").getAsInt() : 0;
                 ganhoOuro(ouroGanhos, "Jogar a partida", null, 60, false);
-                if (venceu) ganhoOuro(ouroGanhos, ehChefe ? "Vitória contra o Chefe do dia" : ehDeckDia ? "Vitória com o Deck do dia" : "Vitória", null, ehChefe ? 200 : 150, false);
+                if (venceu && campN > 0) ganhoOuro(ouroGanhos, "Vitória na campanha (batalha " + campN + ")", null, batalhaTripla(campN) ? 500 : 250, false);
+                else if (venceu) ganhoOuro(ouroGanhos, ehChefe ? "Vitória contra o Chefe do dia" : ehDeckDia ? "Vitória com o Deck do dia" : "Vitória", null, ehChefe ? 200 : 150, false);
                 if (criaturasReais > 0) ganhoOuro(ouroGanhos, "Criaturas abatidas", criaturasReais, Math.min(35, criaturasReais), criaturasReais >= 35);
                 if (comprasReais > 0) ganhoOuro(ouroGanhos, "Cartas compradas", comprasReais, Math.min(20, comprasReais), comprasReais >= 20);
                 if (primeiraVitoriaDoDia) ganhoOuro(ouroGanhos, "Primeira vitória do dia", null, 112, false);
@@ -362,6 +364,22 @@ public class Amigos {
         r.put("nivel", ni); r.put("subiu", (Integer) ni.get("nivel") > antes);
         r.put("missoes", missoesJson(u));
         if (!conqNovas.isEmpty()) r.put("conquistasNovas", conqNovas);
+        // campanha: vitória libera a próxima batalha; a primeira vitória em cada batalha dá 1 booster
+        if (p.has("campanha") && u.campanha != null) {
+            int n = p.get("campanha").getAsInt();
+            Map<String, Object> cr = new LinkedHashMap<>();
+            cr.put("batalha", n); cr.put("venceu", venceu);
+            if (venceu) {
+                JsonArray v = u.campanha.has("vencidas") ? u.campanha.getAsJsonArray("vencidas") : new JsonArray();
+                boolean primeira = true; for (JsonElement e : v) if (e.getAsInt() == n) primeira = false;
+                if (primeira) { v.add(n); u.campanha.add("vencidas", v); u.boosters++; cr.put("booster", true); }
+                int atual = u.campanha.get("batalha").getAsInt();
+                if (n == atual && atual <= 15) { u.campanha.addProperty("batalha", atual + 1); cr.put("liberou", atual + 1); }
+                sujo = true;
+            }
+            cr.put("estado", u.campanha);
+            r.put("campanha", cr);
+        }
         {   // Ouro da partida
             darBoasVindas(u);
             int tot = ouroGanhos.stream().mapToInt(g -> (Integer) g.get("ouro")).sum();
@@ -659,6 +677,19 @@ public class Amigos {
         if (cmd != null) l.add(0, cmd);
         return l;
     }
+    static boolean batalhaTripla(int n) { return n == 5 || n == 10 || n == 15; }
+    static final String[][] BASICOS = {{"W", "Plains", "M15", "250"}, {"U", "Island", "M15", "254"}, {"B", "Swamp", "M15", "258"}, {"R", "Mountain", "M15", "262"}, {"G", "Forest", "M15", "266"}};
+    /** O deck da campanha do jogador em .dck: comandante + cartas + básicos da cor até dar 100. */
+    static String dckCampanha(JsonObject cp) {
+        StringBuilder sb = new StringBuilder();
+        JsonObject cmd = cp.getAsJsonObject("comandante");
+        sb.append("SB: 1 [").append(str(cmd, "set")).append(":").append(str(cmd, "num")).append("] ").append(str(cmd, "nome")).append("\n");
+        JsonArray d = cp.getAsJsonArray("deck");
+        for (JsonElement e : d) { JsonObject x = e.getAsJsonObject(); sb.append("1 [").append(str(x, "set")).append(":").append(str(x, "num")).append("] ").append(str(x, "nome")).append("\n"); }
+        int falta = 99 - d.size(); String cor = str(cp, "cor");
+        for (String[] b : BASICOS) if (b[0].equals(cor) && falta > 0) sb.append(falta).append(" [").append(b[2]).append(":").append(b[3]).append("] ").append(b[1]).append("\n");
+        return sb.toString();
+    }
     static Object campanha(JsonObject c) throws IOException {
         Usuario u = usuario(c);
         darBoasVindas(u);
@@ -674,6 +705,27 @@ public class Amigos {
             for (int i = 1; i < d.size(); i++) { deck.add(d.get(i)); u.colecao.merge(chaveCarta(d.get(i)), 1, Integer::sum); }
             cp.add("deck", deck); cp.addProperty("desde", System.currentTimeMillis());
             u.campanha = cp; sujo = true;
+        }
+        if (acao.equals("batalha")) {   // os decks para jogar a batalha n (só as já liberadas)
+            if (u.campanha == null) throw new IllegalArgumentException("Escolha o seu deck inicial primeiro.");
+            int n = c.has("n") ? c.get("n").getAsInt() : 0;
+            if (n < 1 || n > 15 || n > u.campanha.get("batalha").getAsInt()) throw new IllegalArgumentException("Essa batalha ainda está bloqueada.");
+            java.nio.file.Path m1 = pastaCampanha().resolve("mundo1");
+            JsonObject ind = JsonParser.parseString(new String(Files.readAllBytes(pastaCampanha().resolve("mundo1.json")), StandardCharsets.UTF_8)).getAsJsonObject();
+            JsonArray bots = new JsonArray();
+            for (JsonElement e : ind.getAsJsonArray("batalhas")) {
+                JsonObject b = e.getAsJsonObject(); if (b.get("numero").getAsInt() != n) continue;
+                for (JsonElement x : b.getAsJsonArray("bots")) {
+                    JsonObject bo = x.getAsJsonObject(), o = new JsonObject();
+                    o.addProperty("nome", str(bo, "nome"));
+                    o.addProperty("deck", new String(Files.readAllBytes(m1.resolve(str(bo, "arquivo"))), StandardCharsets.UTF_8));
+                    bots.add(o);
+                }
+            }
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("n", n); r.put("jogador", dckCampanha(u.campanha)); r.put("bots", bots);
+            r.put("nivel", n <= 7 ? 4 : 5);
+            return r;
         }
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("campanha", u.campanha);

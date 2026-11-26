@@ -170,6 +170,15 @@ public class Ponte implements MageClient {
             try {
                 JsonObject c = "POST".equals(ex.getRequestMethod()) ? corpo(ex) : new JsonObject();
                 c.addProperty("id", idMesa());
+                if (c.has("acao") && "jogar".equals(c.get("acao").getAsString())) {   // começa a batalha n
+                    int n = c.get("n").getAsInt();
+                    synchronized (trava) { fase = "conectando"; erro = null; }
+                    mudou();
+                    new Thread(() -> { try { jogarCampanha(n); }
+                        catch (Throwable t) { t.printStackTrace(); synchronized (trava) { fase = "lobby"; erro = String.valueOf(t.getMessage()); } mudou(); } }).start();
+                    json(ex, 200, Collections.singletonMap("ok", true));
+                    return;
+                }
                 json(ex, 200, postAmigos("campanha", c));
             } catch (Exception e) {
                 json(ex, 200, Collections.singletonMap("erro", e instanceof IOException ? "Sem conexão com o servidor do grupo." : String.valueOf(e.getMessage())));
@@ -963,6 +972,37 @@ public class Ponte implements MageClient {
         ultimaCriacao.put("tipo", "deckDia"); ultimaCriacao.put("nivel", NIVEL_DECK_DIA); ultimaCriacao.put("ciclo", ciclo);
     }
 
+    // ---------------- Campanha (Mundo 1): seu deck da campanha contra os decks da batalha ----------------
+    volatile int campanhaBatalha = 0;
+    /** O importador do XMage se perde com "SB:" na primeira linha: põe o comandante no fim. */
+    static String comandanteNoFim(String dck) {
+        StringBuilder main = new StringBuilder(), sb = new StringBuilder();
+        for (String l : dck.split("?
+")) { if (l.trim().isEmpty()) continue; (l.startsWith("SB:") ? sb : main).append(l).append('
+'); }
+        return main.toString() + sb;
+    }
+    void jogarCampanha(int n) throws Exception {
+        JsonObject c = new JsonObject(); c.addProperty("id", idMesa()); c.addProperty("acao", "batalha"); c.addProperty("n", n);
+        JsonObject b = postAmigos("campanha", c);
+        if (b.has("erro")) throw new IllegalStateException(b.get("erro").getAsString());
+        Path dir = CACHE.resolve("chefe"); Files.createDirectories(dir);
+        Files.write(dir.resolve("campanha-jogador.dck"), comandanteNoFim(b.get("jogador").getAsString()).getBytes(StandardCharsets.UTF_8));
+        List<String> ops = new ArrayList<>();
+        com.google.gson.JsonArray bots = b.getAsJsonArray("bots");
+        for (int i = 0; i < bots.size(); i++) {
+            JsonObject bo = bots.get(i).getAsJsonObject();
+            String arq = arquivoSeguro(bo.get("nome").getAsString()) + ".dck";
+            Files.write(dir.resolve(arq), comandanteNoFim(bo.get("deck").getAsString()).getBytes(StandardCharsets.UTF_8));
+            ops.add("@chefe/" + arq);
+        }
+        int nivel = b.get("nivel").getAsInt();
+        criarPartida("@chefe/campanha-jogador.dck", ops, nivel);
+        campanhaBatalha = n;
+        ultimaCriacao = new LinkedHashMap<>();
+        ultimaCriacao.put("tipo", "campanha"); ultimaCriacao.put("n", n);
+    }
+
     volatile boolean assistindo = false;
     /** Assistir a uma partida (sem ver mãos, sem jogar). O servidor responde com WATCHGAME. */
     void assistir(UUID mesa) throws Exception {
@@ -1114,6 +1154,7 @@ public class Ponte implements MageClient {
                 p.add("jogadores", GSON.toJsonTree(nomes));
                 if (chefeCiclo != null && ultimaCriacao != null && "chefe".equals(ultimaCriacao.get("tipo"))) p.addProperty("chefe", chefeCiclo);
                 if (deckDiaCiclo != null && ultimaCriacao != null && "deckDia".equals(ultimaCriacao.get("tipo"))) p.addProperty("deckDia", deckDiaCiclo);
+                if (campanhaBatalha > 0 && ultimaCriacao != null && "campanha".equals(ultimaCriacao.get("tipo"))) p.addProperty("campanha", campanhaBatalha);
                 JsonObject c = new JsonObject();
                 c.addProperty("id", idMesa()); c.add("partida", p);
                 Map<String, Object> r = GSON.fromJson(postAmigos("partida", c), Map.class);
@@ -2228,7 +2269,11 @@ public class Ponte implements MageClient {
                     if (u == null) throw new IllegalStateException("A revanche é com quem criou a sala.");
                     sairDoJogoAtual();
                     synchronized (trava) { fase = "lobby"; resultado = null; }
-                    if ("deckDia".equals(u.get("tipo"))) {
+                    if ("campanha".equals(u.get("tipo"))) {
+                        int n = ((Number) u.get("n")).intValue();
+                        new Thread(() -> { try { jogarCampanha(n); }
+                            catch (Throwable t) { synchronized (trava) { fase = "lobby"; erro = String.valueOf(t.getMessage()); } mudou(); } }).start();
+                    } else if ("deckDia".equals(u.get("tipo"))) {
                         new Thread(() -> { try { jogarDeckDia(); }
                             catch (Throwable t) { synchronized (trava) { fase = "lobby"; erro = String.valueOf(t.getMessage()); } mudou(); } }).start();
                     } else if ("chefe".equals(u.get("tipo"))) {
@@ -2448,6 +2493,7 @@ public class Ponte implements MageClient {
         oponentesAtuais = new ArrayList<>(oponentes);
         if (!(oponentes.size() == 1 && oponentes.get(0).startsWith("@chefe/"))) { chefeCiclo = null; chefeNome = null; }
         deckDiaCiclo = null;   // jogarDeckDia marca de novo depois de criar
+        campanhaBatalha = 0;   // jogarCampanha marca de novo depois de criar
         modo2v2 = false; vitoriaTime = false; timesJogo = null;
         ultimaCriacao = new LinkedHashMap<>();
         ultimaCriacao.put("tipo", "bots"); ultimaCriacao.put("deck", meuDeck); ultimaCriacao.put("oponentes", new ArrayList<>(oponentes)); ultimaCriacao.put("nivel", skill);
@@ -2487,8 +2533,9 @@ public class Ponte implements MageClient {
         TableView t = session.createTable(roomId, op);
         if (t == null) throw new IllegalStateException("O servidor recusou criar a mesa");
         tableId = t.getTableId();
+        long antesJoinBots = System.currentTimeMillis();
         if (!session.joinTable(roomId, tableId, meuNome, PlayerType.HUMAN, 1, meu, "")) {
-            throw new IllegalStateException("Seu deck foi recusado pelo servidor (" + meuDeck + "). Confira se tem 100 cartas.");
+            throw new IllegalStateException("Seu deck foi recusado pelo servidor (" + nomeDeck(meuDeck) + ")." + motivoRecusa(antesJoinBots));
         }
         for (int i = 0; i < decks.size(); i++) {
             String nome = nomeDeck(oponentes.get(i));

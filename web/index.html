@@ -4331,6 +4331,7 @@ function telaEscolhaInicial(){
 }
 const NOME_COR = {W:'Branco', U:'Azul', B:'Preto', R:'Vermelho', G:'Verde'};
 // tela do mundo (campanha-mundo.html) por cima da Mesa: lista de batalhas, arte do comandante, história
+function voltarCampanha(){ post('/api/sair'); irPara('menu'); abrirCampanha(); }
 function mostrarCampanha(c){
   $('#campSub').textContent = `Batalha ${Math.min(c.batalha,15)} de 15`;
   let fr = $('#frameCampanha'); if (fr) fr.remove();
@@ -4342,7 +4343,7 @@ function mostrarCampanha(c){
     const a = e.data.acao;
     if (a === 'pronta') fr.contentWindow.postMessage({estado: c, ouro: f.ouro || 0, nome: (perfilAtual && perfilAtual.nome) || ''}, '*');
     if (a === 'fechar'){ window.removeEventListener('message', ouvir); fr.remove(); }
-    if (a === 'jogar') avisoLocal(`Batalha ${e.data.batalha}: as partidas da campanha chegam no próximo passo.`);
+    if (a === 'jogar'){ window.removeEventListener('message', ouvir); fr.remove(); post('/api/campanha', {acao:'jogar', n: e.data.batalha}).then(r=>{ if (r && r.erro) avisoLocal(r.erro); }); }
     if (a === 'editar') avisoLocal('O editor de deck da campanha chega em breve.');
   };
   window.addEventListener('message', ouvir);
@@ -4449,6 +4450,7 @@ function desenharXpFim(r){
       ${x.ouro && (x.ouro.ganhos||[]).length ? `<div class="ouroFim"><div class="xpTopo"><b>${MOEDA} +${fmtOuro(x.ouro.total)} de Ouro</b><span style="color:var(--txt3);font-size:13px">saldo ${fmtOuro(x.ouro.saldo)}</span></div>
         <table class="xpTab">${x.ouro.ganhos.map(g=>`<tr><td>${esc(g.motivo)}</td><td class="q">${g.qtd!=null?`${g.qtd}×`:''}${g.max?' <small class="xpMax">MAX</small>':''}</td><td class="v">+${g.ouro}</td><td></td></tr>`).join('')}</table></div>` : ''}
       ${(x.conquistasNovas||[]).length ? `<div class="cqNovas"><div class="xpNota" style="color:var(--ouro)">Conquista desbloqueada!</div>${x.conquistasNovas.map(c=>conquistaHtml(Object.assign({quando:Date.now()}, c))).join('')}</div>` : ''}
+      ${x.campanha ? `<div class="deckGanho">${x.campanha.venceu ? `<b>Batalha ${x.campanha.batalha} vencida!</b>${x.campanha.booster ? ' Você ganhou 1 booster.' : ''}${x.campanha.liberou && x.campanha.liberou <= 15 ? ` A batalha ${x.campanha.liberou} foi liberada.` : x.campanha.liberou > 15 ? ' Você completou o Mundo 1!' : ''}` : `Batalha ${x.campanha.batalha} perdida. Ajuste o deck e tente de novo quando quiser.`} <button class="peq" onclick="voltarCampanha()">Voltar à campanha</button></div>` : ''}
       ${x.deckGanhoNome ? `<div class="deckGanho">Você ganhou o deck do chefe: <b>${esc(x.deckGanhoNome)}</b>. Ele está em Decks, na seção "Decks de chefe".</div>` : ''}
       ${x.multiplicador && x.multiplicador < 1 ? `<div class="xpNota">Partida com bots: os itens com % valem ${Math.round(x.multiplicador*100)}% (fácil 30%, normal 40%, difícil 50%, Chefe do dia 70%).</div>` : ''}`
       : '<div class="xpNota">Partida curta demais (menos de 3 turnos): sem XP.</div>'}
