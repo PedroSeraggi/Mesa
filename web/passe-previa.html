@@ -62,9 +62,16 @@ h1{font-family:var(--ff);color:var(--ouro);margin:0;font-size:28px;letter-spacin
 .f10 .anel{background:conic-gradient(#8a5a2a,#e0a060,#7a4a1a,#d09050,#8a5a2a);-webkit-mask:radial-gradient(circle,transparent 58%,#000 60%);mask:radial-gradient(circle,transparent 58%,#000 60%)}
 .f20 .anel{background:repeating-conic-gradient(#f0f4f8 0 10deg,#8a96a2 10deg 20deg);-webkit-mask:radial-gradient(circle,transparent 57%,#000 59%);mask:radial-gradient(circle,transparent 57%,#000 59%);box-shadow:0 0 12px #d0e0f066}
 .f20::after{content:'';position:absolute;inset:4%;border-radius:50%;border:2px solid #c8d4e0;z-index:1}
-.f30 .anel{background:conic-gradient(#fff0b0,#d0a040,#8a6a14,#ffe08a,#c08a2a,#fff0b0);-webkit-mask:radial-gradient(circle,transparent 55%,#000 57%);mask:radial-gradient(circle,transparent 55%,#000 57%);box-shadow:0 0 16px #ffd06088}
-.f30 .gema{position:absolute;width:12%;height:12%;border-radius:50%;z-index:3;background:radial-gradient(circle at 35% 30%,#ff9a9a,#c01a2a);box-shadow:0 0 6px #ff3a4a,0 0 0 1.5px #ffe08a}
-.f30 .g1{top:2%;left:44%}.f30 .g2{bottom:2%;left:44%;background:radial-gradient(circle at 35% 30%,#9affc0,#1a9a4a);box-shadow:0 0 6px #3aff7a,0 0 0 1.5px #ffe08a}.f30 .g3{left:2%;top:44%;background:radial-gradient(circle at 35% 30%,#9ad0ff,#1a4ac0);box-shadow:0 0 6px #3a8aff,0 0 0 1.5px #ffe08a}.f30 .g4{right:2%;top:44%;background:radial-gradient(circle at 35% 30%,#e0b0ff,#7a2ac0);box-shadow:0 0 6px #b04aff,0 0 0 1.5px #ffe08a}
+.f30 .anel{inset:3%;background:
+   repeating-conic-gradient(from 0deg,#fff4c0 0deg 1.2deg,#b8862a 1.2deg 6deg),conic-gradient(from 200deg,#8a5a14,#ffe9a0,#c08a2a,#fff4c8,#8a5a14);
+  background-blend-mode:overlay,normal;
+  -webkit-mask:radial-gradient(circle,transparent 58%,#000 59%,#000 66%,transparent 67%,transparent 69%,#000 70%,#000 73%,transparent 74%);
+  mask:radial-gradient(circle,transparent 58%,#000 59%,#000 66%,transparent 67%,transparent 69%,#000 70%,#000 73%,transparent 74%);filter:drop-shadow(0 0 6px #ffd06099)}
+.f30::before{content:'';position:absolute;inset:3%;border-radius:50%;z-index:2;pointer-events:none;background:linear-gradient(135deg,transparent 35%,#ffffff66 48%,transparent 60%);
+  -webkit-mask:radial-gradient(circle,transparent 58%,#000 59%,#000 73%,transparent 74%);mask:radial-gradient(circle,transparent 58%,#000 59%,#000 73%,transparent 74%)}
+.f30 .gema{position:absolute;top:-1%;left:50%;width:15%;height:15%;transform:translateX(-50%) rotate(45deg);z-index:3;border-radius:2px;
+  background:linear-gradient(135deg,#fff 0%,#9fe8ff 25%,#3a8ad0 60%,#1a3a8a);box-shadow:0 0 0 2px #e8c060,0 0 0 3px #6a4a14,0 0 10px #8ad0ff}
+.f30 .pino{position:absolute;width:5%;height:5%;border-radius:50%;z-index:3;background:radial-gradient(circle at 35% 30%,#fff4c0,#b8862a);box-shadow:0 0 0 1px #6a4a14}
 .f40 .anel{inset:2%;background:conic-gradient(from 0deg,#ff3a0a,#ffb040,#ff6a1a,#fff0a0,#ff3a0a);-webkit-mask:radial-gradient(circle,transparent 60%,#000 62%,#000 70%,transparent 72%);mask:radial-gradient(circle,transparent 60%,#000 62%,#000 70%,transparent 72%);filter:url(#chama) drop-shadow(0 0 6px #ff6a1a);animation:gira 4s linear infinite}
 .f40 .anel2{position:absolute;inset:12%;border-radius:50%;z-index:1;box-shadow:0 0 0 3px #ffb040,0 0 14px #ff6a1a}
 @keyframes gira{to{transform:rotate(360deg)}}
@@ -75,7 +82,6 @@ h1{font-family:var(--ff);color:var(--ouro);margin:0;font-size:28px;letter-spacin
 .f50 .orbe{position:absolute;width:9%;height:9%;border-radius:50%;background:#fff;box-shadow:0 0 10px 3px #c890ff;z-index:3;left:45.5%;top:45.5%;animation:orbita 2.6s linear infinite}
 .f50 .orbe.b{animation-delay:-1.3s;background:#ffe08a;box-shadow:0 0 10px 3px #ffb040}
 @keyframes orbita{from{transform:rotate(0deg) translateX(52px) rotate(0deg)}to{transform:rotate(360deg) translateX(52px) rotate(-360deg)}}
-.f50 .coroa{position:absolute;top:-22%;left:50%;transform:translateX(-50%);font-size:26px;z-index:4;filter:drop-shadow(0 0 8px #ffd060)}
 /* ---- seção das molduras ---- */
 .secao{padding:10px 32px 30px}
 .secao h2{font-family:var(--ff);color:var(--ouro);font-size:20px;margin:10px 0 14px}
@@ -111,9 +117,9 @@ const ATUAL = 17;
 const MOEDA = '<svg class="moeda" viewBox="0 0 24 24"><defs><radialGradient id="mg" cx="35%" cy="30%"><stop offset="0" stop-color="#fff6c8"/><stop offset=".45" stop-color="#f0c44a"/><stop offset="1" stop-color="#9a6a18"/></radialGradient></defs><circle cx="12" cy="12" r="10.5" fill="url(#mg)" stroke="#7a5414" stroke-width="1.2"/><circle cx="12" cy="12" r="7.6" fill="none" stroke="#b8862a" stroke-width="1"/><path d="M8 16V8.4l4 4.6 4-4.6V16" fill="none" stroke="#7a5414" stroke-width="1.8" stroke-linejoin="round"/></svg>';
 const art = n => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n)}&format=image&version=art_crop`;
 const moldura = (k) => {
-  if (k === 50) return `<div class="av f50"><div class="runas">${'✦✧✦✧✦✧✦✧✦✧✦✧'.split('').map((r,i)=>`<span style="transform:translate(-50%,-50%) rotate(${i*30}deg) translateY(-62%) translateY(-50px)">${r}</span>`).join('')}</div><div class="anel"></div><div class="anel2"></div><div class="foto"></div><div class="orbe"></div><div class="orbe b"></div><div class="coroa">👑</div></div>`;
+  if (k === 50) return `<div class="av f50"><div class="runas">${'✦✧✦✧✦✧✦✧✦✧✦✧'.split('').map((r,i)=>`<span style="transform:translate(-50%,-50%) rotate(${i*30}deg) translateY(-62%) translateY(-50px)">${r}</span>`).join('')}</div><div class="anel"></div><div class="anel2"></div><div class="foto"></div><div class="orbe"></div><div class="orbe b"></div></div>`;
   if (k === 40) return `<div class="av f40"><div class="anel"></div><div class="anel2"></div><div class="foto"></div></div>`;
-  if (k === 30) return `<div class="av f30"><div class="anel"></div><div class="foto"></div><i class="gema g1"></i><i class="gema g2"></i><i class="gema g3"></i><i class="gema g4"></i></div>`;
+  if (k === 30) return `<div class="av f30"><div class="anel"></div><div class="foto"></div><i class="gema"></i>${[90,180,270].map(g=>`<i class="pino" style="left:${50+43*Math.sin(g*Math.PI/180)-2.5}%;top:${50-43*Math.cos(g*Math.PI/180)-2.5}%"></i>`).join('')}</div>`;
   return `<div class="av f${k}"><div class="anel"></div><div class="foto"></div></div>`;
 };
 const MARCOS = {
@@ -122,11 +128,11 @@ const MARCOS = {
   20: {t:'Costas de carta', s:'personalizadas + moldura de prata', vis:'<div class="costas"><span>M</span></div>',
        d:'Libera trocar as costas das suas cartas: use a versão preta e dourada da Mesa ou <b>qualquer imagem que você quiser</b>. Todos na mesa veem suas cartas assim. Ganha também a moldura de <b>Prata</b>.'},
   30: {t:'Rara à sua escolha', s:'+ moldura de ouro', vis:`<div class="escolha"><div style="background-image:url('${art('Goblin Chieftain')}')"></div><div style="background-image:url('${art('Krenko, Mob Boss')}')"></div><div style="background-image:url('${art('Serra Angel')}')"></div></div>`,
-       d:'Escolha <b>qualquer rara</b> do mundo e ela vai para a sua coleção. É o jeito de pegar aquela carta que não sai no booster. Ganha também a moldura de <b>Ouro</b>, com gemas das cinco cores.'},
+       d:'Escolha <b>qualquer rara</b> do mundo e ela vai para a sua coleção. É o jeito de pegar aquela carta que não sai no booster. Ganha também a moldura de <b>Ouro</b>: anel duplo gravado, com um diamante no topo.'},
   40: {t:'Moldura em chamas', s:'animada + entrada de comandante + booster', vis:moldura(40),
        d:'Moldura <b>animada</b> com um anel de fogo vivo girando, uma nova <b>entrada do comandante</b> (chamas douradas em vez do impacto comum) e mais um booster.'},
   50: {t:'Lenda da Mesa', s:'mítica à escolha + título + moldura lendária', vis:moldura(50),
-       d:'O grande prêmio: <b>qualquer mítica</b> à sua escolha, o título <span class="titulo">LENDA DA MESA</span> embaixo do seu nome, uma conquista com brasão próprio e a moldura <b>Lendária</b>: anel de energia viva, runas girando, orbes em órbita e coroa.'},
+       d:'O grande prêmio: <b>qualquer mítica</b> à sua escolha, o título <span class="titulo">LENDA DA MESA</span> embaixo do seu nome, uma conquista com brasão próprio e a moldura <b>Lendária</b>: anel de energia viva, estrelas girando e orbes de luz em órbita.'},
 };
 function premio(n){
   if (MARCOS[n]){ const m = MARCOS[n]; return `<div class="premio"><div class="cartaoMarco m${n}" data-n="${n}"><div class="vis">${m.vis}</div><b>${m.t}</b><small>${m.s}</small></div></div>`; }

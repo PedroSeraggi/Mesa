@@ -53,7 +53,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#070504;color:#eee;fon
 .bat.chefe .mini{width:84px;height:62px}
 .bat.chefe b{color:#ffb070}
 .bat.chefe .num{background:linear-gradient(180deg,#ffd060,#d07a1a);color:#2a0a04}
-.bat.chefe .coroa{position:absolute;right:30px;top:-9px;font-size:18px;filter:drop-shadow(0 0 6px #ff8a3a)}
+.bat.chefe .coroa{position:absolute;right:30px;top:-10px;line-height:0;filter:drop-shadow(0 0 6px #ff8a3a)}
 .bat.chefe.bloq{filter:brightness(.55) saturate(.6)}
 #painel.chefe{border-color:#ff7a3a;box-shadow:0 0 40px #ff5a2a33,0 20px 50px #000c}
 #painel.chefe .cap{color:#ff9a5a}
@@ -133,7 +133,7 @@ function desenharLista(){
     const mini = tres ? `<div class="mini">${b.d.map(x=>`<span style="background-image:url('${art(x[1])}')"></span>`).join('')}</div>` : `<div class="mini" style="background-image:url('${art(b.d[0][1])}')"></div>`;
     const nome = tres ? 'Batalha dos três' : b.chefe ? 'Chefe: Krenko' : b.d[0][0];
     const cmd = tres ? b.d.map(x=>x[1].split(',')[0]).join(' · ') : b.d[0][1];
-    return `<div class="bat ${st}${tres?' tres':''}${b.chefe?' chefe':''}${b.n===sel?' sel':''}" data-n="${b.n}"><span class="num">${b.n}</span>${b.chefe?'<span class="coroa">👑</span>':''}${mini}<div class="tx"><b>${nome}</b><small>${cmd}</small></div><span class="est">${st==='feita'?'✓':st==='bloq'?'🔒':''}</span></div>`;
+    return `<div class="bat ${st}${tres?' tres':''}${b.chefe?' chefe':''}${b.n===sel?' sel':''}" data-n="${b.n}"><span class="num">${b.n}</span>${b.chefe?'<span class="coroa"><svg viewBox="0 0 32 22" width="26" height="18"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0b0"/><stop offset=".5" stop-color="#f0b040"/><stop offset="1" stop-color="#9a5a10"/></linearGradient></defs><path d="M2 19 L4 6 L11 12 L16 2 L21 12 L28 6 L30 19 Z" fill="url(#cg)" stroke="#5a3008" stroke-width="1.2" stroke-linejoin="round"/><circle cx="16" cy="13" r="2.2" fill="#ff5a3a" stroke="#5a1a08" stroke-width=".8"/></svg></span>':''}${mini}<div class="tx"><b>${nome}</b><small>${cmd}</small></div><span class="est">${st==='feita'?'✓':st==='bloq'?'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor" fill-opacity=".25"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>':''}</span></div>`;
   }).join('');
   document.querySelectorAll('.bat').forEach(e=>e.onclick=()=>{ const n=+e.dataset.n; if (n>ATUAL || n===sel) return; sel=n; mostrar(); desenharLista(); });
 }
