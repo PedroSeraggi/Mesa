@@ -83,6 +83,7 @@ public class Amigos {
         srv.createContext("/campanha", ex -> tratar(ex, Amigos::campanha));
         srv.createContext("/nivel", ex -> tratar(ex, Amigos::nivel));
         srv.createContext("/bazar", ex -> tratar(ex, Amigos::bazar));
+        srv.createContext("/troca", ex -> tratar(ex, Amigos::troca));
         srv.createContext("/playmats", ex -> tratar(ex, Amigos::playmats));
         srv.createContext("/playmatImg", Amigos::playmatImg);
         srv.createContext("/decksChefe", ex -> tratar(ex, c -> {   // todos os decks de chefe que a pessoa já ganhou (a Mesa baixa os que faltam)
@@ -978,6 +979,156 @@ public class Amigos {
         return r;
     }
 
+    // ---------------- Trocas entre amigos: sessão no servidor; as duas Mesas consultam o estado a cada segundo ----------------
+    static class Troca {
+        String id, a, b, estado = "convite", motivo = "";   // a = quem propôs; estado: convite, aberta, concluida, cancelada
+        List<JsonObject> cartasA = new ArrayList<>(), cartasB = new ArrayList<>();
+        int ouroA = 0, ouroB = 0; boolean aceitoA = false, aceitoB = false;
+        long criada = System.currentTimeMillis(), mexida = System.currentTimeMillis(); int versao = 0;
+        String pedido = "", pedidoDe = ""; long pedidoEm = 0;
+        List<JsonObject> recebeuA = new ArrayList<>(), recebeuB = new ArrayList<>();
+    }
+    static final Map<String, Troca> trocas = new LinkedHashMap<>();
+    static final long CONVITE_TROCA_MS = 3 * 60_000L, TROCA_PARADA_MS = 15 * 60_000L;
+    static void limparTrocas() {
+        long agora = System.currentTimeMillis();
+        for (Troca t : trocas.values()) {
+            if (t.estado.equals("convite") && agora - t.criada > CONVITE_TROCA_MS) { t.estado = "cancelada"; t.motivo = "O convite expirou."; }
+            if (t.estado.equals("aberta") && agora - t.mexida > TROCA_PARADA_MS) { t.estado = "cancelada"; t.motivo = "A troca ficou parada tempo demais."; }
+        }
+        trocas.values().removeIf(t -> !t.estado.equals("convite") && !t.estado.equals("aberta") && agora - t.mexida > 10 * 60_000L);
+    }
+    static List<Map<String, Object>> trocasDe(Usuario u) {
+        limparTrocas();
+        List<Map<String, Object>> l = new ArrayList<>();
+        for (Troca t : trocas.values()) {
+            if (!(t.a.equals(u.codigo) || t.b.equals(u.codigo)) || !(t.estado.equals("convite") || t.estado.equals("aberta"))) continue;
+            Usuario o = porCodigo(t.a.equals(u.codigo) ? t.b : t.a); if (o == null) continue;
+            Map<String, Object> m = new LinkedHashMap<>(); m.put("id", t.id); m.put("estado", t.estado); m.put("propus", t.a.equals(u.codigo)); m.put("com", resumo(o));
+            l.add(m);
+        }
+        return l;
+    }
+    /** Nomes que não podem sair da coleção: cartas do deck da campanha e o comandante. */
+    static Set<String> presasNoDeck(Usuario u) {
+        Set<String> s = new HashSet<>();
+        if (u.campanha != null) {
+            if (u.campanha.has("deck")) for (JsonElement e : u.campanha.getAsJsonArray("deck")) s.add(str(e.getAsJsonObject(), "nome"));
+            if (u.campanha.has("comandante")) s.add(str(u.campanha.getAsJsonObject("comandante"), "nome"));
+        }
+        return s;
+    }
+    /** Confere se u tem todas as cartas (com repetição) e o Ouro da oferta. */
+    static void conferirOferta(Usuario u, List<JsonObject> cartas, int ouro) {
+        if (ouro < 0 || ouro > u.ouro) throw new IllegalArgumentException(u.nome + " não tem esse Ouro.");
+        Set<String> presas = presasNoDeck(u); Map<String, Integer> conta = new HashMap<>();
+        for (JsonObject c : cartas) {
+            String k = chaveCarta(c); int q = conta.merge(k, 1, Integer::sum);
+            if (u.colecao.getOrDefault(k, 0) < q) throw new IllegalArgumentException(u.nome + " não tem mais " + str(c, "nome") + ".");
+            if (presas.contains(str(c, "nome")) && u.colecao.getOrDefault(k, 0) - q < 1) throw new IllegalArgumentException(str(c, "nome") + " está no deck de " + u.nome + ".");
+        }
+    }
+    static Map<String, Object> cartaVista(JsonObject x, Usuario dono) {
+        Map<String, Object> m = new LinkedHashMap<>(); for (String k : new String[]{"nome", "set", "num", "faixa"}) m.put(k, str(x, k));
+        if (dono != null) m.put("qtd", dono.colecao.getOrDefault(chaveCarta(x), 0));
+        return m;
+    }
+    static List<Map<String, Object>> colecaoVista(Usuario u) {
+        List<Map<String, Object>> l = new ArrayList<>();
+        for (Map.Entry<String, Integer> e : u.colecao.entrySet()) { JsonObject x = cartaPorChave.get(e.getKey()); if (x == null || e.getValue() < 1) continue; l.add(cartaVista(x, u)); }
+        l.sort(Comparator.comparing(m -> (String) m.get("nome")));
+        return l;
+    }
+    static Object troca(JsonObject c) throws IOException {
+        Usuario u = usuario(c);
+        darBoasVindas(u); pool("mundo1"); limparTrocas();
+        String acao = texto(c, "acao", 20, "estado");
+        if (acao.equals("propor")) {
+            Usuario o = porCodigo(texto(c, "codigo", 10, ""));
+            if (o == null || o == u) throw new IllegalArgumentException("Não achei esse jogador.");
+            if (!b.amizades.contains(par(u, o))) throw new IllegalArgumentException("Só dá para trocar com amigos.");
+            if (System.currentTimeMillis() - o.visto > ONLINE_MS) throw new IllegalArgumentException(o.nome + " não está online.");
+            for (Troca t : trocas.values())   // já existe uma entre os dois: reaproveita
+                if ((t.estado.equals("convite") || t.estado.equals("aberta")) && ((t.a.equals(u.codigo) && t.b.equals(o.codigo)) || (t.a.equals(o.codigo) && t.b.equals(u.codigo)))) return vistaTroca(t, u);
+            Troca t = new Troca(); t.id = Long.toString(System.nanoTime(), 36); t.a = u.codigo; t.b = o.codigo;
+            trocas.put(t.id, t);
+            return vistaTroca(t, u);
+        }
+        Troca t = trocas.get(texto(c, "trocaId", 40, ""));   // "id" é o da Mesa; o da troca vem como trocaId
+        if (t == null || !(t.a.equals(u.codigo) || t.b.equals(u.codigo))) throw new IllegalArgumentException("Essa troca não existe mais.");
+        boolean souA = t.a.equals(u.codigo);
+        Usuario o = porCodigo(souA ? t.b : t.a);
+        switch (acao) {
+            case "responder":
+                if (souA || !t.estado.equals("convite")) break;
+                if (c.has("aceitar") && c.get("aceitar").getAsBoolean()) t.estado = "aberta"; else { t.estado = "cancelada"; t.motivo = u.nome + " recusou o convite."; }
+                t.mexida = System.currentTimeMillis(); t.versao++;
+                break;
+            case "oferecer": {
+                if (!t.estado.equals("aberta")) throw new IllegalArgumentException("A troca não está aberta.");
+                List<JsonObject> cartas = new ArrayList<>();
+                for (JsonElement e : c.getAsJsonArray("cartas")) {
+                    JsonObject y = e.getAsJsonObject(); JsonObject info = cartaPorChave.get(chaveCarta(y));
+                    if (info == null) throw new IllegalArgumentException("Carta desconhecida.");
+                    JsonObject z = new JsonObject(); for (String k : new String[]{"nome", "set", "num", "faixa"}) z.addProperty(k, str(info, k)); cartas.add(z);
+                }
+                if (cartas.size() > 30) throw new IllegalArgumentException("No máximo 30 cartas por troca.");
+                int ouro = c.has("ouro") ? c.get("ouro").getAsInt() : 0;
+                conferirOferta(u, cartas, ouro);
+                if (souA) { t.cartasA = cartas; t.ouroA = ouro; } else { t.cartasB = cartas; t.ouroB = ouro; }
+                t.aceitoA = t.aceitoB = false;   // qualquer mudança desfaz os aceites
+                t.mexida = System.currentTimeMillis(); t.versao++;
+                break;
+            }
+            case "pedir":   // pedir uma carta da coleção do outro (aparece como aviso para ele)
+                t.pedido = texto(c, "nome", 200, ""); t.pedidoDe = u.codigo; t.pedidoEm = System.currentTimeMillis(); t.versao++;
+                break;
+            case "aceitar": {
+                if (!t.estado.equals("aberta")) throw new IllegalArgumentException("A troca não está aberta.");
+                boolean sim = !c.has("sim") || c.get("sim").getAsBoolean();
+                if (t.cartasA.isEmpty() && t.cartasB.isEmpty() && t.ouroA == 0 && t.ouroB == 0) throw new IllegalArgumentException("A mesa está vazia.");
+                if (souA) t.aceitoA = sim; else t.aceitoB = sim;
+                t.mexida = System.currentTimeMillis(); t.versao++;
+                if (t.aceitoA && t.aceitoB) executarTroca(t);
+                break;
+            }
+            case "cancelar":
+                if (t.estado.equals("convite") || t.estado.equals("aberta")) { t.estado = "cancelada"; t.motivo = u.nome + " saiu da troca."; t.mexida = System.currentTimeMillis(); t.versao++; }
+                break;
+            default: break;
+        }
+        return vistaTroca(t, u);
+    }
+    /** Os dois aceitaram: confere tudo de novo e troca de uma vez (cartas e Ouro). */
+    static void executarTroca(Troca t) {
+        Usuario ua = porCodigo(t.a), ub = porCodigo(t.b);
+        try { conferirOferta(ua, t.cartasA, t.ouroA); conferirOferta(ub, t.cartasB, t.ouroB); }
+        catch (IllegalArgumentException e) { t.aceitoA = t.aceitoB = false; t.motivo = e.getMessage(); return; }
+        for (JsonObject x : t.cartasA) { String k = chaveCarta(x); ua.colecao.merge(k, -1, Integer::sum); ub.colecao.merge(k, 1, Integer::sum); }
+        for (JsonObject x : t.cartasB) { String k = chaveCarta(x); ub.colecao.merge(k, -1, Integer::sum); ua.colecao.merge(k, 1, Integer::sum); }
+        ua.colecao.values().removeIf(q -> q <= 0); ub.colecao.values().removeIf(q -> q <= 0);
+        ua.ouro += t.ouroB - t.ouroA; ub.ouro += t.ouroA - t.ouroB;
+        t.recebeuA = t.cartasB; t.recebeuB = t.cartasA;
+        t.estado = "concluida"; t.mexida = System.currentTimeMillis(); t.versao++; sujo = true;
+    }
+    static Map<String, Object> vistaTroca(Troca t, Usuario u) {
+        boolean souA = t.a.equals(u.codigo); Usuario o = porCodigo(souA ? t.b : t.a);
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("id", t.id); r.put("estado", t.estado); r.put("motivo", t.motivo); r.put("versao", t.versao); r.put("propus", souA);
+        r.put("eu", resumo(u)); r.put("outro", o == null ? null : resumo(o));
+        r.put("minhas", souA ? t.cartasA : t.cartasB); r.put("dele", souA ? t.cartasB : t.cartasA);
+        r.put("meuOuro", souA ? t.ouroA : t.ouroB); r.put("ouroDele", souA ? t.ouroB : t.ouroA);
+        r.put("aceiteiEu", souA ? t.aceitoA : t.aceitoB); r.put("aceitouEle", souA ? t.aceitoB : t.aceitoA);
+        r.put("saldo", u.ouro);
+        if (t.estado.equals("concluida")) { r.put("recebi", souA ? t.recebeuA : t.recebeuB); r.put("ouroRecebido", souA ? t.ouroB : t.ouroA); }
+        if (!t.pedido.isEmpty() && !t.pedidoDe.equals(u.codigo) && System.currentTimeMillis() - t.pedidoEm < 20_000) r.put("pedido", t.pedido);
+        if (t.estado.equals("aberta") || t.estado.equals("convite")) {
+            r.put("colecao", colecaoVista(u)); r.put("presas", presasNoDeck(u)); r.put("desejos", u.desejos == null ? new HashSet<String>() : u.desejos);
+            if (o != null) r.put("colecaoDele", colecaoVista(o));
+        }
+        return r;
+    }
+
     // ---------------- Playmat: cada jogador escolhe um modelo ou sobe a própria imagem ----------------
     static java.nio.file.Path pastaPlaymats() { return DADOS.toAbsolutePath().getParent().resolve("playmats"); }
     static Object playmat(JsonObject c) throws IOException {
@@ -1231,6 +1382,7 @@ public class Amigos {
         if (!premios.isEmpty()) r.put("premiosNivel", premios);
         r.put("ouro", u.ouro); r.put("boosters", u.boosters);
         r.put("moldura", u.moldura); r.put("titulo", u.titulo);
+        r.put("trocas", trocasDe(u));
         r.put("missoes", missoesJson(u));
         if (b.liderChefe != null && cicloAtual().equals(b.liderChefe.get("ciclo"))) r.put("liderChefe", b.liderChefe);   // aviso de novo 1º lugar
         List<Map<String, Object>> amigos = new ArrayList<>(), pedidos = new ArrayList<>(), online = new ArrayList<>(), convites = new ArrayList<>();

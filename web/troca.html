@@ -1,0 +1,300 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Mesa de troca</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Cinzel:wght@700;900&family=EB+Garamond:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+<style>
+:root{--ff:'Metamorphous',serif;--fn:'Cinzel',serif;--ouro:#E4C874;
+ --ruido:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5  0 0 0 0 .4  0 0 0 0 .3  0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+ --veio:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='400' preserveAspectRatio='none'%3E%3Cfilter id='w' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.0018 .06' numOctaves='4' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 .32  0 0 0 0 .18  0 0 0 0 .08  0 0 0 1.25 -.38'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E")}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#060302;color:#eee;font-family:'EB Garamond',serif}
+#cena{position:fixed;inset:0;pointer-events:none}
+#cena .arte{position:absolute;inset:-40px;background:url('campanha/artes/kothophed.jpg') center 30%/cover;filter:blur(16px) brightness(.24) saturate(1.2) sepia(.45)}
+#cena .vela{position:absolute;left:50%;top:-10%;width:140vw;height:110vh;transform:translateX(-50%);background:radial-gradient(ellipse at 50% 40%,#ffaa4a26,transparent 58%);animation:vela 4s ease-in-out infinite}
+@keyframes vela{25%{opacity:.85}50%{opacity:1}70%{opacity:.9}}
+#cena .vinheta{position:absolute;inset:0;box-shadow:inset 0 0 260px 90px #000}
+#brasas{position:fixed;inset:0;pointer-events:none;z-index:8}
+/* botões 3D (iguais ao Bazar) */
+.b3d{position:relative;font-family:var(--ff);font-size:15px;letter-spacing:.04em;color:#f6e2b0;cursor:pointer;border:0;padding:10px 20px 12px;border-radius:12px;
+  background:var(--ruido),linear-gradient(180deg,#6a3a1c 0%,#4a2410 45%,#33170a 100%);background-blend-mode:overlay,normal;
+  box-shadow:inset 0 1px 0 #ffd8a044,inset 0 -2px 0 #0006,0 0 0 1px #1a0a04,0 5px 0 #1e0c04,0 7px 0 #0e0602,0 12px 18px #000a;text-shadow:0 1px 0 #000;transition:transform .08s,box-shadow .08s,filter .2s}
+.b3d::before{content:'';position:absolute;inset:3px 3px auto 3px;height:45%;border-radius:9px 9px 6px 6px;background:linear-gradient(180deg,#ffffff1c,transparent);pointer-events:none}
+.b3d:hover{filter:brightness(1.15)}
+.b3d:active{transform:translateY(5px);box-shadow:inset 0 1px 0 #ffd8a044,0 0 0 1px #1a0a04,0 0 0 #1e0c04,0 2px 0 #0e0602,0 4px 8px #000a}
+.b3d:disabled{filter:grayscale(.8) brightness(.6);cursor:not-allowed}
+.b3d.ouro{color:#3a1e04;text-shadow:0 1px 0 #fff6c888;background:var(--ruido),linear-gradient(180deg,#fff0a8 0%,#f0c050 38%,#c88a24 75%,#9a6214 100%);background-blend-mode:overlay,normal;
+  box-shadow:inset 0 1px 0 #fff,inset 0 -2px 0 #6a3a0866,0 0 0 1px #4a2a06,0 5px 0 #7a4a10,0 7px 0 #3a2004,0 12px 20px #000a,0 0 24px #f0b04a33}
+.b3d.ouro:active{box-shadow:inset 0 1px 0 #fff,0 0 0 1px #4a2a06,0 0 0 #7a4a10,0 2px 0 #3a2004,0 4px 8px #000a}
+.b3d.peq{font-size:13px;padding:6px 12px 8px;border-radius:9px}
+.moeda{width:20px;height:20px;flex:none;filter:drop-shadow(0 1px 1px #000a)}
+/* topo */
+.topo{position:relative;z-index:6;display:flex;align-items:center;gap:18px;padding:14px 26px 0}
+.titulo{flex:1;text-align:center}
+.titulo h1{margin:0;font-family:var(--ff);font-size:38px;letter-spacing:.12em;color:transparent;background:linear-gradient(180deg,#fff6d0 0%,#f0c860 40%,#b8822a 60%,#ffe8a0 100%);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 2px 0 #3a1a04) drop-shadow(0 4px 0 #1a0a02) drop-shadow(0 0 22px #e8a03a55)}
+.titulo .orn{display:flex;align-items:center;justify-content:center;gap:12px;font-family:var(--fn);font-size:12px;letter-spacing:.22em;color:#d0a870}
+.titulo .orn i{width:60px;height:1px;background:linear-gradient(90deg,transparent,#d0a870)}.titulo .orn i:last-child{transform:scaleX(-1)}
+#estado{min-width:120px;text-align:right;font-family:var(--fn);font-size:13px;letter-spacing:.08em;color:#a8d08a}
+/* a mesa */
+.mesa{position:relative;z-index:4;width:min(1300px,96vw);margin:10px auto 0;display:grid;grid-template-columns:1fr 170px 1fr;align-items:stretch;padding:22px 26px 26px;border-radius:18px;
+  background:linear-gradient(180deg,transparent 0 calc(33.3% - 2px),#0009 calc(33.3% - 2px) 33.3%,#ffd0a014 33.3% calc(33.3% + 1px),transparent calc(33.3% + 1px) calc(66.6% - 2px),#0009 calc(66.6% - 2px) 66.6%,#ffd0a014 66.6% calc(66.6% + 1px),transparent calc(66.6% + 1px)),
+    var(--veio) 0 0/100% 100% no-repeat,linear-gradient(180deg,#5a3418 0%,#42240f 50%,#2e180a 100%);
+  box-shadow:inset 0 2px 0 #ffd0a022,inset 0 -8px 16px #000a,0 0 0 2px #0a0402,0 26px 50px #000}
+.mesa::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse 70% 60% at 50% 40%,#ffb05a14,transparent 70%)}
+.lado{position:relative;display:flex;flex-direction:column;gap:12px}
+.quem{display:flex;align-items:center;gap:12px}
+.quem .av{width:62px;height:62px;flex:none;position:relative}
+.quem .av .foto{position:absolute;inset:18%;border-radius:50%;background:center/cover;display:grid;place-items:center;font-family:var(--ff);font-size:22px;color:#1a1208}
+.quem b{display:block;font-family:var(--ff);font-size:20px;color:#fff;text-shadow:0 2px 4px #000}
+.quem small{font-family:var(--fn);font-size:12px;letter-spacing:.08em;color:#c9a070}
+.lado.dir .quem{flex-direction:row-reverse;text-align:right}
+.bandeja{position:relative;flex:1;min-height:282px;border-radius:12px;padding:18px 16px 16px;display:flex;align-items:center;justify-content:center;
+  background:var(--ruido),radial-gradient(ellipse 75% 80% at 50% 60%,#6e1e30 0%,#4a1020 45%,#260510 100%);background-blend-mode:overlay,normal;
+  box-shadow:inset 0 18px 24px -6px #000e,inset 0 -3px 6px #ffffff0a,inset 6px 0 14px -6px #000c,inset -6px 0 14px -6px #000c,0 1px 0 #ffd0a01c,0 -2px 0 #0008}
+.bandeja .vazio{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#d8b8a099;font-style:italic;font-size:16px;text-align:center;padding:0 20px}
+.fantasmas{display:flex;gap:14px}
+.fantasmas i{width:74px;aspect-ratio:63/88;border-radius:6px;border:1.5px dashed #ffffff1f;background:#0000001a}
+.fantasmas i:nth-child(2){transform:translateY(-6px)}
+.leque{position:relative;height:250px;width:100%}
+.leque .c{position:absolute;left:50%;bottom:4px;width:142px;transform-origin:50% 130%;transition:transform .35s cubic-bezier(.2,.9,.3,1.2);cursor:pointer;--r:#fff4dc}
+.leque .c[data-f=incomum]{--r:#8ac8ff}.leque .c[data-f=rara]{--r:#ffc830}.leque .c[data-f=mitica]{--r:#ff6a1a}
+.leque .c img{width:100%;display:block;border-radius:6px;box-shadow:0 0 0 1.5px color-mix(in srgb,var(--r) 70%,transparent),0 0 14px color-mix(in srgb,var(--r) 55%,transparent),0 10px 18px #000c}
+.leque .c:hover{z-index:5}
+.lado.dir .leque .c{cursor:default}
+.ouroLinha{display:flex;align-items:center;gap:10px;justify-content:center}
+.pilha{position:relative;width:46px;height:34px}
+.pilha:empty{display:none}
+.pilha i{position:absolute;left:4px;width:38px;height:9px;border-radius:50%;background:linear-gradient(180deg,#fff0a0,#d0a030 60%,#8a6010);box-shadow:0 1px 0 #5a3a08}
+.valorOuro{display:flex;align-items:center;gap:7px;min-width:96px;justify-content:center;padding:6px 14px 7px 10px;border-radius:7px;font-family:var(--fn);font-weight:900;font-size:18px;color:#2a1404;text-shadow:0 1px 0 #ffffff66;
+  background:var(--ruido),linear-gradient(180deg,#fff2b8 0%,#e8bc5a 40%,#b8862a 72%,#8a5e18 100%);background-blend-mode:overlay,normal;
+  box-shadow:inset 0 1px 0 #fff,inset 0 -2px 3px #5a3a0a88,0 0 0 1px #4a2c06,0 3px 0 #5a3a0a,0 5px 0 #2a1604,0 9px 12px #000b}
+.valorOuro.zero{filter:saturate(.35) brightness(.75)}
+.aceite{display:flex;align-items:center;justify-content:center;gap:12px;min-height:58px}
+.selo{width:54px;height:54px;display:grid;place-items:center;font-family:var(--ff);font-size:24px;color:#ffe0d0;transform:scale(0) rotate(-40deg);transition:transform .35s cubic-bezier(.2,1.6,.4,1);
+  background:radial-gradient(circle at 38% 32%,#d0402a,#8a1a10 60%,#5a0a06);border-radius:47% 53% 50% 50%/52% 48% 52% 48%;box-shadow:0 0 0 4px #a0281a,0 6px 14px #000c,inset 0 -6px 10px #0006}
+.selo.on{transform:scale(1) rotate(-12deg)}
+.aceite .txt{font-family:var(--fn);font-size:13px;letter-spacing:.1em;color:#a8957d}
+.aceite .txt.ok{color:#a8d08a}
+/* centro */
+.centro{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.simbolo{position:relative;width:150px;height:150px;border-radius:50%}
+.simbolo::before{content:'';position:absolute;inset:6px;border-radius:50%;background:radial-gradient(circle at 50% 45%,#1a0c06 55%,#2a160a 70%,#4a2a14 100%);box-shadow:inset 0 6px 14px #000e,inset 0 -2px 4px #ffd0a01a,0 1px 0 #ffd0a01c}
+.simbolo .brilho{position:absolute;inset:-14px;border-radius:50%;opacity:0;transition:opacity .6s;pointer-events:none;
+  background:radial-gradient(circle,transparent 52%,#ffc040 62%,transparent 74%);filter:url(#chamaT)}
+.simbolo.pronto .brilho{opacity:1}
+.simbolo svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.simbolo .runas{animation:gira 60s linear infinite reverse;transform-origin:75px 75px}
+.simbolo .fitas{animation:gira 14s linear infinite;transform-origin:75px 75px}
+.simbolo.pronto .fitas{animation-duration:2.4s}
+.simbolo.pronto .runas{animation-duration:12s}
+.simbolo .runas text{transition:fill .6s}
+.simbolo.pronto .runas text{fill:#ffe08a;filter:drop-shadow(0 0 3px #ffb040)}
+@keyframes gira{to{transform:rotate(360deg)}}
+.centro small{text-align:center;font-family:var(--fn);font-size:11px;letter-spacing:.12em;color:#c9a070;max-width:140px;line-height:1.4}
+/* grimório em miniatura */
+.grim{position:relative;z-index:4;width:min(1300px,96vw);margin:14px auto 0;border-radius:14px;padding:10px 16px 12px;
+  background:var(--ruido),linear-gradient(180deg,#2a1810,#140a06);background-blend-mode:overlay,normal;box-shadow:inset 0 1px 0 #ffd8a01a,0 0 0 2px #0a0402,0 0 0 4px #6a4a2488,0 14px 30px #000a}
+.grimTopo{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.abas{display:flex;gap:6px}
+.aba{font-family:var(--ff);font-size:14px;padding:7px 14px 8px;border-radius:9px;cursor:pointer;color:#c9b89a;background:#0006;box-shadow:inset 0 2px 4px #000a}
+.aba.on{color:#2a1606;background:linear-gradient(180deg,#fff0a8,#e0b04a 60%,#b8862a);box-shadow:inset 0 1px 0 #fff,0 2px 0 #6a4a14}
+.busca{flex:1;max-width:300px;display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:10px;background:linear-gradient(180deg,#2a1208,#1a0804);box-shadow:inset 0 2px 5px #000,0 1px 0 #ffffff14}
+.busca svg{width:16px;height:16px}
+.busca input{flex:1;background:none;border:0;outline:0;color:#f0e0c0;font:16px 'EB Garamond'}
+.rars{display:flex;gap:6px}
+.rars button{font-family:var(--fn);font-weight:700;font-size:11px;letter-spacing:.06em;padding:6px 10px;border-radius:8px;border:0;cursor:pointer;color:#c9b89a;background:#0006;box-shadow:inset 0 2px 4px #000a}
+.rars button.on{color:#2a1606;background:var(--c)}
+.dica{margin-left:auto;font-size:14px;color:#a8957d;font-style:italic}
+.faixa{display:flex;gap:12px;overflow-x:auto;padding:12px 6px 8px;scrollbar-width:thin;scrollbar-color:#c9a24a77 transparent}
+.mini{position:relative;flex:none;width:104px;cursor:pointer;transition:transform .15s;--r:#fff4dc}
+.mini[data-f=incomum]{--r:#8ac8ff}.mini[data-f=rara]{--r:#ffc830}.mini[data-f=mitica]{--r:#ff6a1a}
+.mini:hover{transform:translateY(-6px)}
+.mini img{width:100%;display:block;border-radius:6px;box-shadow:0 6px 12px #000b}
+.mini .qt{position:absolute;top:5px;right:5px;font-family:var(--fn);font-weight:900;font-size:11px;background:#000c;color:#ffe08a;padding:1px 6px;border-radius:5px}
+.mini.oferecida img{filter:brightness(.4)}
+.mini.oferecida::after{content:'NA MESA';position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-family:var(--ff);font-size:11px;letter-spacing:.1em;color:#ffe08a;text-shadow:0 1px 3px #000}
+.mini.bloq{cursor:not-allowed}.mini.bloq img{filter:grayscale(1) brightness(.45)}
+.mini .cad{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);width:30px;height:30px;color:#e0c090}
+.mini .cadTxt{position:absolute;left:0;right:0;top:56%;text-align:center;font-size:11px;color:#e0c090;text-shadow:0 1px 3px #000}
+.mini .est{position:absolute;left:-6px;top:-6px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#fff2b0,#e0a020);box-shadow:0 0 0 2px #fff0b0,0 0 10px #ffb040}
+.mini .est svg{width:13px;height:13px}
+/* voo das cartas e final */
+.voa{position:fixed;z-index:30;pointer-events:none;border-radius:6px;box-shadow:0 10px 26px #000c;transition:all .55s cubic-bezier(.5,0,.3,1)}
+#fimTroca{position:fixed;inset:0;z-index:25;display:none;align-items:center;justify-content:center;background:#000a;flex-direction:column;gap:16px}
+#fimTroca.on{display:flex;animation:apar .3s ease-out}
+@keyframes apar{from{opacity:0}}
+#fimTroca h2{margin:0;font-family:var(--ff);font-size:42px;letter-spacing:.1em;color:transparent;background:linear-gradient(180deg,#fff6d0,#f0c860 50%,#b8822a);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 3px 0 #000) drop-shadow(0 0 30px #e8a03a88)}
+#fimTroca .seloG{width:110px;height:110px;display:grid;place-items:center;font-family:var(--ff);font-size:46px;color:#ffe0d0;background:radial-gradient(circle at 38% 32%,#d0402a,#8a1a10 60%,#5a0a06);border-radius:47% 53% 50% 50%/52% 48% 52% 48%;box-shadow:0 0 0 6px #a0281a,0 10px 24px #000c,inset 0 -8px 14px #0006;animation:carimbo .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes carimbo{from{transform:scale(2.4) rotate(-30deg);opacity:0}}
+#fimTroca p{margin:0;color:#e0d0b0;font-size:18px}
+#avisoTela{position:fixed;inset:0;z-index:24;display:none;align-items:center;justify-content:center;background:#000b}
+#avisoTela.on{display:flex}
+#avisoTela .caixaA{max-width:min(520px,90vw);text-align:center;padding:26px 30px;border-radius:14px;background:var(--ruido),radial-gradient(ellipse at 50% 0%,#3a2010,#1a0c06 70%);background-blend-mode:overlay,normal;box-shadow:inset 0 1px 0 #ffd8a022,0 0 0 2px #0a0402,0 0 0 5px #6a4a24,0 0 0 7px #1a0c04,0 30px 70px #000}
+#avisoTela h2{margin:0 0 8px;font-family:var(--ff);font-size:26px;color:transparent;background:linear-gradient(180deg,#fff2c0,#e8b84a 50%,#a8782a);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 2px 0 #000)}
+#avisoTela p{margin:0 0 18px;color:#e0d0b0;font-size:17px}
+#msg{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#1a0e08ee;color:#f0e0c0;padding:10px 20px;border-radius:10px;font-size:16px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:40;box-shadow:0 0 0 1px #c9a24a66,0 8px 20px #000a}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute"><filter id="chamaT" x="-30%" y="-30%" width="160%" height="160%"><feTurbulence type="fractalNoise" baseFrequency="0.03 0.05" numOctaves="2" seed="4" result="r"><animate attributeName="baseFrequency" dur="5s" values="0.03 0.05;0.045 0.07;0.03 0.05" repeatCount="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="r" scale="20" xChannelSelector="R" yChannelSelector="G"/><feGaussianBlur stdDeviation="2.5"/></filter></svg>
+<div id="cena"><div class="arte"></div><div class="vela"></div><div class="vinheta"></div></div><canvas id="brasas"></canvas>
+<div class="topo">
+  <button class="b3d" id="sair">Sair da troca</button>
+  <div class="titulo"><h1>MESA DE TROCA</h1><div class="orn"><i></i>NEGOCIAÇÃO COM <b style="color:#ffe08a" id="comQuem"></b><i></i></div></div>
+  <div id="estado">Negociando…</div>
+</div>
+<div class="mesa">
+  <div class="lado esq" id="ladoEu">
+    <div class="quem"><div class="av" id="avEu"></div><div><b id="nomeEu"></b><small>VOCÊ OFERECE</small></div></div>
+    <div class="bandeja"><div class="leque" id="leqEu"></div><div class="vazio" id="vazEu"><div class="fantasmas"><i></i><i></i><i></i></div>Escolha cartas da sua coleção, lá embaixo, para colocar na mesa.</div></div>
+    <div class="ouroLinha"><button class="b3d peq" id="menos">− 50</button><div class="valorOuro" id="ouroEu">0</div><button class="b3d peq" id="mais">+ 50</button></div>
+    <div class="aceite"><div class="selo" id="seloEu">✓</div><button class="b3d ouro" id="aceitar">Aceitar troca</button><span class="txt" id="txtEu"></span></div>
+  </div>
+  <div class="centro"><div class="simbolo" id="simbolo"><div class="brilho"></div><svg viewBox="0 0 150 150">
+  <defs>
+    <linearGradient id="bronze" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0b8"/><stop offset=".35" stop-color="#e0a848"/><stop offset=".65" stop-color="#9a6018"/><stop offset="1" stop-color="#f0c870"/></linearGradient>
+    <linearGradient id="bronzeEsc" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#5a3008"/><stop offset="1" stop-color="#b8802a"/></linearGradient>
+    <filter id="relevo" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1.6" stdDeviation=".8" flood-color="#000" flood-opacity=".9"/><feDropShadow dx="0" dy="-.6" stdDeviation=".3" flood-color="#fff4c0" flood-opacity=".35"/></filter>
+    <path id="circRunas" d="M75 75 m-60 0 a60 60 0 1 1 120 0 a60 60 0 1 1 -120 0"/>
+  </defs>
+  <g class="runas"><text font-family="serif" font-size="10" fill="#b8905a" opacity=".85"><textPath href="#circRunas" textLength="368.0" lengthAdjust="spacing">ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾ</textPath></text></g>
+  <g class="fitas" filter="url(#relevo)">
+    <path d="M75 30 A45 45 0 0 1 114.7 53.9" fill="none" stroke="url(#bronze)" stroke-width="7" stroke-linecap="round"/>
+    <path d="M120.4 49.7 L120.3 64.5 L108 56.3 Z" fill="url(#bronze)" stroke="#5a3008" stroke-width=".8" stroke-linejoin="round"/>
+    <path d="M75 120 A45 45 0 0 1 35.3 96.1" fill="none" stroke="url(#bronze)" stroke-width="7" stroke-linecap="round"/>
+    <path d="M29.6 100.3 L29.7 85.5 L42 93.7 Z" fill="url(#bronze)" stroke="#5a3008" stroke-width=".8" stroke-linejoin="round"/>
+    <circle cx="75" cy="30" r="4.5" fill="url(#bronzeEsc)" stroke="#fff0b8" stroke-width=".8"/><circle cx="75" cy="120" r="4.5" fill="url(#bronzeEsc)" stroke="#fff0b8" stroke-width=".8"/>
+  </g>
+  <g filter="url(#relevo)"><circle cx="75" cy="75" r="25" fill="url(#bronzeEsc)"/><circle cx="75" cy="75" r="21" fill="none" stroke="url(#bronze)" stroke-width="2"/>
+    <text x="75" y="86" text-anchor="middle" font-family="Metamorphous,serif" font-size="30" fill="url(#bronze)">M</text></g>
+</svg></div>
+    <small id="centroTxt">Os dois precisam aceitar. Qualquer mudança desfaz os aceites.</small></div>
+  <div class="lado dir" id="ladoEle">
+    <div class="quem"><div class="av" id="avEle"></div><div><b id="nomeEle"></b><small id="subEle"></small></div></div>
+    <div class="bandeja"><div class="leque" id="leqEle"></div><div class="vazio" id="vazEle"><div class="fantasmas"><i></i><i></i><i></i></div>Kaldrax ainda não colocou nada na mesa.</div></div>
+    <div class="ouroLinha"><div class="valorOuro" id="ouroEle">0</div></div>
+    <div class="aceite"><span class="txt" id="txtEle"></span><div class="selo" id="seloEle">✓</div></div>
+  </div>
+</div>
+<div class="grim">
+  <div class="grimTopo">
+    <div class="abas"><div class="aba on" data-a="eu">Sua coleção</div><div class="aba" data-a="ele">Coleção do amigo</div></div>
+    <label class="busca"><svg viewBox="0 0 24 24" fill="none" stroke="#d8b070" stroke-width="2.4" stroke-linecap="round"><circle cx="10" cy="10" r="6.5"/><path d="M15 15l6 6"/></svg><input id="busca" placeholder="Pesquisar carta..."></label>
+    <div class="rars" id="rars"><button data-f="comum" style="--c:#d8d0c0">Comum</button><button data-f="incomum" style="--c:#9fd0ff">Incomum</button><button data-f="rara" style="--c:#ffd060">Rara</button><button data-f="mitica" style="--c:#ff8a4a">Mítica</button></div>
+    <span class="dica" id="dicaGrim">Clique numa carta para pôr na mesa. Clique na mesa para tirar.</span>
+  </div>
+  <div class="faixa" id="faixa"></div>
+</div>
+<div id="fimTroca"><div class="seloG">✓</div><h2>TROCA CONCLUÍDA</h2><p id="fimTxt"></p><button class="b3d ouro" id="fimFechar">Fechar</button></div>
+<div id="avisoTela"><div class="caixaA"><h2></h2><p></p><button class="b3d"></button></div></div>
+<div id="msg"></div>
+<script src="molduras.js"></script>
+<script>
+
+const MOEDA = '<svg class="moeda" viewBox="0 0 24 24"><defs><radialGradient id="mg" cx="35%" cy="30%"><stop offset="0" stop-color="#fff6c8"/><stop offset=".45" stop-color="#f0c44a"/><stop offset="1" stop-color="#9a6a18"/></radialGradient></defs><circle cx="12" cy="12" r="10.5" fill="url(#mg)" stroke="#7a5414" stroke-width="1.2"/><circle cx="12" cy="12" r="7.6" fill="none" stroke="#b8862a" stroke-width="1"/><path d="M8 16V8.4l4 4.6 4-4.6V16" fill="none" stroke="#7a5414" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+const CAD = '<svg class="cad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor" fill-opacity=".25"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+const ESTRELA = '<svg viewBox="0 0 24 24"><path d="M12 2l3 7 7 .6-5.3 4.7 1.6 7.2L12 17.8 5.7 21.5l1.6-7.2L2 9.6 9 9z" fill="#3a1a02"/></svg>';
+const img = c => `https://api.scryfall.com/cards/${c.set.toLowerCase()}/${encodeURIComponent(c.num)}?format=image&version=normal`;
+const fmt = n => Number(n||0).toLocaleString('pt-BR');
+const chave = c => c.nome + '|' + c.set + '|' + c.num;
+const pai = m => parent.postMessage(Object.assign({troca2: true}, m), '*');
+let D = null, versao = -1, aba = 'eu', fRar = new Set(), ocupado = false, terminou = false;
+function aviso(t){ const m = document.getElementById('msg'); m.textContent = t; m.style.opacity = 1; clearTimeout(aviso.t); aviso.t = setTimeout(()=>m.style.opacity = 0, 2800); }
+const avHtml = p => { const f = p.avatar ? `<div style="background:url('${p.avatar}') center/cover"></div>` : `<div style="background:#6a4ab0;display:grid;place-items:center;font-family:Metamorphous,serif;font-size:22px;color:#fff">${(p.nome||'?')[0].toUpperCase()}</div>`; return molduraHtml(p.moldura || '', f, 62); };
+function leque(el, l, minha){
+  const n = l.length, abre = Math.min(12, 54 / Math.max(1, n));
+  el.innerHTML = l.map((c, i) => { const a = (i - (n-1)/2) * abre, x = (i - (n-1)/2) * Math.min(84, 340 / Math.max(1, n));
+    return `<div class="c" data-f="${c.faixa}" data-i="${i}" style="transform:translateX(calc(-50% + ${x}px)) rotate(${a}deg)" ${minha ? 'title="Clique para tirar da mesa"' : ''}><img src="${img(c)}" alt="${c.nome}"></div>`; }).join('');
+}
+function oferecer(cartas, ouro){ if (ocupado) return; ocupado = true; pai({acao:'oferecer', cartas: cartas.map(c => ({nome:c.nome, set:c.set, num:c.num})), ouro}); }
+function desenhar(){
+  const nome = (D.outro && D.outro.nome) || '?';
+  document.getElementById('comQuem').textContent = nome.toUpperCase();
+  document.getElementById('nomeEu').textContent = D.eu.nome; document.getElementById('nomeEle').textContent = nome;
+  document.getElementById('subEle').textContent = `${nome.toUpperCase()} OFERECE`;
+  document.getElementById('avEu').innerHTML = avHtml(D.eu); if (D.outro) document.getElementById('avEle').innerHTML = avHtml(D.outro);
+  document.getElementById('vazEle').lastChild.textContent = `${nome} ainda não colocou nada na mesa.`;
+  leque(document.getElementById('leqEu'), D.minhas, true); leque(document.getElementById('leqEle'), D.dele, false);
+  document.getElementById('vazEu').style.display = D.minhas.length ? 'none' : 'flex'; document.getElementById('vazEle').style.display = D.dele.length ? 'none' : 'flex';
+  [['ouroEu', D.meuOuro], ['ouroEle', D.ouroDele]].forEach(([id, v]) => { const e = document.getElementById(id); e.innerHTML = MOEDA + fmt(v); e.classList.toggle('zero', !v); });
+  document.getElementById('seloEu').classList.toggle('on', D.aceiteiEu); document.getElementById('seloEle').classList.toggle('on', D.aceitouEle);
+  const ac = document.getElementById('aceitar'); ac.textContent = D.aceiteiEu ? 'Desfazer aceite' : 'Aceitar troca'; ac.classList.toggle('ouro', !D.aceiteiEu);
+  ac.disabled = !D.minhas.length && !D.dele.length && !D.meuOuro && !D.ouroDele;
+  const tE = document.getElementById('txtEu'); tE.textContent = D.aceiteiEu ? 'Você aceitou' : ''; tE.className = 'txt' + (D.aceiteiEu ? ' ok' : '');
+  const tO = document.getElementById('txtEle'); tO.textContent = D.aceitouEle ? `${nome} aceitou` : `Esperando ${nome}…`; tO.className = 'txt' + (D.aceitouEle ? ' ok' : '');
+  document.getElementById('simbolo').classList.toggle('pronto', D.aceiteiEu && D.aceitouEle);
+  document.getElementById('estado').textContent = D.aceiteiEu && D.aceitouEle ? 'Fechando a troca…' : D.aceiteiEu || D.aceitouEle ? 'Um aceite de dois' : 'Negociando…';
+  document.querySelectorAll('#leqEu .c').forEach(c => c.onclick = () => { const l = [...D.minhas]; l.splice(+c.dataset.i, 1); oferecer(l, D.meuOuro); });
+  document.querySelector('.abas .aba[data-a="ele"]').textContent = `Coleção de ${nome}`;
+  desenharGrim();
+}
+function livres(c){ const usadas = D.minhas.filter(x => chave(x) === chave(c)).length, presa = (D.presas || []).includes(c.nome) ? 1 : 0; return c.qtd - presa - usadas; }
+function desenharGrim(){
+  const q = document.getElementById('busca').value.trim().toLowerCase(), nome = (D.outro && D.outro.nome) || '?', desejos = new Set(D.desejos || []);
+  const l = ((aba === 'eu' ? D.colecao : D.colecaoDele) || []).filter(c => (!q || c.nome.toLowerCase().includes(q)) && (!fRar.size || fRar.has(c.faixa)));
+  document.getElementById('dicaGrim').textContent = aba === 'eu' ? 'Clique numa carta para pôr na mesa. Clique na mesa para tirar.' : `Estrela = está na sua lista de desejos. Clique para pedir a ${nome}.`;
+  document.getElementById('faixa').innerHTML = l.map(c => { const k = chave(c);
+    if (aba === 'eu'){ const lv = livres(c), presa = (D.presas || []).includes(c.nome), bloq = presa && c.qtd <= 1;
+      return `<div class="mini${bloq ? ' bloq' : ''}${!bloq && lv <= 0 ? ' oferecida' : ''}" data-f="${c.faixa}" data-k="${encodeURIComponent(k)}"><img loading="lazy" src="${img(c)}" alt="${c.nome}"><span class="qt">${Math.max(0, lv)}/${c.qtd}</span>${bloq ? CAD + '<span class="cadTxt">no seu deck</span>' : ''}</div>`; }
+    return `<div class="mini" data-f="${c.faixa}" data-k="${encodeURIComponent(k)}">${desejos.has(c.nome) ? `<span class="est">${ESTRELA}</span>` : ''}<img loading="lazy" src="${img(c)}" alt="${c.nome}"><span class="qt">x${c.qtd}</span></div>`; }).join('')
+    || '<div style="color:#a8957d;font-style:italic;padding:20px">Nenhuma carta.</div>';
+  document.querySelectorAll('#faixa .mini').forEach(el => el.onclick = () => {
+    const lista = aba === 'eu' ? D.colecao : D.colecaoDele, c = lista.find(x => chave(x) === decodeURIComponent(el.dataset.k));
+    if (aba === 'ele'){ pai({acao:'pedir', nome: c.nome}); aviso(`Pedido enviado: "${nome}, coloca ${c.nome} na mesa?"`); return; }
+    if (el.classList.contains('bloq')){ aviso(`${c.nome} está no seu deck. Tire do deck antes de trocar.`); return; }
+    if (livres(c) <= 0) return;
+    const presa = (D.presas || []).includes(c.nome);
+    if (livres(c) === 1 && !presa) aviso(`É a sua última cópia de ${c.nome}.`);
+    voar(el.querySelector('img'), document.getElementById('leqEu'));
+    oferecer([...D.minhas, c], D.meuOuro);
+  });
+}
+function voar(de, para){ const r = de.getBoundingClientRect(), rp = para.getBoundingClientRect(), v = de.cloneNode(); v.className = 'voa';
+  Object.assign(v.style, {left: r.left+'px', top: r.top+'px', width: r.width+'px'}); document.body.appendChild(v);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>Object.assign(v.style, {left: (rp.left + rp.width/2 - 60)+'px', top: (rp.top + 20)+'px', width: '120px', opacity: .3})));
+  setTimeout(()=>v.remove(), 580); }
+document.querySelectorAll('.aba').forEach(a => a.onclick = () => { aba = a.dataset.a; document.querySelectorAll('.aba').forEach(x => x.classList.toggle('on', x === a)); desenharGrim(); });
+document.getElementById('busca').oninput = desenharGrim;
+document.querySelectorAll('#rars button').forEach(b => b.onclick = () => { const f = b.dataset.f; fRar.has(f) ? fRar.delete(f) : fRar.add(f); b.classList.toggle('on'); desenharGrim(); });
+document.getElementById('mais').onclick = () => { if (D.meuOuro + 50 > D.saldo) return aviso('Você não tem esse Ouro.'); oferecer(D.minhas, D.meuOuro + 50); };
+document.getElementById('menos').onclick = () => { if (D.meuOuro) oferecer(D.minhas, D.meuOuro - 50); };
+document.getElementById('aceitar').onclick = () => { if (ocupado) return; ocupado = true; pai({acao:'aceitar', sim: !D.aceiteiEu}); };
+document.getElementById('sair').onclick = () => { if (terminou || D.estado === 'cancelada') return pai({acao:'fechar'}); pai({acao:'cancelar'}); pai({acao:'fechar'}); };
+function telaAviso(titulo, texto, botao){ const t = document.getElementById('avisoTela'); t.querySelector('h2').textContent = titulo; t.querySelector('p').textContent = texto;
+  t.querySelector('button').textContent = botao; t.classList.add('on'); }
+document.querySelector('#avisoTela button').onclick = () => { if (D && D.estado === 'convite') pai({acao:'cancelar'}); pai({acao:'fechar'}); };
+function concluir(){
+  terminou = true;
+  const cE = [...document.querySelectorAll('#leqEu .c img')], cO = [...document.querySelectorAll('#leqEle .c img')], rE = document.getElementById('leqEle').getBoundingClientRect(), rO = document.getElementById('leqEu').getBoundingClientRect();
+  [[cE, rE], [cO, rO]].forEach(([l, alvo]) => l.forEach((im, i) => { const r = im.getBoundingClientRect(), v = im.cloneNode(); v.className = 'voa';
+    Object.assign(v.style, {left: r.left+'px', top: r.top+'px', width: r.width+'px'}); document.body.appendChild(v); im.style.opacity = 0;
+    setTimeout(()=>Object.assign(v.style, {left: (alvo.left + alvo.width/2 - 60 + (i - l.length/2) * 30)+'px', top: (alvo.top + 30)+'px', transform: 'rotate(360deg)'}), 60 + i * 90); }));
+  setTimeout(() => { document.querySelectorAll('.voa').forEach(v => v.remove());
+    const rec = (D.recebi || []).map(c => c.nome);
+    document.getElementById('fimTxt').innerHTML = rec.length || D.ouroRecebido ? `Você recebeu <b>${rec.join(', ')}</b>${D.ouroRecebido ? `${rec.length ? ' e ' : ''}${fmt(D.ouroRecebido)} de Ouro` : ''}.` : 'A troca foi feita.';
+    document.getElementById('fimTroca').classList.add('on'); }, 1400);
+}
+document.getElementById('fimFechar').onclick = () => pai({acao:'fechar'});
+addEventListener('message', e => { const d = e.data; if (!d || !d.troca2r) return;
+  ocupado = false;
+  if (d.erro){ aviso(d.erro); return; }
+  const n = d.dados; if (!n || terminou) return;
+  if (n.pedido && n.pedido !== (D && D.pedidoVisto)) { aviso(`${(n.outro||{}).nome} pediu: ${n.pedido}`); n.pedidoVisto = n.pedido; } else if (D) n.pedidoVisto = D.pedidoVisto;
+  if (n.motivo && n.estado === 'aberta' && (!D || D.motivo !== n.motivo)) aviso(n.motivo);
+  const mudou = !D || n.versao !== D.versao || (n.colecao && !D.colecao);
+  const antes = D; D = Object.assign({}, n, {colecao: n.colecao || (antes && antes.colecao), colecaoDele: n.colecaoDele || (antes && antes.colecaoDele)});
+  const nome = (D.outro && D.outro.nome) || 'seu amigo';
+  if (D.estado === 'convite'){ desenhar(); telaAviso('Esperando resposta', `O convite foi enviado. Esperando ${nome} aceitar a troca…`, 'Cancelar convite'); return; }
+  if (D.estado === 'cancelada'){ telaAviso('Troca cancelada', D.motivo || 'A troca foi cancelada.', 'Fechar'); return; }
+  document.getElementById('avisoTela').classList.remove('on');
+  if (D.estado === 'concluida'){ if (antes) { desenhar(); } concluir(); return; }
+  if (antes && (antes.aceiteiEu || antes.aceitouEle) && !D.aceiteiEu && !D.aceitouEle && antes.versao !== D.versao) aviso('A oferta mudou: os aceites foram desfeitos.');
+  if (mudou) desenhar();
+});
+pai({acao:'pronta'});
+// brasas
+const cv = document.getElementById('brasas'), g = cv.getContext('2d'); let B = [];
+function tam(){ cv.width = innerWidth; cv.height = innerHeight; } tam(); addEventListener('resize', tam);
+const nova = q => ({x: Math.random()*innerWidth, y: q ? Math.random()*innerHeight : innerHeight+10, v: .2+Math.random()*.5, r: .5+Math.random()*1.5, o: Math.random()*7, a: .2+Math.random()*.4});
+for (let i = 0; i < 36; i++) B.push(nova(true));
+(function loop(){ g.clearRect(0,0,cv.width,cv.height);
+  for (const b of B){ b.y -= b.v; b.o += .02; b.x += Math.sin(b.o)*.4; if (b.y < -10) Object.assign(b, nova(false));
+    g.beginPath(); g.fillStyle = `rgba(255,${170+Math.floor(b.r*25)},90,${b.a*Math.min(1,b.y/innerHeight*1.5)})`; g.shadowColor = '#ffa040'; g.shadowBlur = 8; g.arc(b.x,b.y,b.r,0,7); g.fill(); }
+  requestAnimationFrame(loop); })();
+</script></body></html>

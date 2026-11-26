@@ -255,6 +255,7 @@ html.modoDesenho #mesa,html.modoDesenho #mesa *{cursor:crosshair!important}
 .tab.comPlaymat .corpoTab.pmPadrao{background:var(--pm)}
 .corpoTab.pmAnim{position:relative;isolation:isolate}.corpoTab.pmAnim>.pmFx{z-index:-1}
 .comMoldura{margin-right:22px;margin-left:8px}.comMoldura[data-mld='40'],.comMoldura[data-mld='50']{margin-right:34px;margin-left:16px}
+#convitesTroca{position:fixed;right:18px;bottom:70px;z-index:9400;display:flex;flex-direction:column;gap:8px}
 .mldSobre{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:3}
 .pfNivelLinha.clicavel{cursor:pointer;border-radius:10px;padding:4px 6px;margin-left:-6px;transition:background .2s}
 .pfNivelLinha.clicavel:hover{background:#ffffff10}
@@ -3695,6 +3696,7 @@ function desenharAmigos(){
         ${sala ? `<button class="pri" data-entrar="${esc(JSON.stringify(sala))}">Entrar</button>` : ''}
         ${jogoAmigo ? `<button data-assistir="${esc(JSON.stringify(jogoAmigo))}">Assistir</button>` : ''}
         ${podeConv ? `<button data-am="convidar" data-c="${a.codigo}">Convidar</button>` : ''}
+        ${a.online ? `<button data-trocar="${a.codigo}" title="Trocar cartas com ${esc(a.nome)}">Trocar</button>` : ''}
         <button class="amX" title="Remover amigo" data-am="remover" data-c="${a.codigo}" data-n="${esc(a.nome)}">✕</button></div></div>`; }).join('')
       : `<div class="dicaMenu bnVazio">${q ? 'Ninguém com esse nome.' : 'Nenhum amigo ainda. Clique no ícone de adicionar, ali em cima.'}</div>`);
     const outros = (f.online||[]).filter(bate);
@@ -3831,6 +3833,7 @@ async function acaoAmigo(acao, codigo, extra){
 // convites recebidos: aviso com escolha de deck e Entrar
 function desenharConvites(){
   const box = $('#convitesAmigos');
+  desenharConvitesTroca();
   const lista = (amigos && amigos.foto && amigos.foto.convites || []).filter(c=>!convitesVistos.has(c.id));
   if (E && (E.fase==='jogo' || E.fase==='sala')){ box.innerHTML = ''; return; }   // não atrapalha quem está jogando
   const ids = lista.map(c=>c.id).join(',');
@@ -3845,6 +3848,21 @@ function desenharConvites(){
     const fim = ()=>{ convitesVistos.add(c.id); localSet('convitesVistos', JSON.stringify([...convitesVistos].slice(-50))); post('/api/amigos',{acao:'descartar', convite:c.id}); el.remove(); box.dataset.ids=''; };
     el.querySelector('.cvNao').onclick = fim;
     el.querySelector('.cvEntrar').onclick = async ()=>{ fim(); await entrarSalaAmigo(c.sala, sel.value); };
+  });
+}
+// convite de troca: aparece por cima de tudo (menos durante uma partida)
+const trocasRecusadas = new Set();
+function desenharConvitesTroca(){
+  let box = $('#convitesTroca'); if (!box){ box = document.createElement('div'); box.id = 'convitesTroca'; document.body.appendChild(box); }
+  const lista = ((amigos && amigos.foto && amigos.foto.trocas) || []).filter(t => !t.propus && t.estado === 'convite' && !trocasRecusadas.has(t.id) && trocaAberta !== t.id);
+  if (E && E.fase === 'jogo'){ box.innerHTML = ''; return; }
+  const ids = lista.map(t => t.id).join(','); if (box.dataset.ids === ids) return; box.dataset.ids = ids;
+  box.innerHTML = lista.map(t => `<div class="conviteBox conviteTroca" data-id="${t.id}">${avAmigo(t.com)}<div><b>${esc(t.com.nome)}</b> quer trocar cartas com você</div>
+    <button class="pri ctSim">Abrir a mesa de troca</button><button class="ctNao">Agora não</button></div>`).join('');
+  box.querySelectorAll('.conviteTroca').forEach(el => {
+    const id = el.dataset.id, tira = ()=>{ el.remove(); box.dataset.ids = ''; };
+    el.querySelector('.ctNao').onclick = ()=>{ trocasRecusadas.add(id); post('/api/troca', {acao:'responder', id, aceitar:false}); tira(); };
+    el.querySelector('.ctSim').onclick = async ()=>{ tira(); const r = await post('/api/troca', {acao:'responder', id, aceitar:true}); if (r.erro) avisoLocal(r.erro); else abrirTroca(id); };
   });
 }
 async function escolherDeckEEntrar(sala){
@@ -4412,6 +4430,39 @@ function telaEscolhaInicial(){
 }
 const NOME_COR = {W:'Branco', U:'Azul', B:'Preto', R:'Vermelho', G:'Verde'};
 // tela do mundo (campanha-mundo.html) por cima da Mesa: lista de batalhas, arte do comandante, história
+document.addEventListener('click', ev => { const b = ev.target.closest('[data-trocar]'); if (b){ ev.stopPropagation(); proporTroca(b.dataset.trocar); } }, true);
+// troca de cartas com um amigo (troca.html por cima da Mesa); o estado vem do Zera a cada segundo
+let trocaAberta = null;
+async function proporTroca(codigo){
+  const r = await post('/api/troca', {acao:'propor', codigo});
+  if (r.erro){ avisoLocal(r.erro); return; }
+  abrirTroca(r.id);
+}
+function abrirTroca(id){
+  if (trocaAberta === id && $('#frameTroca')) return;
+  let fr = $('#frameTroca'); if (fr) fr.remove();
+  trocaAberta = id;
+  fr = document.createElement('iframe'); fr.id = 'frameTroca'; fr.src = 'troca.html';
+  fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9320;background:#060302';
+  const mandar = m => fr.contentWindow && fr.contentWindow.postMessage(Object.assign({troca2r: true}, m), '*');
+  let timer = null, buscando = false;
+  const buscar = async ()=>{ if (buscando) return; buscando = true;
+    try { const r = await post('/api/troca', {acao:'estado', id}); mandar(r.erro ? {erro: r.erro} : {dados: r}); if (!r.erro && (r.estado === 'concluida' || r.estado === 'cancelada')) { clearInterval(timer); timer = null; } }
+    finally { buscando = false; } };
+  const fechar = ()=>{ window.removeEventListener('message', ouvir); clearInterval(timer); fr.remove(); trocaAberta = null; if (typeof atualizarAmigos === 'function') atualizarAmigos(); };
+  const ouvir = async e=>{
+    if (!e.data || !e.data.troca2) return;
+    if (!fr.isConnected || e.source !== fr.contentWindow){ if (!fr.isConnected) window.removeEventListener('message', ouvir); return; }
+    const a = e.data.acao;
+    if (a === 'pronta'){ buscar(); timer = setInterval(buscar, 1000); return; }
+    if (a === 'fechar'){ fechar(); return; }
+    const corpo = Object.assign({}, e.data, {id}); delete corpo.troca2;
+    const r = await post('/api/troca', corpo);
+    mandar(r.erro ? {erro: r.erro} : {dados: r});
+  };
+  window.addEventListener('message', ouvir);
+  document.body.appendChild(fr);
+}
 // o Bazar (bazar.html por cima da Mesa): mercadoria do dia, lista de desejos, desmanchar repetidas
 async function abrirBazar(){
   let dados = await post('/api/bazar', {acao:'estado'});
