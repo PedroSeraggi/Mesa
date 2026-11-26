@@ -2537,7 +2537,8 @@ public class Ponte implements MageClient {
         }
         for (int i = 0; i < decks.size(); i++) {
             String nome = nomeDeck(oponentes.get(i));
-            String nomeBot = chefeCiclo != null && i == 0 ? "Chefe · " + chefeNome : "IA " + (i + 1) + " · " + nome;
+            boolean daCampanha = oponentes.get(i).startsWith("@chefe/") && chefeCiclo == null;   // campanha: o nome do deck do bot, sem "IA n"
+            String nomeBot = chefeCiclo != null && i == 0 ? "Chefe · " + chefeNome : daCampanha ? oponentes.get(i).substring(7).replace(".dck", "") : "IA " + (i + 1) + " · " + nome;
             if (!session.joinTable(roomId, tableId, nomeBot, PlayerType.COMPUTER_MAD, skill, decks.get(i), "")) {
                 throw new IllegalStateException("Deck da IA recusado: " + oponentes.get(i));
             }
