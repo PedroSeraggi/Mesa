@@ -1,0 +1,217 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>A Loja</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Cinzel:wght@700;900&family=EB+Garamond:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+<style>
+:root{--ff:'Metamorphous',serif;--fn:'Cinzel',serif;--ouro:#E4C874;
+ --ruido:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5  0 0 0 0 .4  0 0 0 0 .3  0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+ --veio:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='400' preserveAspectRatio='none'%3E%3Cfilter id='w' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.0018 .06' numOctaves='4' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 .32  0 0 0 0 .18  0 0 0 0 .08  0 0 0 1.25 -.38'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E")}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#060302;color:#eee;font-family:'EB Garamond',serif}
+#cena{position:fixed;inset:0;pointer-events:none}
+#cena .arte{position:absolute;inset:-40px;background:url('campanha/artes/krenko.jpg') center 30%/cover;filter:blur(18px) brightness(.22) saturate(1.3) sepia(.4)}
+#cena .vela{position:absolute;left:50%;top:-10%;width:140vw;height:110vh;transform:translateX(-50%);background:radial-gradient(ellipse at 42% 45%,#ffaa4a2e,transparent 55%);animation:vela 4s ease-in-out infinite}
+@keyframes vela{25%{opacity:.85}50%{opacity:1}70%{opacity:.9}}
+#cena .vinheta{position:absolute;inset:0;box-shadow:inset 0 0 260px 90px #000}
+#brasas{position:fixed;inset:0;pointer-events:none;z-index:8}
+/* botões 3D */
+.b3d{position:relative;font-family:var(--ff);font-size:15px;letter-spacing:.04em;color:#f6e2b0;cursor:pointer;border:0;padding:10px 20px 12px;border-radius:12px;
+  background:var(--ruido),linear-gradient(180deg,#6a3a1c 0%,#4a2410 45%,#33170a 100%);background-blend-mode:overlay,normal;
+  box-shadow:inset 0 1px 0 #ffd8a044,inset 0 -2px 0 #0006,0 0 0 1px #1a0a04,0 5px 0 #1e0c04,0 7px 0 #0e0602,0 12px 18px #000a;text-shadow:0 1px 0 #000;transition:transform .08s,box-shadow .08s,filter .2s}
+.b3d::before{content:'';position:absolute;inset:3px 3px auto 3px;height:45%;border-radius:9px 9px 6px 6px;background:linear-gradient(180deg,#ffffff1c,transparent);pointer-events:none}
+.b3d:hover{filter:brightness(1.15)}
+.b3d:active{transform:translateY(5px);box-shadow:inset 0 1px 0 #ffd8a044,0 0 0 1px #1a0a04,0 0 0 #1e0c04,0 2px 0 #0e0602,0 4px 8px #000a}
+.b3d:disabled{filter:grayscale(.8) brightness(.6);cursor:not-allowed}
+.b3d.ouro{color:#3a1e04;text-shadow:0 1px 0 #fff6c888;background:var(--ruido),linear-gradient(180deg,#fff0a8 0%,#f0c050 38%,#c88a24 75%,#9a6214 100%);background-blend-mode:overlay,normal;
+  box-shadow:inset 0 1px 0 #fff,inset 0 -2px 0 #6a3a0866,0 0 0 1px #4a2a06,0 5px 0 #7a4a10,0 7px 0 #3a2004,0 12px 20px #000a,0 0 24px #f0b04a33}
+.b3d.ouro:active{box-shadow:inset 0 1px 0 #fff,0 0 0 1px #4a2a06,0 0 0 #7a4a10,0 2px 0 #3a2004,0 4px 8px #000a}
+.b3d.grande{font-size:20px;padding:14px 34px 16px;border-radius:14px}
+.moeda{width:22px;height:22px;flex:none;vertical-align:-5px;filter:drop-shadow(0 1px 1px #000a)}
+/* topo */
+.topo{position:relative;z-index:6;display:flex;align-items:center;gap:18px;padding:16px 28px 0}
+.titulo{flex:1;text-align:center}
+.titulo h1{margin:0;font-family:var(--ff);font-size:44px;letter-spacing:.14em;color:transparent;background:linear-gradient(180deg,#fff6d0 0%,#f0c860 40%,#b8822a 60%,#ffe8a0 100%);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 2px 0 #3a1a04) drop-shadow(0 4px 0 #1a0a02) drop-shadow(0 0 22px #e8a03a55)}
+.titulo .orn{display:flex;align-items:center;justify-content:center;gap:12px;font-family:var(--fn);font-size:12px;letter-spacing:.24em;color:#d0a870}
+.titulo .orn i{width:70px;height:1px;background:linear-gradient(90deg,transparent,#d0a870)}.titulo .orn i:last-child{transform:scaleX(-1)}
+.saldo{display:flex;align-items:center;gap:8px;font-family:var(--fn);font-weight:900;font-size:17px;color:#ffe9a0;padding:7px 18px 9px 9px;border-radius:999px;text-shadow:0 1px 0 #000;
+  background:var(--ruido),linear-gradient(180deg,#3a2210,#1a0c06);background-blend-mode:overlay,normal;box-shadow:inset 0 1px 0 #ffd8a033,inset 0 -2px 0 #0008,0 0 0 1px #0a0402,0 4px 0 #0a0402,0 8px 14px #000a}
+/* layout */
+.palco{position:relative;z-index:4;display:grid;grid-template-columns:1.35fr 1fr;gap:26px;width:min(1280px,95vw);height:calc(100vh - 110px);margin:6px auto 0}
+/* ---- vitrine principal: booster no pedestal ---- */
+.vitrine{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:20px}
+.raios{position:absolute;left:50%;top:40%;width:760px;height:760px;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+  background:repeating-conic-gradient(from 0deg,#ffd06022 0deg 4deg,transparent 4deg 16deg);-webkit-mask-image:radial-gradient(circle,#000 10%,transparent 62%);mask-image:radial-gradient(circle,#000 10%,transparent 62%);animation:giraRaios 60s linear infinite}
+@keyframes giraRaios{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.halo{position:absolute;left:50%;top:40%;width:420px;height:420px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,#ffb04a40,transparent 65%);pointer-events:none;animation:halo 4s ease-in-out infinite}
+@keyframes halo{50%{opacity:.6;transform:translate(-50%,-50%) scale(1.08)}}
+/* o pacote 3D */
+.cena3d{position:relative;width:250px;height:390px;perspective:1300px;margin-bottom:6px;z-index:2}
+.flut{position:absolute;inset:0;animation:flutua 5s ease-in-out infinite}
+@keyframes flutua{50%{transform:translateY(-16px)}}
+.pk{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateX(var(--rx,4deg)) rotateY(var(--ry,-30deg)) rotateZ(-3deg);transition:transform .25s ease-out}
+.pk .face{position:absolute;inset:0;backface-visibility:hidden;
+  clip-path:polygon(0 2.5%,3% 0,6% 2.5%,9% 0,12% 2.5%,15% 0,18% 2.5%,21% 0,24% 2.5%,27% 0,30% 2.5%,33% 0,36% 2.5%,39% 0,42% 2.5%,45% 0,48% 2.5%,51% 0,54% 2.5%,57% 0,60% 2.5%,63% 0,66% 2.5%,69% 0,72% 2.5%,75% 0,78% 2.5%,81% 0,84% 2.5%,87% 0,90% 2.5%,93% 0,96% 2.5%,100% 0,100% 97.5%,97% 100%,94% 97.5%,91% 100%,88% 97.5%,85% 100%,82% 97.5%,79% 100%,76% 97.5%,73% 100%,70% 97.5%,67% 100%,64% 97.5%,61% 100%,58% 97.5%,55% 100%,52% 97.5%,49% 100%,46% 97.5%,43% 100%,40% 97.5%,37% 100%,34% 97.5%,31% 100%,28% 97.5%,25% 100%,22% 97.5%,19% 100%,16% 97.5%,13% 100%,10% 97.5%,7% 100%,4% 97.5%,0 100%)}
+.pk .frente{transform:translateZ(13px);background:linear-gradient(180deg,#050302cc 0%,transparent 24%,transparent 50%,#050302ee 80%,#050302 100%),url('campanha/artes/krenko.jpg') 42% 30%/cover}
+.pk .frente::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,#ffffff55 45%,transparent 58%);background-size:300% 100%;animation:reflexo 5.5s ease-in-out infinite;mix-blend-mode:screen}
+@keyframes reflexo{0%,55%{background-position:120% 0}85%,100%{background-position:-60% 0}}
+.pk .frente::before{content:'';position:absolute;inset:0;box-shadow:inset 0 0 0 3px #c9a24a,inset 0 0 30px #000a;z-index:1}
+.pk .verso{transform:rotateY(180deg) translateZ(13px);background:radial-gradient(ellipse at 50% 40%,#3a2a12,#120c06 60%,#050302);box-shadow:inset 0 0 0 3px #8a6a28}
+.pk .lado{position:absolute;top:2.5%;bottom:2.5%;width:26px;background:linear-gradient(90deg,#2a1a0a,#0a0603);}
+.pk .lado.e{left:-13px;transform:rotateY(-90deg)}
+.pk .lado.d{right:-13px;transform:rotateY(90deg);background:linear-gradient(90deg,#1a0e06,#4a2e12 40%,#1a0e06)}
+.pk .borda{position:absolute;left:0;right:0;height:22px;transform:translateZ(13.5px);background:repeating-linear-gradient(90deg,#e8c060 0 3px,#7a5a20 3px 6px);opacity:.95}
+.pk .borda.cima{top:8px}.pk .borda.baixo{bottom:8px}
+.pk .logo{position:absolute;left:0;right:0;top:8%;text-align:center;transform:translateZ(14px)}
+.pk .logo b{display:block;font-family:var(--ff);font-size:64px;line-height:1;color:transparent;background:linear-gradient(180deg,#fff4c8,#e8b84a 45%,#8a5a18);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 2px 0 #000) drop-shadow(0 0 12px #c9962e88)}
+.pk .logo span{display:block;font-family:var(--ff);font-size:15px;letter-spacing:.45em;margin-left:.45em;color:#f0d080;text-shadow:0 1px 3px #000}
+.pk .placa{position:absolute;left:18px;right:18px;bottom:62px;padding:7px 4px;text-align:center;font-family:var(--ff);font-size:18px;letter-spacing:.12em;line-height:1.1;color:#2a1606;transform:translateZ(14px);
+  background:linear-gradient(180deg,#fff0b0,#e0b04a 50%,#a87a20);border-radius:4px;box-shadow:0 3px 8px #000c,inset 0 1px 0 #fff8,0 0 0 1px #5a3a0a}
+.pk .info{position:absolute;left:0;right:0;bottom:36px;text-align:center;font-family:var(--fn);font-size:10px;letter-spacing:.32em;color:#e8c874cc;transform:translateZ(14px)}
+.sombraPk{width:200px;height:26px;border-radius:50%;background:radial-gradient(ellipse,#000c,transparent 70%);margin-top:-8px;animation:sombraF 5s ease-in-out infinite}
+@keyframes sombraF{50%{transform:scale(.85);opacity:.7}}
+/* pedestal de pedra com runas */
+.pedestal{position:relative;width:330px;height:64px;margin-top:4px}
+.pedestal .topoP{position:absolute;left:0;right:0;top:0;height:40px;border-radius:50%;
+  background:var(--ruido),radial-gradient(ellipse at 50% 40%,#5a5048,#2a2420 70%);background-blend-mode:overlay,normal;box-shadow:inset 0 -6px 10px #0008,0 2px 0 #6a6058}
+.pedestal .runasP{position:absolute;left:16%;right:16%;top:7px;height:26px;border-radius:50%;border:2px solid #ffb04a99;box-shadow:0 0 14px #ffa040,inset 0 0 14px #ffa04088;animation:runaP 3s ease-in-out infinite}
+@keyframes runaP{50%{opacity:.55}}
+.pedestal .corpoP{position:absolute;left:5%;right:5%;top:20px;height:44px;border-radius:0 0 40% 40%/0 0 30% 30%;
+  background:var(--ruido),linear-gradient(90deg,#1a1614,#3a3430 30%,#2a2420 70%,#120e0c);background-blend-mode:overlay,normal;box-shadow:0 14px 24px #000c}
+.ofertaTxt{text-align:center;margin-top:14px}
+.ofertaTxt h2{margin:0;font-family:var(--ff);font-size:28px;color:#fff;text-shadow:0 2px 8px #000}
+.ofertaTxt p{margin:6px auto 14px;max-width:460px;color:#e0d0b0;font-size:16px;line-height:1.45}
+.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+.chips span{font-family:var(--fn);font-weight:700;font-size:12px;letter-spacing:.06em;padding:4px 11px;border-radius:999px;background:#0008;box-shadow:inset 0 1px 3px #000;color:var(--c)}
+/* ---- coluna da direita ---- */
+.lateral{display:flex;flex-direction:column;gap:18px;padding:18px 0 22px}
+.painel{position:relative;border-radius:16px;padding:18px 20px;
+  background:var(--ruido),radial-gradient(ellipse at 50% 0%,#3a2010,#1a0c06 75%);background-blend-mode:overlay,normal;box-shadow:inset 0 1px 0 #ffd8a01a,inset 0 0 30px #0006,0 0 0 2px #0a0402,0 14px 30px #000a}
+.painel h3{margin:0 0 4px;font-family:var(--ff);font-size:21px;color:transparent;background:linear-gradient(180deg,#fff2c0,#e8b84a 50%,#a8782a);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 2px 0 #000)}
+.painel p{margin:0;color:#c9b89a;font-size:15px;line-height:1.4}
+/* seus boosters: pilha em leque */
+.meus{display:flex;align-items:center;gap:20px;min-height:200px}
+.pilhaPk{position:relative;width:170px;height:190px;flex:none;perspective:900px}
+.mini3d{position:absolute;left:30px;top:8px;width:110px;height:172px;transform-style:preserve-3d;transition:transform .4s cubic-bezier(.2,.9,.3,1.2)}
+.mini3d .f{position:absolute;inset:0;border-radius:3px;background:linear-gradient(180deg,#050302cc,transparent 26%,transparent 52%,#050302ee 82%),url('campanha/artes/krenko.jpg') 42% 30%/cover;
+  box-shadow:inset 0 0 0 2px #c9a24a,0 8px 14px #000c;transform:translateZ(5px)}
+.mini3d .f::before{content:'M';position:absolute;top:8px;left:0;right:0;text-align:center;font-family:var(--ff);font-size:26px;color:#ffe08a;text-shadow:0 2px 3px #000}
+.mini3d .f::after{content:'';position:absolute;left:6px;right:6px;bottom:22px;height:16px;border-radius:2px;background:linear-gradient(180deg,#fff0b0,#c89a44)}
+.mini3d .l{position:absolute;top:0;bottom:0;right:-5px;width:10px;background:linear-gradient(90deg,#1a0e06,#4a2e12);transform:rotateY(90deg)}
+.pilhaPk.vazia .mini3d .f{filter:grayscale(1) brightness(.35)}
+.contador{position:absolute;right:-6px;top:-6px;z-index:9;min-width:38px;height:38px;border-radius:19px;display:grid;place-items:center;padding:0 8px;font-family:var(--fn);font-weight:900;font-size:18px;color:#fff;
+  background:radial-gradient(circle at 35% 30%,#e0503a,#8a1a10);box-shadow:0 0 0 3px #3a0a06,0 4px 10px #000c}
+.meusTxt{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+/* vitrines pequenas */
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.vit{display:flex;flex-direction:column;gap:12px;align-items:flex-start;cursor:default}
+.vit .img{width:100%;height:110px;border-radius:10px;background:#000 center/cover;box-shadow:inset 0 0 0 1px #0008,inset 0 -40px 40px -10px #000c,0 6px 14px #000a;position:relative;overflow:hidden}
+.vit .img b{position:absolute;left:12px;bottom:8px;font-family:var(--ff);font-size:20px;color:#ffe9a0;text-shadow:0 2px 6px #000}
+.dicaOuro{color:#a8957d;font-size:14px;font-style:italic;text-align:center}
+/* confirmação */
+#conf{position:fixed;inset:0;z-index:25;display:none;align-items:center;justify-content:center;background:#000b}
+#conf.on{display:flex;animation:apar .2s ease-out}
+@keyframes apar{from{opacity:0}}
+#conf .caixa{display:flex;gap:26px;align-items:center;padding:26px 30px;border-radius:14px;max-width:min(560px,92vw);
+  background:var(--ruido),radial-gradient(ellipse at 50% 0%,#3a2010,#1a0c06 70%);background-blend-mode:overlay,normal;box-shadow:inset 0 1px 0 #ffd8a022,0 0 0 2px #0a0402,0 0 0 5px #6a4a24,0 0 0 7px #1a0c04,0 30px 70px #000}
+#conf .mini3d{position:relative;left:0;top:0;transform:rotateY(-22deg)}
+#conf h3{margin:0 0 8px;font-family:var(--ff);font-size:22px;color:transparent;background:linear-gradient(180deg,#fff2c0,#e8b84a 50%,#a8782a);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 2px 0 #000)}
+#conf p{margin:0 0 6px;color:#e0d0b0;font-size:17px}
+#conf .resto{color:#a8957d;font-size:14px}
+#conf .bts{display:flex;gap:14px;margin-top:16px}
+.voaPk{position:fixed;z-index:30;pointer-events:none;width:110px;height:172px;border-radius:3px;background:linear-gradient(180deg,#050302cc,transparent 26%,transparent 52%,#050302ee 82%),url('campanha/artes/krenko.jpg') 42% 30%/cover;
+  box-shadow:inset 0 0 0 2px #c9a24a,0 10px 24px #000c;transition:all .7s cubic-bezier(.5,0,.3,1)}
+#msg{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#1a0e08ee;color:#f0e0c0;padding:10px 20px;border-radius:10px;font-size:16px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:40;box-shadow:0 0 0 1px #c9a24a66,0 8px 20px #000a}
+@media (max-width:1000px){.palco{grid-template-columns:1fr;overflow-y:auto}}
+</style></head><body>
+<div id="cena"><div class="arte"></div><div class="vela"></div><div class="vinheta"></div></div><canvas id="brasas"></canvas>
+<div class="topo">
+  <button class="b3d" id="voltar">Voltar</button>
+  <div class="titulo"><h1>A LOJA</h1><div class="orn"><i></i>BOOSTERS · <b style="color:#ffe08a">TERRAS DE ORIGEM</b><i></i></div></div>
+  <div class="saldo" id="saldo"></div>
+</div>
+<div class="palco">
+  <div class="vitrine">
+    <div class="raios"></div><div class="halo"></div>
+    <div class="cena3d" id="cena3d"><div class="flut"><div class="pk" id="pk">
+      <div class="face verso"></div><div class="lado e"></div><div class="lado d"></div>
+      <div class="face frente"></div><div class="borda cima"></div><div class="borda baixo"></div>
+      <div class="logo"><b>M</b><span>MESA</span></div><div class="placa">TERRAS DE ORIGEM</div><div class="info">15 CARTAS · BOOSTER</div>
+    </div></div></div>
+    <div class="sombraPk"></div>
+    <div class="pedestal"><div class="corpoP"></div><div class="topoP"></div><div class="runasP"></div></div>
+    <div class="ofertaTxt">
+      <h2>Booster de Terras de Origem</h2>
+      <p>15 cartas do Mundo 1, como num booster de verdade. A rara pode virar mítica em 1 a cada 6 pacotes.</p>
+      <div class="chips"><span style="--c:#d8d0c0">10 comuns</span><span style="--c:#9fd0ff">3 incomuns</span><span style="--c:#ffd060">1 rara ou mítica</span><span style="--c:#c8b090">1 terreno ou comum</span></div>
+      <button class="b3d ouro grande" id="comprar"></button>
+    </div>
+  </div>
+  <div class="lateral">
+    <div class="painel"><div class="meus">
+      <div class="pilhaPk" id="pilha"></div>
+      <div class="meusTxt"><h3>Seus boosters</h3><p id="meusTxt"></p><button class="b3d ouro" id="abrir">Abrir booster</button></div>
+    </div></div>
+    <div class="duas">
+      <div class="painel vit"><div class="img" style="background-image:url('campanha/artes/pia-and-kiran-nalaar.jpg')"><b>O Bazar</b></div><p>6 cartas à venda por dia, escolhidas para você, e o desmanche das repetidas.</p><button class="b3d" id="bazar">Visitar o Bazar</button></div>
+      <div class="painel vit"><div class="img" style="background-image:url('campanha/artes/talrand.jpg')"><b>Sua coleção</b></div><p id="colTxt"></p><button class="b3d" id="colecao">Ver coleção</button></div>
+    </div>
+    <div class="dicaOuro">Ganhe Ouro em todas as partidas: jogar e vencer, criaturas abatidas, cartas compradas, missões e a primeira vitória do dia.</div>
+  </div>
+</div>
+<div id="conf"><div class="caixa"><div class="mini3d"><div class="f"></div><div class="l"></div></div><div><h3>Comprar um booster?</h3><p id="confPreco"></p><div class="resto" id="confResto"></div>
+  <div class="bts"><button class="b3d ouro" id="confSim">Sim, comprar</button><button class="b3d" id="confNao">Não</button></div></div></div></div>
+<div id="msg"></div>
+<script>
+const MOEDA = '<svg class="moeda" viewBox="0 0 24 24"><defs><radialGradient id="mg" cx="35%" cy="30%"><stop offset="0" stop-color="#fff6c8"/><stop offset=".45" stop-color="#f0c44a"/><stop offset="1" stop-color="#9a6a18"/></radialGradient></defs><circle cx="12" cy="12" r="10.5" fill="url(#mg)" stroke="#7a5414" stroke-width="1.2"/><circle cx="12" cy="12" r="7.6" fill="none" stroke="#b8862a" stroke-width="1"/><path d="M8 16V8.4l4 4.6 4-4.6V16" fill="none" stroke="#7a5414" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+const fmt = n => Number(n||0).toLocaleString('pt-BR');
+const pai = m => parent.postMessage(Object.assign({loja2: true}, m), '*');
+let D = null, ocupado = false;
+function aviso(t){ const m = document.getElementById('msg'); m.textContent = t; m.style.opacity = 1; clearTimeout(aviso.t); aviso.t = setTimeout(()=>m.style.opacity = 0, 2600); }
+function desenhar(){
+  document.getElementById('saldo').innerHTML = `${MOEDA}${fmt(D.ouro)}`;
+  const c = document.getElementById('comprar'); c.innerHTML = `Comprar por ${MOEDA} ${fmt(D.precoBooster)}`; c.disabled = D.ouro < D.precoBooster;
+  const n = D.boosters || 0, vis = Math.max(1, Math.min(5, n));
+  const pilha = document.getElementById('pilha'); pilha.classList.toggle('vazia', !n);
+  pilha.innerHTML = Array.from({length: vis}, (_, i) => { const k = i - (vis-1)/2; return `<div class="mini3d" style="transform:translateX(${k*14}px) rotate(${k*6}deg) rotateY(-24deg);z-index:${i}"><div class="f"></div><div class="l"></div></div>`; }).join('')
+    + (n ? `<div class="contador">${n}</div>` : '');
+  document.getElementById('meusTxt').textContent = n ? `Você tem ${n} booster${n > 1 ? 's' : ''} fechado${n > 1 ? 's' : ''} esperando.` : 'Nenhum booster fechado. Compre um ou vença batalhas da campanha.';
+  document.getElementById('abrir').disabled = !n;
+  document.getElementById('colTxt').textContent = `${fmt(D.cartasNaColecao)} cartas (${fmt(D.cartasDiferentes)} diferentes) para montar o deck da campanha.`;
+}
+// o pacote acompanha o mouse
+const pk = document.getElementById('pk'), cena = document.getElementById('cena3d');
+addEventListener('mousemove', e => { const r = cena.getBoundingClientRect(), dx = (e.clientX - (r.left + r.width/2)) / innerWidth, dy = (e.clientY - (r.top + r.height/2)) / innerHeight;
+  pk.style.setProperty('--ry', (-30 + dx * 40) + 'deg'); pk.style.setProperty('--rx', (4 - dy * 18) + 'deg'); });
+// comprar
+document.getElementById('comprar').onclick = () => { const p = D.precoBooster;
+  document.getElementById('confPreco').innerHTML = `Booster de Terras de Origem por ${MOEDA} <b style="color:#ffe08a">${fmt(p)}</b>`;
+  document.getElementById('confResto').textContent = `Depois da compra você fica com ${fmt(D.ouro - p)} de Ouro.`;
+  document.getElementById('confSim').disabled = false; document.getElementById('conf').classList.add('on'); };
+document.getElementById('confNao').onclick = () => document.getElementById('conf').classList.remove('on');
+document.getElementById('conf').onclick = e => { if (e.target.id === 'conf') document.getElementById('conf').classList.remove('on'); };
+document.getElementById('confSim').onclick = () => { if (ocupado) return; ocupado = true; document.getElementById('confSim').disabled = true; pai({acao:'comprar'}); };
+document.getElementById('abrir').onclick = () => { if (ocupado || !D.boosters) return; ocupado = true; pai({acao:'abrir'}); };
+document.getElementById('voltar').onclick = () => pai({acao:'fechar'});
+document.getElementById('bazar').onclick = () => pai({acao:'bazar'});
+document.getElementById('colecao').onclick = () => pai({acao:'colecao'});
+function voarParaPilha(){ const de = cena.getBoundingClientRect(), para = document.getElementById('pilha').getBoundingClientRect(), v = document.createElement('div'); v.className = 'voaPk';
+  Object.assign(v.style, {left: (de.left + de.width/2 - 55)+'px', top: (de.top + 60)+'px', transform: 'rotate(-8deg) scale(1.4)'}); document.body.appendChild(v);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>Object.assign(v.style, {left: (para.left + 30)+'px', top: (para.top + 8)+'px', transform: 'rotate(4deg) scale(1)', opacity: .4})));
+  setTimeout(()=>v.remove(), 760); }
+addEventListener('message', e => { const d = e.data; if (!d || !d.loja2r) return;
+  ocupado = false;
+  if (d.erro){ aviso(d.erro); document.getElementById('conf').classList.remove('on'); return; }
+  const comprou = D && d.dados.boosters > D.boosters && d.dados.ouro < D.ouro;
+  D = d.dados; document.getElementById('conf').classList.remove('on');
+  if (comprou){ voarParaPilha(); setTimeout(desenhar, 650); aviso('Booster comprado!'); } else desenhar();
+});
+// brasas
+const cv = document.getElementById('brasas'), g = cv.getContext('2d'); let B = [];
+function tam(){ cv.width = innerWidth; cv.height = innerHeight; } tam(); addEventListener('resize', tam);
+const nova = q => ({x: Math.random()*innerWidth, y: q ? Math.random()*innerHeight : innerHeight+10, v: .2+Math.random()*.6, r: .5+Math.random()*1.6, o: Math.random()*7, a: .2+Math.random()*.45});
+for (let i = 0; i < 44; i++) B.push(nova(true));
+(function loop(){ g.clearRect(0,0,cv.width,cv.height);
+  for (const b of B){ b.y -= b.v; b.o += .02; b.x += Math.sin(b.o)*.4; if (b.y < -10) Object.assign(b, nova(false));
+    g.beginPath(); g.fillStyle = `rgba(255,${170+Math.floor(b.r*25)},90,${b.a*Math.min(1,b.y/innerHeight*1.5)})`; g.shadowColor = '#ffa040'; g.shadowBlur = 8; g.arc(b.x,b.y,b.r,0,7); g.fill(); }
+  requestAnimationFrame(loop); })();
+pai({acao:'pronta'});
+</script></body></html>

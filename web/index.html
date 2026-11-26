@@ -4533,10 +4533,28 @@ function mostrarCampanha(c){
   window.addEventListener('message', ouvir);
   document.body.appendChild(fr);
 }
+// a loja (loja.html por cima da Mesa): booster 3D no pedestal, seus boosters, Bazar e coleção
 async function abrirLoja(){
-  const cx = abrirModal('<div class="dicaMenu">Abrindo a loja...</div>');
   lojaInfo = await post('/api/loja', {acao:'saldo'});
-  desenharLoja(cx);
+  if (lojaInfo.erro){ avisoLocal(lojaInfo.erro); return; }
+  let fr = $('#frameLoja'); if (fr) fr.remove();
+  fr = document.createElement('iframe'); fr.id = 'frameLoja'; fr.src = 'loja.html';
+  fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9290;background:#060302';
+  const mandar = m => fr.contentWindow.postMessage(Object.assign({loja2r: true}, m), '*');
+  const fechar = ()=>{ window.removeEventListener('message', ouvir); fr.remove(); };
+  const ouvir = async e=>{
+    if (!e.data || !e.data.loja2) return;
+    if (!fr.isConnected || e.source !== fr.contentWindow){ if (!fr.isConnected) window.removeEventListener('message', ouvir); return; }
+    const a = e.data.acao;
+    if (a === 'pronta') mandar({dados: lojaInfo});
+    if (a === 'fechar') fechar();
+    if (a === 'comprar'){ const r = await post('/api/loja', {acao:'comprarBooster'}); if (r.erro){ mandar({erro: r.erro}); return; } lojaInfo = r; atualizarOuroMenu(r); mandar({dados: r}); }
+    if (a === 'abrir'){ const r = await post('/api/loja', {acao:'abrirBooster'}); if (r.erro){ mandar({erro: r.erro}); return; } lojaInfo = r; atualizarOuroMenu(r); fechar(); animarBooster(r.cartas || []); }
+    if (a === 'bazar'){ fechar(); abrirBazar(); }
+    if (a === 'colecao'){ fechar(); verColecao(); }
+  };
+  window.addEventListener('message', ouvir);
+  document.body.appendChild(fr);
 }
 function desenharLoja(cx){
   const L = lojaInfo || {};

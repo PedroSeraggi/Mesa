@@ -1,0 +1,14 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia: a loja</title><style>html,body{margin:0;height:100%;background:#000;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}</style></head><body>
+<iframe id="f" src="loja.html"></iframe><script>
+let dados = {ouro: 2332, boosters: 3, precoBooster: 450, cartasNaColecao: 148, cartasDiferentes: 121};
+const f = document.getElementById('f');
+addEventListener('message', e => { const d = e.data; if (!d || !d.loja2) return;
+  const r = m => f.contentWindow.postMessage(Object.assign({loja2r: true}, m), '*');
+  if (d.acao === 'pronta') r({dados});
+  if (d.acao === 'comprar'){ if (dados.ouro < 450) return r({erro: 'Ouro insuficiente.'}); dados = Object.assign({}, dados, {ouro: dados.ouro - 450, boosters: dados.boosters + 1}); r({dados}); }
+  if (d.acao === 'abrir'){ dados = Object.assign({}, dados, {boosters: dados.boosters - 1}); r({dados}); alert('Na Mesa, aqui abre a tela de abrir o booster.'); }
+  if (d.acao === 'bazar') alert('Na Mesa, aqui abre o Bazar.');
+  if (d.acao === 'colecao') alert('Na Mesa, aqui abre a coleção.');
+  if (d.acao === 'fechar') alert('Na Mesa, aqui volta para o menu.');
+});
+</script></body></html>
