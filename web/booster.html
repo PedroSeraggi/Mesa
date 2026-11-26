@@ -130,6 +130,8 @@ body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color
 .carta.ehNova.virada .aura{opacity:.95;animation:pulsa 2.4s ease-in-out infinite}
 .faisca{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--cor);box-shadow:0 0 8px var(--cor);pointer-events:none;animation:faisca .9s ease-out forwards}
 @keyframes faisca{from{opacity:1;transform:translate(0,0)}to{opacity:0;transform:translate(var(--x),var(--y))}}
+#ver{position:fixed;z-index:15;width:300px;border-radius:15px;pointer-events:none;display:none;box-shadow:0 0 0 2px var(--cor,#c9a24a),0 0 30px var(--cor,#c9a24a),0 20px 50px #000;animation:verIn .15s ease-out}
+@keyframes verIn{from{opacity:0;transform:scale(.92)}}
 #zoom{position:fixed;inset:0;z-index:20;background:#06030ad0;display:flex;align-items:center;justify-content:center;cursor:zoom-out;animation:zIn .2s ease-out}
 #zoom img{width:min(340px,80vw);border-radius:16px;box-shadow:0 0 0 2px var(--cor,#c9a24a),0 0 40px var(--cor,#c9a24a),0 20px 50px #000;animation:zImg .25s cubic-bezier(.3,1.4,.5,1)}
 @keyframes zIn{from{opacity:0}}@keyframes zImg{from{transform:scale(.6)}}
@@ -142,7 +144,7 @@ body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color
   <feDisplacementMap in="SourceGraphic" in2="r" scale="26" xChannelSelector="R" yChannelSelector="G"/>
   <feGaussianBlur stdDeviation="3.5"/></filter></svg>
 <div id="fundoB"><div class="arte"></div><div class="piso"></div><div class="vela"></div><div class="vinheta"></div></div><canvas id="energia"></canvas>
-<div id="palco"></div>
+<div id="palco"></div><img id="ver" alt="">
 <script>
 // o pacote vem da Mesa (que abriu esta tela por cima dela)
 let PACOTE = [], MUNDO = 'MUNDO 1', NOME_MUNDO = '';
@@ -227,8 +229,22 @@ function abrir(){
     palco.insertAdjacentHTML('beforeend', cartas);
     const els = [...palco.querySelectorAll('.carta')];
     requestAnimationFrame(()=>requestAnimationFrame(()=>els.forEach(el=>{ el.style.left = el.dataset.x + 'px'; el.style.top = el.dataset.y + 'px'; el.classList.add('posta'); })));
+    // passar o mouse numa carta já virada: ela aparece grande ao lado (sem cobrir a carta)
+    const ver = document.getElementById('ver');
+    els.forEach(el=>{
+      el.onmouseenter = ()=>{ if (!el.classList.contains('virada')) return;
+        const r = el.getBoundingClientRect(), u = el.querySelector('.frente').style.backgroundImage.slice(5,-2);
+        if (ver.dataset.u !== u){ ver.src = u; ver.dataset.u = u; }
+        ver.style.setProperty('--cor', getComputedStyle(el).getPropertyValue('--cor'));
+        const larg = 300, alt = 418, dir = r.right + 18 + larg < innerWidth;
+        ver.style.left = (dir ? r.right + 18 : r.left - 18 - larg) + 'px';
+        ver.style.top = Math.max(10, Math.min(innerHeight - alt - 10, r.top + r.height/2 - alt/2)) + 'px';
+        ver.style.display = 'block'; };
+      el.onmouseleave = ()=>{ ver.style.display = 'none'; };
+    });
     els.forEach(el=>el.onclick = ()=>{
       if (el.classList.contains('virada')){   // já virada: abre o zoom para ler
+        document.getElementById('ver').style.display = 'none';
         const z = document.createElement('div'); z.id = 'zoom'; z.style.setProperty('--cor', getComputedStyle(el).getPropertyValue('--cor'));
         z.innerHTML = `<img src="${el.querySelector('.frente').style.backgroundImage.slice(5,-2)}">`; z.onclick = ()=>z.remove(); document.body.appendChild(z); return; }
       const nivel = ordem[els.indexOf(el)].faixa;
@@ -236,7 +252,7 @@ function abrir(){
       if (nivel !== 'comum' && nivel !== 'incomum' && !el.classList.contains('revela')){   // rara/mítica/especial: suspense antes de virar
         el.classList.add('carrega'); setTimeout(()=>{ el.classList.remove('carrega'); el.classList.add('revela'); el.click(); }, 620); return; }
       if (el.classList.contains('virada')) return;
-      el.classList.add('virada'); brilhoSom(nivel);
+      el.classList.add('virada'); brilhoSom(nivel); if (el.matches(':hover')) setTimeout(()=>el.onmouseenter(), 600);
       if (nivel === 'mitica'){ bum(.85, .8); palco.classList.remove('treme'); void palco.offsetWidth; palco.classList.add('treme'); }
       else if (nivel === 'rara' || nivel === 'especial') bum(1.4, .35);
       if (nivel !== 'comum'){ const r = el.getBoundingClientRect(); const n = nivel === 'mitica' ? 40 : 18;
