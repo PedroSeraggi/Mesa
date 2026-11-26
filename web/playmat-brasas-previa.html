@@ -1,0 +1,20 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia: playmat Brasas de Akros</title>
+<link href="https://fonts.googleapis.com/css2?family=Metamorphous&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:serif}
+.mesaP{position:absolute;inset:24px;border-radius:18px;overflow:hidden;box-shadow:0 0 0 2px #5a3a1a,0 20px 60px #000}
+.cartas{position:absolute;left:50%;bottom:8%;transform:translateX(-50%);display:flex;gap:14px;z-index:1}
+.cartas img{width:130px;border-radius:7px;box-shadow:0 10px 24px #000c}
+.rot{position:absolute;left:44px;top:40px;z-index:2;color:#ffd070;font-family:Metamorphous,serif;font-size:22px;text-shadow:0 2px 8px #000}
+.rot small{display:block;font-size:13px;color:#d0a070}
+</style></head><body>
+<div class="mesaP" id="m"></div>
+<div class="rot">Brasas de Akros<small>playmat animado · prêmio do nível 10</small></div>
+<div class="cartas"><img src="https://api.scryfall.com/cards/named?format=image&exact=Krenko%2C%20Mob%20Boss"><img src="https://api.scryfall.com/cards/named?format=image&exact=Goblin%20Chieftain"><img src="https://api.scryfall.com/cards/named?format=image&exact=Mountain"></div>
+<script src="playmats/brasas.js"></script>
+<script>
+const m = document.getElementById('m');
+const desenhar = () => { m.innerHTML = playmatAnimado.brasas.html(); };
+desenhar();
+setInterval(desenhar, 4000);   // simula a mesa sendo redesenhada: as animações não podem pular
+</script></body></html>

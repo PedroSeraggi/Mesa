@@ -38,6 +38,8 @@ public class Amigos {
         Map<String, Long> conquistas = new LinkedHashMap<>();   // id -> quando desbloqueou
         long ouro = 0; int boosters = 0; boolean boasVindas = false;   // economia: Ouro, boosters fechados, saldo inicial já dado
         Map<String, Integer> colecao = new LinkedHashMap<>();        // "nome|set|num" -> quantidade   // playmat: "" (padrão), nome de um modelo pronto ou "foto" (imagem em playmats/<código>.jpg)
+        int nivelPremiado = 0; Set<String> desbloqueios = new LinkedHashSet<>();   // trilha de níveis: até que nível já recebeu prêmio; "pm:brasas", "moldura:10", "costas", ...
+        String moldura = "", titulo = ""; int escolhaRara = 0, escolhaMitica = 0;   // moldura equipada (""/10/20/...), título, cartas à escolha pendentes
         JsonObject campanha;   // {cor, mundo, batalha, comandante:{nome,set,num}, deck:[{nome,set,num}]} (null = ainda não escolheu)
         long xp = 0; String diaVitoria = ""; String diaMissoes = ""; Map<String, Integer> progresso = new HashMap<>(); Set<String> missoesFeitas = new HashSet<>();
         JsonObject recordes = new JsonObject(); List<JsonObject> historico = new ArrayList<>();
@@ -77,6 +79,7 @@ public class Amigos {
         srv.createContext("/playmat", ex -> tratar(ex, Amigos::playmat));
         srv.createContext("/loja", ex -> tratar(ex, Amigos::loja));
         srv.createContext("/campanha", ex -> tratar(ex, Amigos::campanha));
+        srv.createContext("/nivel", ex -> tratar(ex, Amigos::nivel));
         srv.createContext("/playmats", ex -> tratar(ex, Amigos::playmats));
         srv.createContext("/playmatImg", Amigos::playmatImg);
         srv.createContext("/decksChefe", ex -> tratar(ex, c -> {   // todos os decks de chefe que a pessoa já ganhou (a Mesa baixa os que faltam)
@@ -362,6 +365,8 @@ public class Amigos {
         r.put("total", ganhos.stream().mapToInt(g -> (Integer) g.get("xp")).sum());
         Map<String, Object> ni = nivelInfo(u);
         r.put("nivel", ni); r.put("subiu", (Integer) ni.get("nivel") > antes);
+        List<Map<String, Object>> premios = premiarNiveis(u);
+        if (!premios.isEmpty()) r.put("premiosNivel", premios);
         r.put("missoes", missoesJson(u));
         if (!conqNovas.isEmpty()) r.put("conquistasNovas", conqNovas);
         // campanha: vitória libera a próxima batalha; a primeira vitória em cada batalha dá 1 booster
@@ -772,6 +777,80 @@ public class Amigos {
         return r;
     }
 
+    // ---------------- Trilha de níveis: prêmio a cada nível, marcos nos níveis 10, 20, 30, 40 e 50 ----------------
+    static final int NIVEL_MAX_TRILHA = 50;
+    /** O que o nível n dá. Aplica em u e devolve a descrição. */
+    static Map<String, Object> darPremioNivel(Usuario u, int n) {
+        Map<String, Object> m = new LinkedHashMap<>(); m.put("nivel", n);
+        List<String> itens = new ArrayList<>();
+        switch (n) {
+            case 10: u.ouro += 300; u.desbloqueios.add("pm:brasas"); u.desbloqueios.add("moldura:10");
+                itens.add("Playmat Brasas de Akros"); itens.add("Moldura de Bronze"); itens.add("300 de Ouro"); break;
+            case 20: u.desbloqueios.add("costas"); u.desbloqueios.add("moldura:20");
+                itens.add("Costas de carta personalizadas"); itens.add("Moldura de Prata"); break;
+            case 30: u.escolhaRara++; u.desbloqueios.add("moldura:30");
+                itens.add("Uma rara à sua escolha"); itens.add("Moldura de Ouro"); break;
+            case 40: u.desbloqueios.add("moldura:40"); u.desbloqueios.add("entrada:chamas"); u.boosters++;
+                itens.add("Moldura em Chamas"); itens.add("Entrada de comandante em chamas"); itens.add("1 booster"); break;
+            case 50: u.escolhaMitica++; u.desbloqueios.add("moldura:50"); u.desbloqueios.add("titulo:lenda"); u.titulo = "Lenda da Mesa";
+                itens.add("Uma mítica à sua escolha"); itens.add("Título Lenda da Mesa"); itens.add("Moldura Lendária"); break;
+            default:
+                if (n % 3 == 0) { u.boosters++; itens.add("1 booster"); } else { u.ouro += 150; itens.add("150 de Ouro"); }
+        }
+        m.put("itens", itens); m.put("marco", n % 10 == 0);
+        return m;
+    }
+    /** Entrega os prêmios de todos os níveis alcançados que ainda não foram entregues. */
+    static List<Map<String, Object>> premiarNiveis(Usuario u) {
+        if (u.desbloqueios == null) u.desbloqueios = new LinkedHashSet<>();
+        if (u.moldura == null) u.moldura = ""; if (u.titulo == null) u.titulo = "";
+        int nivel = Math.min(NIVEL_MAX_TRILHA, (Integer) nivelInfo(u).get("nivel"));
+        List<Map<String, Object>> l = new ArrayList<>();
+        if (u.nivelPremiado < 1) u.nivelPremiado = 1;   // o nível 1 são os 500 de Ouro das boas-vindas
+        while (u.nivelPremiado < nivel) { u.nivelPremiado++; l.add(darPremioNivel(u, u.nivelPremiado)); }
+        if (!l.isEmpty()) sujo = true;
+        return l;
+    }
+    static Object nivel(JsonObject c) throws IOException {
+        Usuario u = usuario(c);
+        darBoasVindas(u);
+        List<Map<String, Object>> premios = premiarNiveis(u);
+        String acao = texto(c, "acao", 20, "trilha");
+        if (acao.equals("moldura")) {   // equipar uma moldura desbloqueada ("" = sem moldura)
+            String k = texto(c, "moldura", 4, "");
+            if (!k.isEmpty() && !u.desbloqueios.contains("moldura:" + k)) throw new IllegalArgumentException("Moldura ainda bloqueada.");
+            u.moldura = k; sujo = true;
+        }
+        if (acao.equals("escolher")) {   // a rara (nível 30) ou mítica (nível 50) à escolha
+            String faixa = texto(c, "faixa", 10, "");
+            if (faixa.equals("rara") ? u.escolhaRara < 1 : faixa.equals("mitica") ? u.escolhaMitica < 1 : true) throw new IllegalArgumentException("Você não tem essa escolha disponível.");
+            pool("mundo1");
+            JsonObject x = cartaPorChave.get(texto(c, "nome", 200, "") + "|" + texto(c, "set", 10, "") + "|" + texto(c, "num", 10, ""));
+            if (x == null || !faixa.equals(str(x, "faixa"))) throw new IllegalArgumentException("Escolha uma carta " + (faixa.equals("rara") ? "rara" : "mítica") + " do mundo.");
+            if (faixa.equals("rara")) u.escolhaRara--; else u.escolhaMitica--;
+            u.colecao.merge(chaveCarta(x), 1, Integer::sum); sujo = true;
+        }
+        if (acao.equals("cartas")) {   // as cartas que podem ser escolhidas (raras ou míticas do mundo)
+            String faixa = texto(c, "faixa", 10, "rara");
+            pool("mundo1");
+            List<Map<String, Object>> l = new ArrayList<>();
+            for (JsonObject x : cartaPorChave.values()) if (faixa.equals(str(x, "faixa")) && !str(x, "tipo").contains("Land")) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                for (String k : new String[]{"nome", "set", "num", "cores", "tipo"}) m.put(k, str(x, k));
+                m.put("tenho", u.colecao.getOrDefault(chaveCarta(x), 0)); l.add(m);
+            }
+            l.sort(Comparator.comparing(m -> (String) m.get("nome")));
+            Map<String, Object> r = new LinkedHashMap<>(); r.put("cartas", l); return r;
+        }
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("nivel", nivelInfo(u)); r.put("nivelPremiado", u.nivelPremiado);
+        r.put("desbloqueios", u.desbloqueios); r.put("moldura", u.moldura); r.put("titulo", u.titulo);
+        r.put("escolhaRara", u.escolhaRara); r.put("escolhaMitica", u.escolhaMitica);
+        r.put("ouro", u.ouro); r.put("boosters", u.boosters);
+        if (!premios.isEmpty()) r.put("premiosNivel", premios);
+        return r;
+    }
+
     // ---------------- Playmat: cada jogador escolhe um modelo ou sobe a própria imagem ----------------
     static java.nio.file.Path pastaPlaymats() { return DADOS.toAbsolutePath().getParent().resolve("playmats"); }
     static Object playmat(JsonObject c) throws IOException {
@@ -785,6 +864,7 @@ public class Amigos {
         } else if (c.has("preset")) {
             String pr = texto(c, "preset", 30, "");
             if (!pr.matches("[a-z0-9-]*")) throw new IllegalArgumentException("modelo inválido");
+            if (pr.equals("brasas") && (u.desbloqueios == null || !u.desbloqueios.contains("pm:brasas"))) throw new IllegalArgumentException("Esse playmat é o prêmio do nível 10.");
             u.playmat = pr; u.playmatVer = System.currentTimeMillis(); sujo = true;
         }
         if (c.has("jogador")) u.xmage = texto(c, "jogador", 64, u.xmage);
@@ -1020,7 +1100,10 @@ public class Amigos {
         if (conferirConquistas(u).size() > 0) sujo = true;   // quem já tinha os recordes antes das conquistas existirem
         r.put("conquistas", conquistasJson(u));
         darBoasVindas(u);
+        List<Map<String, Object>> premios = premiarNiveis(u);   // quem subiu antes da trilha existir recebe o que ficou para trás
+        if (!premios.isEmpty()) r.put("premiosNivel", premios);
         r.put("ouro", u.ouro); r.put("boosters", u.boosters);
+        r.put("moldura", u.moldura); r.put("titulo", u.titulo);
         r.put("missoes", missoesJson(u));
         if (b.liderChefe != null && cicloAtual().equals(b.liderChefe.get("ciclo"))) r.put("liderChefe", b.liderChefe);   // aviso de novo 1º lugar
         List<Map<String, Object>> amigos = new ArrayList<>(), pedidos = new ArrayList<>(), online = new ArrayList<>(), convites = new ArrayList<>();
@@ -1075,6 +1158,7 @@ public class Amigos {
     static Map<String, Object> resumo(Usuario o) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("codigo", o.codigo); m.put("nome", o.nome); m.put("avatar", o.avatar); m.put("nivel", nivelInfo(o).get("nivel"));
+        m.put("moldura", o.moldura == null ? "" : o.moldura); m.put("titulo", o.titulo == null ? "" : o.titulo);
         return m;
     }
     static String codigoDe(String id) {

@@ -253,6 +253,14 @@ html.modoDesenho #mesa,html.modoDesenho #mesa *{cursor:crosshair!important}
 /* playmat de cada jogador: fica atrás do campo e da zona de comando, com um véu escuro para as cartas aparecerem */
 .tab.comPlaymat .corpoTab{background:linear-gradient(#0b0705aa,#0b0705aa),var(--pm);background-size:auto,cover;background-position:center}
 .tab.comPlaymat .corpoTab.pmPadrao{background:var(--pm)}
+.corpoTab.pmAnim{position:relative;isolation:isolate}.corpoTab.pmAnim>.pmFx{z-index:-1}
+.comMoldura{margin-right:22px;margin-left:8px}.comMoldura[data-mld='40'],.comMoldura[data-mld='50']{margin-right:34px;margin-left:16px}
+.mldSobre{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:3}
+.pfNivelLinha.clicavel{cursor:pointer;border-radius:10px;padding:4px 6px;margin-left:-6px;transition:background .2s}
+.pfNivelLinha.clicavel:hover{background:#ffffff10}
+.pfNivelLinha .verTrilha{display:inline-block;margin-top:4px;font-family:var(--ff-titulo);font-size:12px;letter-spacing:.1em;color:var(--ouro)}
+.pfTitulo{margin-top:2px;font-size:12px}
+.pmOp.bloqueado{filter:grayscale(1) brightness(.5);cursor:not-allowed}
 /* seções que abrem com a setinha (Playmat, Conquistas) */
 .secAbre{display:flex;align-items:center;gap:8px;width:100%;background:none!important;border:none!important;border-bottom:1px solid var(--borda)!important;border-radius:0!important;padding:8px 0!important;cursor:pointer;color:var(--ouro);font-family:var(--ff-titulo);font-size:14px;letter-spacing:.08em;text-transform:uppercase;text-align:left}
 .secAbre .seta{display:inline-block;transition:transform .15s;color:var(--txt2)}.secAbre.aberta .seta{transform:rotate(90deg)}
@@ -1493,6 +1501,8 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
 </style>
 </head>
 <body>
+<script src="molduras.js"></script>
+<script src="playmats/brasas.js"></script>
 <div id="topo">
   <div id="logo">Me<b>sa</b></div>
   <div id="turnoInfo"></div>
@@ -3603,6 +3613,7 @@ function arteToken(p, c){
 let amigos = null, painelAmigosAberto = false, convitesVistos = new Set(JSON.parse(localGet('convitesVistos')||'[]'));
 async function atualizarAmigos(){
   try { amigos = await (await fetch('/api/amigos')).json(); } catch(e){ return; }
+  if (amigos && amigos.foto && amigos.foto.premiosNivel) avisarPremiosNivel(amigos.foto.premiosNivel);
   const f = amigos.foto;
   const on = f ? (f.amigos||[]).filter(a=>a.online).length : 0;
   const ped = f ? (f.pedidos||[]).length : 0;
@@ -3714,14 +3725,14 @@ async function verPerfilAmigo(codigo){
   const cmdNomes = d => (d && d.cmds || []).map(c=>c.nome).join(' + ');
   const fav = decksP[0];
   const av = p.avatar || r.avatar;
-  const avHtml = av ? `<div class="avatarGrande" style="background:center/cover url('${av}')"></div>`
-                    : `<div class="avatarGrande" style="background:${esc(p.cor||'#A487C4')}">${esc(((p.nome||r.nome||'?')[0]||'?').toUpperCase())}</div>`;
+  const avHtml = av ? `<div class="avatarGrande" data-mld="${esc(r.moldura||'')}" style="background:center/cover url('${av}')"></div>`
+                    : `<div class="avatarGrande" data-mld="${esc(r.moldura||'')}" style="background:${esc(p.cor||'#A487C4')}">${esc(((p.nome||r.nome||'?')[0]||'?').toUpperCase())}</div>`;
   const situacao = r.online ? `<span class="apOn">● ${esc(r.status||'online')}</span>` : `<span class="apOff">${quandoVisto(r.visto)}</span>`;
   cx.innerHTML = `<div class="perfilCaixa apCaixa">
     <div class="pfCapa" style="background-image:url('${esc(p.banner||'fundos/gw-30.jpg')}')">
       <div class="pfCapaBts"><button class="peq" id="apFechar">✕ Fechar</button></div>
       <div class="pfIdent"><div class="pfAvatarWrap">${avHtml}</div>
-        <div class="pfNomeBloco"><div class="pfNomeGrande">${esc(p.nome||r.nome||'?')} ${r.nivel?`<span class="nvChip grande">Nível ${r.nivel.nivel}</span>`:''}</div><div class="pfFrase">${esc(p.frase||'')}</div></div></div>
+        <div class="pfNomeBloco"><div class="pfNomeGrande">${esc(p.nome||r.nome||'?')} ${r.nivel?`<span class="nvChip grande">Nível ${r.nivel.nivel}</span>`:''}</div>${r.titulo?`<div class="pfTitulo tituloLenda">${esc(r.titulo.toUpperCase())}</div>`:''}<div class="pfFrase">${esc(p.frase||'')}</div></div></div>
     </div>
     <div class="apSit">${situacao}<span class="amCod">código <b>${esc(r.codigo)}</b></span>${r.amigo?'':'<span class="apOff">· ainda não é seu amigo</span>'}</div>
     ${conquistasAmigoHtml(r.conquistas)}
@@ -3743,6 +3754,7 @@ async function verPerfilAmigo(codigo){
     : '<div class="dicaMenu" style="margin-top:44px">Essa pessoa ainda está numa versão antiga da Mesa: o perfil aparece quando ela atualizar.</div>'}
   </div>`;
   $('#apFechar').onclick = ()=>fecharModal(true);
+  cx.querySelectorAll('.avatarGrande[data-mld]').forEach(el=>{ if (el.dataset.mld) requestAnimationFrame(()=>aplicarMoldura(el, el.dataset.mld)); });
   cx.querySelectorAll('[data-verdeck]').forEach(b=>b.onclick=()=>verListaDeck(p.todosDecks[+b.dataset.verdeck], p.nome||r.nome, codigo));
   cx.querySelectorAll('[data-copiardeck]').forEach(b=>b.onclick=()=>copiarDeckAmigo(p.todosDecks[+b.dataset.copiardeck], p.nome||r.nome));
 }
@@ -3924,16 +3936,52 @@ const PLAYMATS = {
   'pedra':          {nome:'Pedra',          bg:'radial-gradient(circle at 20% 30%,#5a5550 0,#0000 40%),radial-gradient(circle at 75% 70%,#4a4642 0,#0000 45%),linear-gradient(135deg,#3a3633,#24211f)'},
   'grade-verde':    {nome:'Grade verde',    bg:GRADE('#ffffff14') + ',radial-gradient(ellipse at center,#2f5c3c 0%,#1a3524 75%)'},
   'grade-azul':     {nome:'Grade azul',     bg:GRADE('#9fd0ff1a') + ',radial-gradient(ellipse at center,#22405f 0%,#13243a 75%)'},
-  'grade-escura':   {nome:'Grade escura',   bg:GRADE('#e4c87414') + ',linear-gradient(#1c1612,#120e0b)'}
+  'grade-escura':   {nome:'Grade escura',   bg:GRADE('#e4c87414') + ',linear-gradient(#1c1612,#120e0b)'},
+  'brasas':         {nome:'Brasas de Akros', bg:'radial-gradient(ellipse at 50% 45%,#2a1610 0%,#140a07 55%,#070403 100%)', premio:'pm:brasas', anim:'brasas'}
 };
 function fundoPlaymat(pm){   // pm = {playmat, codigo, versao} -> valor CSS de background (ou '')
   if (!pm || !pm.playmat) return '';
   if (pm.playmat === 'foto') return `url('/api/playmatImg?c=${encodeURIComponent(pm.codigo)}&v=${Math.round(pm.versao||0)}')`;
   return (PLAYMATS[pm.playmat] || {}).bg || '';
 }
-let meuPlaymat = null;
+let meuPlaymat = null, meusDesbloqueios = [];
+// moldura de avatar (prêmio de nível) por cima de qualquer foto redonda
+function aplicarMoldura(el, k){
+  if (!el) return; const pai = el.parentElement; pai.querySelectorAll(':scope > .mldSobre').forEach(x=>x.remove());
+  pai.classList.toggle('comMoldura', !!k); pai.dataset.mld = k || '';
+  if (!k) return; if (getComputedStyle(pai).position === 'static') pai.style.position = 'relative';
+  const tam = Math.round(el.offsetWidth / .72) || 120;
+  const d = document.createElement('div'); d.className = 'mldSobre';
+  d.style.left = (el.offsetLeft + el.offsetWidth/2) + 'px'; d.style.top = (el.offsetTop + el.offsetHeight/2) + 'px';
+  d.innerHTML = molduraHtml(k, '', tam); pai.appendChild(d);
+}
+// trilha de recompensas de nível (trilha.html por cima da Mesa)
+async function abrirTrilha(){
+  let dados = await post('/api/nivel', {acao:'trilha'});
+  if (dados.erro){ avisoLocal(dados.erro); return; }
+  let fr = $('#frameTrilha'); if (fr) fr.remove();
+  fr = document.createElement('iframe'); fr.id = 'frameTrilha'; fr.src = 'trilha.html';
+  fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9300;background:#0a0604';
+  const foto = (perfilAtual && perfilAtual.avatar) ? new URL(perfilAtual.avatar, location.href).href : '';
+  const semFoto = {cor: (perfilAtual && perfilAtual.cor) || '#A487C4', letra: (((perfilAtual && perfilAtual.nome) || '?')[0] || '?').toUpperCase()};
+  const mandar = m => fr.contentWindow.postMessage(m, '*');
+  const ouvir = async e=>{
+    if (!e.data || !e.data.trilha) return;
+    const a = e.data.acao;
+    if (a === 'pronta') mandar({dados, foto, semFoto});
+    if (a === 'fechar'){ window.removeEventListener('message', ouvir); fr.remove(); if (typeof desenharPerfil === 'function' && !$('#vPerfil').classList.contains('oculto')) desenharPerfil(); }
+    if (a === 'moldura'){ const r = await post('/api/nivel', {acao:'moldura', moldura: e.data.moldura}); if (r.erro) mandar({erro: r.erro}); else { dados = r; mandar({dados}); } }
+    if (a === 'cartas'){ const r = await post('/api/nivel', {acao:'cartas', faixa: e.data.faixa}); mandar(r.erro ? {erro: r.erro} : {cartas: r.cartas}); }
+    if (a === 'escolher'){ const r = await post('/api/nivel', {acao:'escolher', faixa: e.data.faixa, nome: e.data.nome, set: e.data.set, num: e.data.num});
+      if (r.erro) mandar({erro: r.erro}); else { dados = r; mandar({dados, escolhida: e.data.nome}); } }
+  };
+  window.addEventListener('message', ouvir);
+  document.body.appendChild(fr);
+}
+function avisarPremiosNivel(l){ (l||[]).forEach((p,i)=>setTimeout(()=>avisoLocal(`Nível ${p.nivel}: ${p.itens.join(', ')}`), i*700)); }
 async function desenharPlaymatPerfil(){
   const box = $('#pfPlaymat'); if (!box) return;
+  try { const nv = await post('/api/nivel', {acao:'trilha'}); if (!nv.erro) meusDesbloqueios = nv.desbloqueios || []; } catch(e){}
   try { meuPlaymat = await (await fetch('/api/playmat')).json(); } catch(e){ meuPlaymat = {erro:'Sem conexão com o servidor do grupo.'}; }
   if (meuPlaymat.erro){ box.innerHTML = `<div class="pmDica">${esc(meuPlaymat.erro)}</div>`; return; }
   const atual = meuPlaymat.playmat || '';
@@ -3941,7 +3989,8 @@ async function desenharPlaymatPerfil(){
   $('#pmAtualTxt').textContent = 'atual: ' + (atual === 'foto' ? 'sua imagem' : atual ? (PLAYMATS[atual]||{}).nome || atual : 'padrão da Mesa');
   box.innerHTML = `<div class="pmGrade">
       <div class="pmOp ${!atual?'sel':''}" data-pm="" style="background:linear-gradient(180deg,var(--painel),var(--bg2))"><span>Padrão da Mesa</span></div>
-      ${Object.entries(PLAYMATS).map(([id, m])=>`<div class="pmOp ${atual===id?'sel':''}" data-pm="${id}" style="background:${m.bg}"><span>${esc(m.nome)}</span></div>`).join('')}
+      ${Object.entries(PLAYMATS).map(([id, m])=>{ const bloq = m.premio && !(meusDesbloqueios||[]).includes(m.premio);
+        return `<div class="pmOp ${atual===id?'sel':''}${bloq?' bloqueado':''}" ${bloq?`title="Prêmio do nível 10"`:`data-pm="${id}"`} style="background:${m.bg}"><span>${esc(m.nome)}${bloq?' · nível 10':''}</span></div>`; }).join('')}
       ${foto ? `<div class="pmOp sel" style="background-image:${foto}"><span>Sua imagem</span></div>` : ''}
       <div class="pmOp foto" id="pmSubir">＋ Subir minha imagem</div>
     </div>
@@ -4019,7 +4068,10 @@ ligarSecao($('#secConquistas'), $('#pfConquistas'), 'secConquistasAberta');
 async function desenharPerfil(){
   desenharPlaymatPerfil();
   const p = await carregarPerfil();
-  fetch('/api/amigos').then(r=>r.json()).then(async a=>{ const n = a && a.foto && a.foto.nivel; $('#pfNivel').innerHTML = n ? `<div class="pfNivelLinha">${barraNivel(n)}</div>` : '';
+  fetch('/api/amigos').then(r=>r.json()).then(async a=>{ const n = a && a.foto && a.foto.nivel, f = (a && a.foto) || {};
+    $('#pfNivel').innerHTML = n ? `<div class="pfNivelLinha clicavel" id="pfAbrirTrilha" title="Ver as recompensas de nível">${barraNivel(n)}<span class="verTrilha">Ver recompensas de nível</span></div>${f.titulo ? `<div class="pfTitulo tituloLenda">${esc(f.titulo.toUpperCase())}</div>` : ''}` : '';
+    if ($('#pfAbrirTrilha')) $('#pfAbrirTrilha').onclick = ()=>abrirTrilha();
+    aplicarMoldura($('#avatarGrande'), f.moldura);
     desenharConquistasPerfil(a && a.foto && a.foto.conquistas);
     if (a && a.foto && a.foto.codigo){ const eu = await post('/api/amigos', {acao:'perfil', codigo:a.foto.codigo}); $('#pfChefes').innerHTML = galeriaChefesHtml(eu.trofeus, true); } }).catch(()=>{});
   corEscolhida = p.cor;
@@ -4504,6 +4556,7 @@ function desenharXpFim(r){
       ${x.ouro && (x.ouro.ganhos||[]).length ? `<div class="ouroFim"><div class="xpTopo"><b>${MOEDA} +${fmtOuro(x.ouro.total)} de Ouro</b><span style="color:var(--txt3);font-size:13px">saldo ${fmtOuro(x.ouro.saldo)}</span></div>
         <table class="xpTab">${x.ouro.ganhos.map(g=>`<tr><td>${esc(g.motivo)}</td><td class="q">${g.qtd!=null?`${g.qtd}×`:''}${g.max?' <small class="xpMax">MAX</small>':''}</td><td class="v">+${g.ouro}</td><td></td></tr>`).join('')}</table></div>` : ''}
       ${(x.conquistasNovas||[]).length ? `<div class="cqNovas"><div class="xpNota" style="color:var(--ouro)">Conquista desbloqueada!</div>${x.conquistasNovas.map(c=>conquistaHtml(Object.assign({quando:Date.now()}, c))).join('')}</div>` : ''}
+      ${(x.premiosNivel||[]).length ? `<div class="deckGanho"><b>Recompensas de nível:</b> ${x.premiosNivel.map(p=>`nível ${p.nivel}: ${esc(p.itens.join(', '))}`).join(' · ')} <button class="peq" onclick="abrirTrilha()">Ver trilha</button></div>` : ''}
       ${x.campanha ? `<div class="deckGanho">${x.campanha.venceu ? `<b>Batalha ${x.campanha.batalha} vencida!</b>${x.campanha.booster ? ' Você ganhou 1 booster.' : ''}${x.campanha.liberou && x.campanha.liberou <= 15 ? ` A batalha ${x.campanha.liberou} foi liberada.` : x.campanha.liberou > 15 ? ' Você completou o Mundo 1!' : ''}` : `Batalha ${x.campanha.batalha} perdida. Ajuste o deck e tente de novo quando quiser.`} <button class="peq" onclick="voltarCampanha()">Voltar à campanha</button></div>` : ''}
       ${x.deckGanhoNome ? `<div class="deckGanho">Você ganhou o deck do chefe: <b>${esc(x.deckGanhoNome)}</b>. Ele está em Decks, na seção "Decks de chefe".</div>` : ''}
       ${x.multiplicador && x.multiplicador < 1 ? `<div class="xpNota">Partida com bots: os itens com % valem ${Math.round(x.multiplicador*100)}% (fácil 30%, normal 40%, difícil 50%, Chefe do dia 70%).</div>` : ''}`
@@ -5267,6 +5320,8 @@ function desenharMesa(){
     if (!bg) return;
     t.classList.add('comPlaymat'); t.style.setProperty('--pm', bg);
     if (pm.playmat !== 'foto') t.querySelector('.corpoTab').classList.add('pmPadrao');
+    const anim = (PLAYMATS[pm.playmat] || {}).anim;
+    if (anim && window.playmatAnimado && playmatAnimado[anim]){ const ct = t.querySelector('.corpoTab'); ct.classList.add('pmAnim'); ct.insertAdjacentHTML('afterbegin', playmatAnimado[anim].html()); }
   });
   if (dupla2v2){ const mt = meuTime(); mesa.querySelectorAll('.tab').forEach((t,i)=>t.classList.add(timeDe((ordem[i]||{}).nome)!==mt ? 'ladoBot' : 'ladoTime')); }
   dispararEfeitos(efeitosPendentes);

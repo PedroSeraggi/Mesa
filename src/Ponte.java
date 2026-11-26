@@ -166,6 +166,15 @@ public class Ponte implements MageClient {
                 json(ex, 200, Collections.singletonMap("erro", e instanceof IOException ? "Sem conexão com o servidor do grupo." : String.valueOf(e.getMessage())));
             }
         });
+        srv.createContext("/api/nivel", ex -> {   // trilha de níveis: prêmios, molduras, carta à escolha (no Zera)
+            try {
+                JsonObject c = "POST".equals(ex.getRequestMethod()) ? corpo(ex) : new JsonObject();
+                c.addProperty("id", idMesa());
+                json(ex, 200, postAmigos("nivel", c));
+            } catch (Exception e) {
+                json(ex, 200, Collections.singletonMap("erro", e instanceof IOException ? "Sem conexão com o servidor do grupo." : String.valueOf(e.getMessage())));
+            }
+        });
         srv.createContext("/api/campanha", ex -> {   // campanha: deck inicial e progresso (no Zera)
             try {
                 JsonObject c = "POST".equals(ex.getRequestMethod()) ? corpo(ex) : new JsonObject();
