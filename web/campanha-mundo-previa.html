@@ -9,9 +9,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#070504;color:#eee;fon
 #fundo{position:fixed;inset:-6%;display:flex;transition:opacity .6s;will-change:transform}
 #fundo{inset:-3%}
 #fundo .borrado{position:absolute;inset:-40px;background:center/cover no-repeat;filter:blur(28px) brightness(.45) saturate(1.2)}
-#fundo .nitida{position:absolute;inset:0;display:flex}
-#fundo .nitida div{flex:1;background:center 30%/cover no-repeat;animation:respiraFundo 18s ease-in-out infinite alternate}
-#fundo .nitida div+div{box-shadow:-3px 0 0 #000}
+#fundo .nitida{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:min(1050px,64vw);aspect-ratio:626/457;display:flex;
+  -webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 55%,transparent 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 55%,transparent 100%)}
+#fundo .nitida div{flex:1;background:center/cover no-repeat;animation:respiraFundo 18s ease-in-out infinite alternate}
+#fundo.tres .nitida{width:min(1250px,76vw);aspect-ratio:2/1}
 @keyframes respiraFundo{from{transform:scale(1)}to{transform:scale(1.03)}}
 #fundo.troca{opacity:0}
 #sombra{position:fixed;inset:0;pointer-events:none;background:
