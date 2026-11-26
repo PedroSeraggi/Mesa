@@ -55,9 +55,14 @@ function pose(q, u){
 }
 function aplicar(el, p, dx, dy){ el.style.width = p.w + 'px'; el.style.height = p.h + 'px';
   el.style.transform = `translate(calc(-50% + ${p.x + dx}px), calc(-50% + ${p.y + dy}px)) scale(${p.z})`; }
-const dur = q => q.dur || Math.max(12, q.texto.length * 0.072);   // tempo para ler (ou para a voz) com calma
+const dur = q => q.dur || (q._fala ? q._fala + 1.4 : Math.max(12, q.texto.length * 0.072));   // com narração: a fala + uma pausa; sem: tempo para ler com calma
 function legenda(txt){ leg.classList.remove('on'); setTimeout(() => { leg.textContent = txt; leg.classList.add('on'); }, 350); }
-function tocar(q){ if (audio) audio.pause(); audio = null; if (q.audio){ audio = new Audio(base + q.audio); audio.play().catch(()=>{}); } }
+let R = {}, musica = null, vento = null;
+function tocar(q){ if (audio) audio.pause(); audio = null; if (q._audio){ audio = q._audio; audio.currentTime = 0; setTimeout(() => audio && audio.play().catch(()=>{}), 450); } }
+// música de fundo: entra e sai devagar, sempre baixinha
+function fadeVol(a, alvo, ms){ if (!a) return; const v0 = a.volume, t = performance.now(); (function f(){ const k = Math.min(1, (performance.now() - t) / ms); a.volume = v0 + (alvo - v0) * k; if (k < 1) requestAnimationFrame(f); else if (!alvo) a.pause(); })(); }
+let ventoTocou = -1;
+function soprar(i){ if (!vento || ventoTocou === i) return; ventoTocou = i; const v = vento.cloneNode(); v.volume = R.volumeVento ?? .35; v.play().catch(()=>{}); }
 let tremor = 0;
 function quadro(i){ atual = i; t0 = performance.now(); legenda(Q[i].texto); tocar(Q[i]); tremor = Q[i].tremor ? 1 : 0; }
 function loop(agora){
@@ -72,6 +77,7 @@ function loop(agora){
     // passagem para o próximo: os dois andam juntos na direção da câmera do próximo quadro, com borrão de movimento
     const prox = Q[atual + 1];
     if (!prox){ acabar(); return; }
+    soprar(atual);
     const tt = Math.min(1, (u - 1) * d / (TRANS * 1000)), e = tt < .5 ? 4*tt*tt*tt : 1 - Math.pow(-2*tt + 2, 3) / 2, vel = tt < .5 ? 12*tt*tt : 12*(1-tt)*(1-tt);
     let dirv = VEL[prox.mov] || [0,0]; if (!dirv[0] && !dirv[1]) dirv = VEL[q.mov] && (VEL[q.mov][0] || VEL[q.mov][1]) ? VEL[q.mov] : [1,0];
     const dist = dirv[0] ? W * 1.05 : H * 1.12;
@@ -82,7 +88,7 @@ function loop(agora){
   }
   requestAnimationFrame(loop);
 }
-function acabar(){ if (fim) return; fim = true; leg.classList.remove('on'); if (audio) audio.pause();
+function acabar(){ if (fim) return; fim = true; leg.classList.remove('on'); if (audio) audio.pause(); fadeVol(musica, 0, 1400);
   document.getElementById('escuro').style.opacity = 1; setTimeout(() => pai({acao: 'fim'}), 1500); }
 document.getElementById('pular').onclick = acabar;
 addEventListener('keydown', e => { if (e.key === 'Escape') acabar(); });
@@ -96,11 +102,16 @@ for (let i = 0; i < 50; i++) B.push(nova(true));
     g.beginPath(); g.fillStyle = `rgba(255,${160+Math.floor(b.r*30)},70,${b.a*Math.min(1,b.y/innerHeight*1.4)})`; g.shadowColor = '#ff9a3a'; g.shadowBlur = 8; g.arc(b.x,b.y,b.r,0,7); g.fill(); }
   requestAnimationFrame(br); })();
 // carregar e começar
-fetch(base + 'roteiro.json').then(r => r.json()).then(async R => {
-  Q = R.quadros;
+fetch(base + 'roteiro.json').then(r => r.json()).then(async roteiro => {
+  R = roteiro; Q = R.quadros;
+  // narração de cada quadro: carrega e mede a duração
+  await Promise.all(Q.map(q => q.audio ? new Promise(ok => { const a = new Audio(base + q.audio); a.preload = 'auto'; q._audio = a;
+    a.onloadedmetadata = () => { q._fala = a.duration; ok(); }; a.onerror = ok; }) : null));
+  if (R.musica){ musica = new Audio(base + R.musica); musica.loop = true; musica.volume = 0; }
+  if (R.vento){ vento = new Audio(base + R.vento); vento.preload = 'auto'; }
   els = Q.map(q => { const d = document.createElement('div'); d.className = 'quadro'; d.style.backgroundImage = `url('${base}${q.img}')`; d.style.display = 'none'; cam.appendChild(d); return d; });
   await Promise.all(Q.map(q => new Promise(ok => { const i = new Image(); i.onload = i.onerror = ok; i.src = base + q.img; })));
-  const comecar = () => { document.getElementById('iniciar').style.display = 'none'; els[0].style.display = 'block'; document.getElementById('escuro').style.opacity = 0; quadro(0); requestAnimationFrame(loop); };
-  if (Q.some(q => q.audio) && !navigator.userActivation?.hasBeenActive){ const b = document.getElementById('iniciar'); b.style.display = 'flex'; b.onclick = comecar; } else comecar();
+  const comecar = () => { if (musica){ musica.play().catch(()=>{}); fadeVol(musica, R.volumeMusica ?? .16, 3000); } document.getElementById('iniciar').style.display = 'none'; els[0].style.display = 'block'; document.getElementById('escuro').style.opacity = 0; quadro(0); requestAnimationFrame(loop); };
+  if ((Q.some(q => q.audio) || R.musica) && !navigator.userActivation?.hasBeenActive){ const b = document.getElementById('iniciar'); b.style.display = 'flex'; b.onclick = comecar; } else comecar();
 });
 </script></body></html>
