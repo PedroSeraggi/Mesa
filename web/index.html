@@ -1456,6 +1456,10 @@ html.fundoParado #cena .slide.ativo{animation:none}
 .tocando{font-size:13px;color:var(--txt2);display:flex;gap:10px;align-items:center}
 .grupoDeck{break-inside:avoid;margin-bottom:14px}
 .grupoDeck .subt{margin:0 0 4px}
+/* sideboard: guardado com o deck, fora da partida e da conta das 100 */
+.grupoSide{border-top:1px dashed var(--borda,#6b5a3a);padding-top:8px;opacity:.85}
+.grupoSide .subt::after{content:" · fora da partida";font-size:10px;letter-spacing:0;text-transform:none;opacity:.7}
+.edContaSide{font-size:12px;opacity:.75;margin-left:4px}
 .contaGrupo{color:var(--txt3);font-size:12px;letter-spacing:0;margin-left:4px}
 .linhaCarta{break-inside:avoid;padding:2px 6px;border-radius:4px;cursor:default;display:flex;gap:8px}
 .linhaCarta:hover{background:var(--painel2)}
@@ -2519,12 +2523,16 @@ function grupoDaCarta(nome){
   return 'Outras';
 }
 
+const sideDoDeck = {};   // sideboard de cada deck aberto (as trocas do Oráculo não podem apagá-lo)
 async function verDeck(arq){
   const d = decks.find(x=>x.arquivo===arq) || {nome:arq};
   // mostra na hora que está carregando (a 1ª vez de cada deck consulta os tipos das cartas no Scryfall)
   abrirModal(`<div class="detalheDeck"><h2>${esc(nomeDeckCurto(d))}</h2><div class="odEspera"><div class="odGira">⚖</div><div>Carregando o deck...</div></div></div>`);
-  const cartas = await (await fetch('/api/deck/ver?arquivo='+encodeURIComponent(arq))).json();
-  await buscarTipos(cartas.map(c=>c.nome));
+  const todas = await (await fetch('/api/deck/ver?arquivo='+encodeURIComponent(arq))).json();
+  await buscarTipos(todas.map(c=>c.nome));
+  // sideboard: aparece numa seção própria, mas fica fora da contagem, do resumo e do Oráculo
+  const cartas = todas.filter(c=>!c.side), side = todas.filter(c=>c.side);
+  side.forEach((c,i)=>{ c.id = 'dks'+i; cacheCartas.set(c.id, {id:c.id, nome:c.nome, set:c.set, num:c.num, regras:[], tipo:(tiposCartas[c.nome]||{}).t||''}); });
   if ($('#modal').classList.contains('oculto')) return;   // fechou enquanto carregava
   cartas.forEach((c,i)=>{ c.id = 'dk'+i; cacheCartas.set(c.id, {id:c.id, nome:c.nome, set:c.set, num:c.num, regras:[], tipo:(tiposCartas[c.nome]||{}).t||''}); });
   const cmd = cartas.filter(c=>c.comandante);
@@ -2543,6 +2551,8 @@ async function verDeck(arq){
     const l = porGrupo[g].sort((a,b)=> g==='Terrenos' ? a.nome.localeCompare(b.nome) : mv(a)-mv(b) || a.nome.localeCompare(b.nome));
     return `<div class="grupoDeck"><div class="subt">${g} <span class="contaGrupo">${l.reduce((n,c)=>n+c.qtd,0)}</span></div>${l.map(linha).join('')}</div>`;
   }).join('');
+  const secaoSide = side.length ? `<div class="grupoDeck grupoSide"><div class="subt">Sideboard <span class="contaGrupo">${side.reduce((n,c)=>n+c.qtd,0)}</span></div>${side.slice().sort((a,b)=>a.nome.localeCompare(b.nome)).map(linha).join('')}</div>` : '';
+  sideDoDeck[arq] = side;
   const cx = abrirModal(`<div class="detalheDeck">
     <div class="edFaixa ${cmd.length?'comCmd':''} vFaixa" ${cmd.length?`style="background-image:${fundoCmd(cmd[0])}"`:''}>
       <h2>${esc(nomeDeckCurto(d))}</h2>
@@ -2550,7 +2560,7 @@ async function verDeck(arq){
     </div>
     <div class="vTopo"><div class="edResumo">${resumoDeckHtml(cartas)}</div><div class="dicaMenu">${cartas.reduce((n,c)=>n+c.qtd,0)} cartas · passe o mouse num nome para ver a carta</div></div>
     <div id="oResultado" class="oResultado oculto"></div>
-    <div class="colunasCartas">${secoes}</div>
+    <div class="colunasCartas">${secoes}${secaoSide}</div>
     <div class="subt">Tokens <span class="contaGrupo" id="tkConta"></span></div>
     <div class="dicaMenu">Fichas que as cartas deste deck podem criar. Clique numa para escolher a arte: todos na partida veem a arte que você escolher.</div>
     <div id="tkLista" class="tkLista"><div class="dicaMenu">Procurando os tokens...</div></div>
@@ -2573,7 +2583,7 @@ async function verDeck(arq){
     el.onmouseleave = esconderHover;
   });
   $('#mFechar').onclick = fecharModal;
-  $('#mEditar').onclick = ()=>abrirEditor(arq, nomeDeckCurto(d), cartas);
+  $('#mEditar').onclick = ()=>abrirEditor(arq, nomeDeckCurto(d), cartas.concat(side));
   $('#mApagar').onclick = async ()=>{
     if (!confirm(`Apagar o deck "${nomeDeckCurto(d)}" desta Mesa? (O Grimório não é afetado.)`)) return;
     await post('/api/deck/apagar', {arquivo: arq}); fecharModal(); desenharDecks();
@@ -2610,9 +2620,9 @@ $('#btnColar').onclick = ()=>{
 let ed = null;   // {arquivo, nome, cartas:[{qtd,nome,set,num,comandante}]}
 const BASICOS = /^(Plains|Island|Swamp|Mountain|Forest|Wastes|Snow-Covered (Plains|Island|Swamp|Mountain|Forest))$/;
 function abrirEditor(arquivo, nome, cartas, opc={}){
-  ed = {arquivo: arquivo || null, nome: nome || '', cartas: (cartas||[]).map(c=>({qtd:c.qtd, nome:c.nome, set:c.set||'', num:c.num||'', comandante:!!c.comandante}))};
+  ed = {arquivo: arquivo || null, nome: nome || '', cartas: (cartas||[]).map(c=>({qtd:c.qtd, nome:c.nome, set:c.set||'', num:c.num||'', comandante:!!c.comandante, side:!!c.side}))};
   // base = como o deck está salvo hoje (para marcar o que é "nova" e registrar o histórico ao salvar)
-  ed.base = arquivo ? contarCartas(opc.base || cartas) : null;
+  ed.base = arquivo ? contarCartas((opc.base || cartas).filter(c=>!c.side)) : null;   // o sideboard não entra no histórico
   ed.motivos = opc.motivos || {}; ed.origem = opc.origem || '';
   ed.historico = [];
   if (arquivo) fetch('/api/deck/historico?arquivo=' + encodeURIComponent(arquivo)).then(r=>r.json()).then(h=>{ if (ed && ed.arquivo===arquivo){ ed.historico = h; desenharHistoricoEd(); } }).catch(()=>{});
@@ -2647,21 +2657,24 @@ function abrirEditor(arquivo, nome, cartas, opc={}){
 }
 function desenharEditor(){
   if (!ed) return;
-  const total = ed.cartas.reduce((n,c)=>n+c.qtd,0);
-  const cmds = ed.cartas.filter(c=>c.comandante);
-  $('#edConta').innerHTML = `<b class="${total===100?'ok100':'nao100'}">${total}</b> / 100`;
+  // o sideboard fica guardado com o deck, mas não entra na partida nem na conta das 100
+  const principal = ed.cartas.filter(c=>!c.side), nSide = ed.cartas.filter(c=>c.side).reduce((n,c)=>n+c.qtd,0);
+  const total = principal.reduce((n,c)=>n+c.qtd,0);
+  const cmds = principal.filter(c=>c.comandante);
+  $('#edConta').innerHTML = `<b class="${total===100?'ok100':'nao100'}">${total}</b> / 100${nSide?`<span class="edContaSide" title="Sideboard: fica guardado com o deck, não entra na partida"> + ${nSide} SB</span>`:''}`;
   // identidade de cor do(s) comandante(s)
   const idCmd = new Set(cmds.flatMap(c=>(tiposCartas[c.nome]||{}).ci||[]));
-  const foraCor = cmds.length ? ed.cartas.filter(c=>!c.comandante && ((tiposCartas[c.nome]||{}).ci||[]).some(x=>!idCmd.has(x))) : [];
-  const repetidas = ed.cartas.filter(c=>c.qtd>1 && !BASICOS.test(c.nome));
+  const foraCorTodas = cmds.length ? ed.cartas.filter(c=>!c.comandante && ((tiposCartas[c.nome]||{}).ci||[]).some(x=>!idCmd.has(x))) : [];
+  const foraCor = foraCorTodas.filter(c=>!c.side);
+  const repetidas = principal.filter(c=>c.qtd>1 && !BASICOS.test(c.nome));
   const avisos = [];
   if (!cmds.length) avisos.push('Marque o comandante com a ★.');
   if (total !== 100) avisos.push(total < 100 ? `Faltam ${100-total} cartas.` : `Sobram ${total-100} cartas.`);
   if (foraCor.length) avisos.push(`${foraCor.length} carta(s) fora das cores do comandante (em vermelho).`);
   if (repetidas.length) avisos.push(`Commander só permite 1 cópia: ${repetidas.map(c=>esc(c.nome)).join(', ')}.`);
   $('#edAvisos').innerHTML = avisos.length ? avisos.map(a=>`<div>⚠ ${a}</div>`).join('') : '<div class="tudoCerto">✓ Deck pronto para jogar</div>';
-  const foraSet = new Set(foraCor.map(c=>c.nome));
-  const ehNova = c => ed.base && (ed.base.get(c.nome)||0) < c.qtd;
+  const foraSet = new Set(foraCorTodas.map(c=>c.nome));
+  const ehNova = c => ed.base && !c.side && (ed.base.get(c.nome)||0) < c.qtd;
   const mcHtml = c => { const mc = (tiposCartas[c.nome]||{}).mc; return mc ? `<span class="edMc">${simbolos(mc)}</span>` : ''; };
   const linha = (c, i) => {
     const multi = BASICOS.test(c.nome) || c.qtd > 1;
@@ -2669,15 +2682,15 @@ function desenharEditor(){
       ${multi ? `<span class="qtdBox"><button class="peq edMenos" data-i="${i}">−</button><span class="q">${c.qtd}</span><button class="peq edMais" data-i="${i}">+</button></span>` : ''}
       <span class="nm">${esc(c.nome)}${ehNova(c)?`<span class="tagNova" title="${esc(ed.motivos[c.nome] || 'Entrou agora (ainda não salvo)')}">nova</span>`:''}</span>
       ${mcHtml(c)}
-      <span class="edAcoes"><button class="peq edArte ${ed.arteAtiva===c.nome?'on':''}" data-i="${i}" title="Escolher a arte desta carta">Arte</button><button class="peq edCmd ${c.comandante?'on':''}" data-i="${i}" title="Comandante">★</button><button class="peq edTirar" data-i="${i}" title="Remover">✕</button></span></div>`;
+      <span class="edAcoes"><button class="peq edArte ${ed.arteAtiva===c.nome?'on':''}" data-i="${i}" title="Escolher a arte desta carta">Arte</button><button class="peq edSide ${c.side?'on':''}" data-i="${i}" title="${c.side?'Voltar para o deck':'Mover para o sideboard (fica guardado, não entra na partida)'}">SB</button>${c.side?'':`<button class="peq edCmd ${c.comandante?'on':''}" data-i="${i}" title="Comandante">★</button>`}<button class="peq edTirar" data-i="${i}" title="Remover">✕</button></span></div>`;
   };
   ed.cartas.forEach((c,i)=>cacheCartas.set('ed'+i, {id:'ed'+i, nome:c.nome, set:c.set, num:c.num, regras:[], tipo:(tiposCartas[c.nome]||{}).t||''}));
-  const ordem = ['Comandante','Criaturas','Planeswalkers','Batalhas','Instantâneas','Feitiços','Artefatos','Encantamentos','Outras','Terrenos'];
+  const ordem = ['Comandante','Criaturas','Planeswalkers','Batalhas','Instantâneas','Feitiços','Artefatos','Encantamentos','Outras','Terrenos','Sideboard'];
   const grupos = {};
-  ed.cartas.forEach((c,i)=>{ const g = c.comandante ? 'Comandante' : grupoDaCarta(c.nome); (grupos[g] = grupos[g] || []).push([c,i]); });
+  ed.cartas.forEach((c,i)=>{ const g = c.side ? 'Sideboard' : c.comandante ? 'Comandante' : grupoDaCarta(c.nome); (grupos[g] = grupos[g] || []).push([c,i]); });
   const mv = c => (tiposCartas[c.nome]||{}).mv || 0;
   const rolagem = $('#edLista').scrollTop;
-  $('#edLista').innerHTML = `<div class="edCols">${ordem.filter(g=>grupos[g]).map(g=>`<div class="grupoDeck"><div class="subt">${g} <span class="contaGrupo">${grupos[g].reduce((n,[c])=>n+c.qtd,0)}</span></div>
+  $('#edLista').innerHTML = `<div class="edCols">${ordem.filter(g=>grupos[g]).map(g=>`<div class="grupoDeck ${g==='Sideboard'?'grupoSide':''}"><div class="subt">${g} <span class="contaGrupo">${grupos[g].reduce((n,[c])=>n+c.qtd,0)}</span></div>
       ${grupos[g].sort((a,b)=>mv(a[0])-mv(b[0]) || a[0].nome.localeCompare(b[0].nome)).map(([c,i])=>linha(c,i)).join('')}</div>`).join('')
     || '<div class="dicaMenu">Deck vazio. Busque cartas ao lado e clique em "Adicionar".</div>'}</div>`;
   $('#edLista').scrollTop = rolagem;
@@ -2688,6 +2701,7 @@ function desenharEditor(){
   L.querySelectorAll('.edTirar').forEach(b=>b.onclick=()=>{ ed.cartas.splice(+b.dataset.i,1); desenharEditor(); });
   L.querySelectorAll('.edArte').forEach(b=>b.onclick=()=>escolherArte(+b.dataset.i));
   L.querySelectorAll('.edCmd').forEach(b=>b.onclick=()=>{ const c = ed.cartas[+b.dataset.i]; c.comandante = !c.comandante; if (c.comandante) c.qtd = 1; desenharEditor(); });
+  L.querySelectorAll('.edSide').forEach(b=>b.onclick=()=>{ const c = ed.cartas[+b.dataset.i]; c.side = !c.side; if (c.side) c.comandante = false; desenharEditor(); });
   L.querySelectorAll('[data-cid]').forEach(el=>{ el.onmouseenter = ev=>{ mostrarPreview(el.dataset.cid); posicionarHover(ev); }; el.onmouseleave = esconderHover; });
   desenharHistoricoEd();
 }
@@ -2705,7 +2719,7 @@ function desenharResumoEd(){
 }
 // curva, cores e contagens (sem contar o comandante)
 function resumoDeckHtml(cartas){
-  const resto = cartas.filter(c=>!c.comandante), T = c => (tiposCartas[c.nome]||{});
+  const resto = cartas.filter(c=>!c.comandante && !c.side), T = c => (tiposCartas[c.nome]||{});
   const ehTerra = c => /Land/.test(T(c).t||'') && !/Creature/.test(T(c).t||'');
   const magias = resto.filter(c=>!ehTerra(c)), terras = resto.filter(ehTerra);
   const curva = Array(8).fill(0); let somaMv = 0, nMv = 0;
@@ -2731,7 +2745,7 @@ const fundoCmd = c => `linear-gradient(90deg,#140d07f2 0%,#140d07c0 45%,#140d074
 function contarCartas(l){ const m = new Map(); (l||[]).forEach(c=>m.set(c.nome, (m.get(c.nome)||0) + c.qtd)); return m; }
 function diferencaDeck(){
   if (!ed.base) return {entrou:[], saiu:[]};
-  const atual = contarCartas(ed.cartas), entrou = [], saiu = [];
+  const atual = contarCartas(ed.cartas.filter(c=>!c.side)), entrou = [], saiu = [];
   for (const [n,q] of atual){ const b = ed.base.get(n)||0; if (q > b) entrou.push({nome:n, qtd:q-b, motivo: ed.motivos[n] || ''}); }
   for (const [n,q] of ed.base){ const a = atual.get(n)||0; if (q > a) saiu.push({nome:n, qtd:q-a}); }
   return {entrou, saiu};
@@ -2750,12 +2764,17 @@ function desenharHistoricoEd(){
   box.innerHTML = (pend || hist) ? `<div class="subt">Histórico do deck</div>${pend}${hist || '<div class="dicaMenu">Nenhuma mudança salva ainda.</div>'}`
     : (ed.base ? '<div class="subt">Histórico do deck</div><div class="dicaMenu">As mudanças que você salvar neste deck (o que entrou, o que saiu e quando) aparecem aqui.</div>' : '');
 }
-function adicionarCarta(c, comoCmd){
+function adicionarCarta(c, comoCmd, noSide){
   const nome = c.name.split(' // ')[0];
   guardarTipo(nome, {t: c.type_line || (c.card_faces||[])[0]?.type_line || '', mv: c.cmc||0, ci: c.color_identity||[], mc: c.mana_cost ?? (c.card_faces||[])[0]?.mana_cost ?? ''});
   const ja = ed.cartas.find(x=>x.nome===nome);
-  if (ja){ if (comoCmd) { ja.comandante = true; ja.qtd = 1; } else if (BASICOS.test(nome)) ja.qtd++; else avisoLocal(`${nome} já está no deck.`); }
-  else ed.cartas.push({qtd:1, nome, set:(c.set||'').toUpperCase(), num:c.collector_number||'', comandante:!!comoCmd});
+  if (ja && noSide){   // para o sideboard
+    if (ja.side && BASICOS.test(nome)) ja.qtd++;
+    else avisoLocal(ja.side ? `${nome} já está no sideboard.` : `${nome} já está no deck. Use o botão SB na lista para mover.`);
+  }
+  else if (ja && ja.side){ ja.side = false; ja.comandante = !!comoCmd; if (comoCmd) ja.qtd = 1; avisoLocal(`${nome} saiu do sideboard e entrou no deck.`); }
+  else if (ja){ if (comoCmd) { ja.comandante = true; ja.qtd = 1; } else if (BASICOS.test(nome)) ja.qtd++; else avisoLocal(`${nome} já está no deck.`); }
+  else ed.cartas.push({qtd:1, nome, set:(c.set||'').toUpperCase(), num:c.collector_number||'', comandante:!!comoCmd && !noSide, side:!!noSide});
   localSet('tiposCartas', JSON.stringify(tiposCartas));
   desenharEditor();
 }
@@ -2774,21 +2793,22 @@ async function buscarCartasEditor(){
   } catch(e){}
   if (pedido !== ultimaBusca) return;
   if (!lista.length){ box.innerHTML = '<div class="dicaMenu">Nenhuma carta encontrada.</div>'; return; }
-  const ja = new Set(ed.cartas.map(c=>c.nome));
+  const ja = new Set(ed.cartas.filter(c=>!c.side).map(c=>c.nome)), jaSide = new Set(ed.cartas.filter(c=>c.side).map(c=>c.nome));
   box.innerHTML = `<div class="edGrade">${lista.slice(0, 30).map((c,i)=>{
     const imgs = c.image_uris || (c.card_faces||[])[0]?.image_uris || {};
     const lendaria = /Legendary/.test(c.type_line||'') && /Creature|Planeswalker/.test(c.type_line||'');
-    const tem = ja.has(c.name.split(' // ')[0]);
-    return `<div class="edCartaRes ${tem?'jaTem':''}" title="${esc(c.name)}${c.printed_name&&c.printed_name!==c.name?' · '+esc(c.printed_name):''}">
+    const nm = c.name.split(' // ')[0], tem = ja.has(nm), temSide = jaSide.has(nm);
+    return `<div class="edCartaRes ${tem||temSide?'jaTem':''}" title="${esc(c.name)}${c.printed_name&&c.printed_name!==c.name?' · '+esc(c.printed_name):''}">
       <img src="${imgs.normal || imgs.small || ''}" loading="lazy" alt="${esc(c.name)}" data-grande="${esc(imgs.normal||'')}">
-      ${tem?'<span class="jaTemTag">no deck</span>':''}
-      <div class="edResBot">${tem && !BASICOS.test(c.name) ? '<button class="peq" disabled>Já está no deck</button>' : `<button class="peq pri" data-add="${i}">${tem?'+1':'Adicionar'}</button>`}${lendaria?`<button class="peq" data-cmd="${i}" title="Usar como comandante">★</button>`:''}</div></div>`;
+      ${tem?'<span class="jaTemTag">no deck</span>':temSide?'<span class="jaTemTag">no sideboard</span>':''}
+      <div class="edResBot">${tem && !BASICOS.test(c.name) ? '<button class="peq" disabled>Já está no deck</button>' : `<button class="peq pri" data-add="${i}">${tem?'+1':'Adicionar'}</button>`}${!tem && (!temSide || BASICOS.test(c.name))?`<button class="peq" data-side="${i}" title="Adicionar ao sideboard (fica guardado com o deck, não entra na partida)">SB</button>`:''}${lendaria?`<button class="peq" data-cmd="${i}" title="Usar como comandante">★</button>`:''}</div></div>`;
   }).join('')}</div>`;
   box.querySelectorAll('[data-grande]').forEach(im=>{ if (!im.dataset.grande) return;
     im.onmouseenter = ev=>{ const h = $('#hover'); h.innerHTML = `<img src="${im.dataset.grande}" style="width:300px;border-radius:12px">`; h.classList.remove('oculto'); posicionarHover(ev); };
     im.onmouseleave = esconderHover; });
   box.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>adicionarCarta(lista[+b.dataset.add], false));
   box.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>adicionarCarta(lista[+b.dataset.cmd], true));
+  box.querySelectorAll('[data-side]').forEach(b=>b.onclick=()=>adicionarCarta(lista[+b.dataset.side], false, true));
 }
 // escolher a arte (impressão) de uma carta: lista todas as edições no painel da direita
 async function escolherArte(i){
@@ -2826,7 +2846,7 @@ async function escolherArte(i){
     avisoLocal(`Arte de ${c.nome}: ${p.set_name}.`);
   });
 }
-function fotoEditor(){ return JSON.stringify({n: ed.nome, c: ed.cartas.map(c=>[c.qtd,c.nome,c.set,c.num,c.comandante])}); }
+function fotoEditor(){ return JSON.stringify({n: ed.nome, c: ed.cartas.map(c=>[c.qtd,c.nome,c.set,c.num,c.comandante,!!c.side])}); }
 function editorMudou(){ return ed && fotoEditor() !== ed.salvo; }
 function atualizarBotaoArtes(){
   const b = $('#edSalvarArtes'); if (!b || !ed) return;
@@ -3478,13 +3498,14 @@ function mostrarTrocas(arq, nome, cartas, trocas, quando){
     $('#oAplicar').onclick = ()=>{
       const marcadas = trocas.filter((t,i)=>r.querySelector(`[data-t="${i}"]`).checked);
       if (!marcadas.length) return avisoLocal('Marque pelo menos uma troca.');
-      const novas = cartas.map(c=>({...c}));
+      const novas = cartas.filter(c=>!c.side).map(c=>({...c}));
       for (const t of marcadas){
         const k = novas.findIndex(c=>c.nome===t.sai.nome); if (k < 0) continue;
         if (novas[k].qtd > 1) novas[k].qtd--; else novas.splice(k, 1);
         novas.push({qtd:1, nome:t.c.name.split(' // ')[0], set:(t.c.set||'').toUpperCase(), num:t.c.collector_number||'', comandante:false});
       }
       const motivos = {}; marcadas.forEach(t=>{ motivos[t.c.name.split(' // ')[0]] = `Oráculo: no lugar de ${t.sai.nome}. ${t.motivo}`; });
+      novas.push(...(sideDoDeck[arq]||[]).map(c=>({...c})));
       esconderHover(); abrirEditor(arq, nome, novas, {base: cartas, motivos, origem: 'Trocas do Oráculo'}); ed.salvo = '';
       avisoLocal(`${marcadas.length} troca(s) aplicada(s) no editor. Confira e salve se gostar.`);
     };
