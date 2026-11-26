@@ -5065,7 +5065,10 @@ function danoComandante(){
     if (!m || !nomesComandantes.has(m[1])) continue;
     // o texto pode ter coisas depois do nome ("... during the game"): acha o jogador pelo começo
     const pj = E.jogo.jogadores.slice().sort((x,y)=>y.nome.length-x.nome.length).find(x=>m[3].trim().startsWith(x.nome)); if (!pj) continue;
-    const alvo = pj.nome; (tot[alvo] = tot[alvo] || {})[m[1]] = ((tot[alvo]||{})[m[1]]||0) + (+m[2]);
+    // o XMage escreve o TOTAL acumulado ("did 16 combat damage to Y during the game"), não o dano daquele
+    // combate: somar as linhas contava o mesmo dano várias vezes (ex.: 8 + 16 = 24 quando eram 16)
+    const alvo = pj.nome, t = (tot[alvo] = tot[alvo] || {});
+    t[m[1]] = /during the game/i.test(m[3]) ? +m[2] : (t[m[1]]||0) + (+m[2]);
   }
   return tot;
 }
