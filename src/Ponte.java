@@ -3345,9 +3345,21 @@ public class Ponte implements MageClient {
                     c.put("set", s.getExpansionSetCode());
                     c.put("num", s.getCardNumber());
                     c.put("nome", "");
+                    // o XMage só manda edição e número; o nome vem do banco de cartas (serve para a tela juntar
+                    // esta carta, ex.: o topo do grimório com Bolas's Citadel, com o que dá para jogar dela)
+                    try {
+                        mage.cards.repository.CardInfo ci = mage.cards.repository.CardRepository.instance.findCard(s.getExpansionSetCode(), s.getCardNumber());
+                        if (ci != null) {
+                            c.put("nome", ci.getName());
+                            String v = ci.getDoubleFacedSecondSideName();
+                            if (v == null || v.isEmpty()) v = ci.getSecondSideName();
+                            if (v != null && !v.isEmpty()) c.put("nomeVerso", v);
+                        }
+                    } catch (Throwable ignored) { }
                     l.add(c);
                 }
                 z.put("cartas", l);
+                if (r.getName() != null && r.getName().toLowerCase().startsWith("top card of")) z.put("topoOlhado", true);
                 zonas.add(z);
             }
         }
