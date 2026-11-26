@@ -454,6 +454,29 @@ public class Ponte implements MageClient {
         return r;
     }
 
+    // Sideboard da Mesa: fica no próprio arquivo do deck, em linhas de comentário ("# SIDEBOARD: 1 [SET:NUM] Nome").
+    // Não dá para usar o "SB:" do XMage: no Commander ele marca o comandante. Assim o sideboard não entra na partida
+    // nem na conta das 100 cartas (o lerCartas pula linhas com "#").
+    static final String PREFIXO_SIDE = "# SIDEBOARD: ";
+    /** Cartas do sideboard: [qtd, nome, set, num]. */
+    static List<Object[]> lerSide(Path p) throws IOException {
+        List<Object[]> r = new ArrayList<>();
+        for (String bruta : new String(Files.readAllBytes(p), StandardCharsets.UTF_8).split("\r?\n")) {
+            String l = bruta.trim();
+            if (!l.startsWith(PREFIXO_SIDE)) continue;
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("^(\\d+)x?\\s+(?:\\[([^:\\]]*):([^\\]]*)\\]\\s+)?(.+)$").matcher(l.substring(PREFIXO_SIDE.length()).trim());
+            if (!m.matches()) continue;
+            r.add(new Object[]{Integer.parseInt(m.group(1)), m.group(4).trim(), m.group(2) == null ? "" : m.group(2), m.group(3) == null ? "" : m.group(3)});
+        }
+        return r;
+    }
+    /** As linhas de sideboard de um deck já salvo (para não perder ao reimportar do Grimório). */
+    static String linhasSide(Path p) {
+        StringBuilder sb = new StringBuilder();
+        try { if (Files.exists(p)) for (String l : new String(Files.readAllBytes(p), StandardCharsets.UTF_8).split("\r?\n")) if (l.trim().startsWith(PREFIXO_SIDE)) sb.append(l.trim()).append('\n'); } catch (IOException ignored) { }
+        return sb.toString();
+    }
+
     static String nomeDoArquivo(String arquivo) {
         return arquivo.replaceFirst("^chefes/", "").replaceAll("\\.(dck|txt)$", "").replaceAll("\\s+", " ").trim();
     }
@@ -517,6 +540,11 @@ public class Ponte implements MageClient {
                 for (Object[] c : lerCartas(arquivoDeck(q.get("arquivo")))) {
                     Map<String, Object> x = new LinkedHashMap<>();
                     x.put("qtd", c[0]); x.put("nome", c[1]); x.put("set", c[2]); x.put("num", c[3]); x.put("comandante", c[4]);
+                    cs.add(x);
+                }
+                for (Object[] c : lerSide(arquivoDeck(q.get("arquivo")))) {
+                    Map<String, Object> x = new LinkedHashMap<>();
+                    x.put("qtd", c[0]); x.put("nome", c[1]); x.put("set", c[2]); x.put("num", c[3]); x.put("comandante", false); x.put("side", true);
                     cs.add(x);
                 }
                 json(ex, 200, cs);
@@ -609,6 +637,8 @@ public class Ponte implements MageClient {
                 sb.append(ehCmd ? "SB: " : "").append(qtd).append(set.isEmpty() ? " " : " [" + set + ":" + num + "] ").append(nome).append('\n');
             }
             String arq = arquivoSeguro(nomeDeck) + ".dck";
+            String side = linhasSide(existente);   // o Grimório não tem o sideboard da Mesa: mantém o que já estava
+            if (!side.isEmpty()) sb.append('\n').append(side);
             Files.write(DECKS.resolve(arq), sb.toString().getBytes(StandardCharsets.UTF_8));
             feitos.add(nomeDoArquivo(arq));
         }
@@ -622,7 +652,7 @@ public class Ponte implements MageClient {
     Map<String, Object> salvarDeck(JsonObject b) throws IOException {
         String nome = b.get("nome").getAsString().trim();
         if (nome.isEmpty()) throw new IllegalArgumentException("Dê um nome ao deck.");
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(), sideTxt = new StringBuilder();
         int total = 0;
         boolean semEdicao = false;
         for (com.google.gson.JsonElement e : b.getAsJsonArray("cartas")) {
@@ -632,6 +662,10 @@ public class Ponte implements MageClient {
             if (q <= 0) continue;
             String set = c.has("set") && !c.get("set").isJsonNull() ? c.get("set").getAsString().toUpperCase() : "";
             String num = c.has("num") && !c.get("num").isJsonNull() ? c.get("num").getAsString() : "";
+            if (c.has("side") && c.get("side").getAsBoolean()) {   // sideboard: comentário, fora da partida e da conta
+                sideTxt.append(PREFIXO_SIDE).append(q).append(set.isEmpty() || num.isEmpty() ? "" : " [" + set + ":" + num + "]").append(' ').append(n).append('\n');
+                continue;
+            }
             boolean cmd = c.has("comandante") && c.get("comandante").getAsBoolean();
             if (set.isEmpty() || num.isEmpty()) {
                 try {
@@ -656,6 +690,7 @@ public class Ponte implements MageClient {
             texto = main + "\nSideboard\n" + side;
             ext = ".txt";
         }
+        if (sideTxt.length() > 0) texto += "\n" + sideTxt;
         String arq = arquivoSeguro(nome) + ext;
         Files.write(DECKS.resolve(arq), texto.getBytes(StandardCharsets.UTF_8));
         // renomeou ou trocou de formato: apaga o arquivo antigo
@@ -2501,6 +2536,7 @@ public class Ponte implements MageClient {
             StringBuilder limpo = new StringBuilder();
             for (String linha : txt.split("\r?\n")) {
                 if (linha.startsWith("NAME:")) continue;
+                if (linha.trim().startsWith(PREFIXO_SIDE)) continue;   // sideboard da Mesa não entra na partida
                 limpo.append(linha).append('\n');
             }
             Files.write(tmp, limpo.toString().getBytes(StandardCharsets.UTF_8));
