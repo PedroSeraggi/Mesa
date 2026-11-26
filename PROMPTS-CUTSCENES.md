@@ -34,7 +34,7 @@ Scene: On top of the enormous rune-carved stone slab floating in the void, a hoo
 ```
 Wide cinematic 21:9 landscape image. Painted graphic-novel illustration, thick black ink outlines, flat muted colors with one strong accent color, rough brush textures, dark fantasy, misty atmosphere, like the hand-painted story cutscenes of The Witcher 3. No text, no letters, no logos, no watermark.
 
-Scene: The starry sky darkens: the shadow of immense wings covers the stars, and only one gigantic golden reptilian eye, the size of a moon, is visible, belonging to Nicol Bolas, an ancient colossal elder dragon with horns like a crown and a glowing gem between the horns. Below it, the tiny rune stone. Accent color: gold.
+Scene: Extreme close-up in the dark starry void: we see only ONE side of a colossal ancient dragon's head emerging from black clouds — a single huge golden reptilian eye with a vertical slit pupil, surrounded by dark scales, part of a curved horn and the edge of a glowing gem on the forehead. The rest of the dragon is lost in shadow, too big to fit in the frame. Far below, very small, the rune-carved stone slab floating in the mist. The eye is the only bright thing in the image. Accent color: gold.
 ```
 
 ### Prompt 4  →  salvar como  abertura\q4.png
