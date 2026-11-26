@@ -1,8 +1,8 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia: Mundo 1</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Metamorphous&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
 <style>
-:root{--ff:'Cinzel',serif;--fc:'EB Garamond',serif;--ouro:#E4C874;--ouro2:#c9a24a}
+:root{--ff:'Metamorphous',serif;--fc:'EB Garamond',serif;--ouro:#E4C874;--ouro2:#c9a24a}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:#070504;color:#eee;font-family:var(--fc)}
 /* fundo: arte do comandante selecionado, mexendo devagar (parallax) */
@@ -65,7 +65,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#070504;color:#eee;fon
 #painel h2{margin:4px 0 2px;font-family:var(--ff);font-weight:800;font-size:24px;color:#fff;letter-spacing:.04em}
 #painel .cmds{font-size:15px;color:#d9c8b0;font-style:italic}
 #painel .lore{margin:16px 0 0;font-size:17px;line-height:1.5;color:#efe4cc;max-height:34vh;overflow-y:auto}
-#painel .lore::first-letter{font-family:var(--ff);font-size:42px;float:left;line-height:.9;margin:4px 8px 0 0;color:var(--ouro)}
+#painel .lore::first-letter{font-family:var(--ff);font-size:30px;line-height:1;color:var(--ouro)}
 #painel .premio{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 0;font-size:14px;color:#d9c8b0}
 #painel .premio span{display:flex;align-items:center;gap:5px;background:#0006;border:1px solid #ffffff18;border-radius:8px;padding:4px 9px}
 #painel .premio svg{width:16px;height:16px}
@@ -95,7 +95,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#070504;color:#eee;fon
 <div id="painel"></div>
 <button class="editar">EDITAR DECK</button>
 <script>
-const art = n => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n).replace(/'/g,'%27')}&format=image&version=art_crop`;
+const artSf = n => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n).replace(/'/g,'%27')}&format=image&version=art_crop`;
+const artHd = n => `campanha/artes/${encodeURIComponent(n.split(',')[0].toLowerCase().replace(/[^a-z0-9]+/g,'-'))}.jpg`;
+const art = artSf;
+const artFundo = n => artHd(n) + `'), url('${artSf(n)}`;
 const BAT = [
  {n:1, d:[['Soldados de Akros','Kytheon, Hero of Akros']], lore:'Sua jornada começa nos portões de Akros. O jovem Kytheon não deixa nenhum estranho passar sem provar seu valor, e os soldados dele lutam ombro a ombro. Vença e as estradas se abrem para você.'},
  {n:2, d:[['Horda de Zumbis','Liliana, Heretical Healer']], lore:'Na estrada para o leste, os mortos não ficam no chão. Uma curandeira chamada Liliana tentou salvar o irmão e acabou descobrindo outro dom. Agora a horda dela anda pelos campos à noite.'},
@@ -129,13 +132,13 @@ function desenharLista(){
 function mostrar(){
   const b = BAT[sel-1], tres = b.d.length > 1, f = document.getElementById('fundo');
   f.classList.add('troca');
-  setTimeout(()=>{ f.className = tres ? 'tres' : ''; f.innerHTML = `<div class="borrado" style="background-image:url('${art(b.d[0][1])}')"></div><div class="nitida">${b.d.map(x=>`<div style="background-image:url('${art(x[1])}')"></div>`).join('')}</div>`; f.classList.remove('troca'); }, 350);
+  setTimeout(()=>{ f.className = tres ? 'tres' : ''; f.innerHTML = `<div class="borrado" style="background-image:url('${art(b.d[0][1])}')"></div><div class="nitida">${b.d.map(x=>`<div style="background-image:url('${artFundo(x[1])}')"></div>`).join('')}</div>`; f.classList.remove('troca'); }, 350);
   document.getElementById('nomeGrande').innerHTML = `<small>BATALHA ${b.n}${tres?' · TRÊS OPONENTES':''}</small><b>${tres?'Batalha dos três':b.d[0][1].split(',')[0]}</b>`;
   const ganho = tres ? 500 : 250, feita = b.n < ATUAL;
   document.getElementById('painel').innerHTML = `<div class="cap">BATALHA ${b.n} DE 15</div><h2>${tres?'Batalha dos três':b.d[0][0]}</h2>
     <div class="cmds">${b.d.map(x=>x[1]).join(' · ')}</div>
     <p class="lore">${b.lore}</p>
-    <div class="premio"><span>${MOEDA} ${ganho} na vitória</span>${feita?'<span>✓ Já vencida</span>':'<span>🎁 1 booster na primeira vitória</span>'}</div>
+    <div class="premio"><span>${MOEDA} ${ganho} na vitória</span>${feita?'<span>✓ Já vencida</span>':'<span>+1 booster na primeira vitória</span>'}</div>
     <button id="comecar" class="${feita?'de-novo':''}">${feita?'JOGAR DE NOVO':'COMEÇAR'}</button>`;
 }
 desenharLista(); mostrar();
