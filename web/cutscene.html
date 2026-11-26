@@ -39,23 +39,23 @@ const nome = new URLSearchParams(location.search).get('c') || 'abertura';
 const base = `cutscenes/${nome}/`;
 const cam = document.getElementById('camera'), leg = document.getElementById('legenda'), blur = document.getElementById('borraoG');
 const VEL = {desce:[0,1], sobe:[0,-1], dir:[1,0], esq:[-1,0], aprox:[0,0], afasta:[0,0]};
-const ESCALA = 1.12, TRANS = 1.15;   // folga para a câmera andar; duração da passagem (s)
+const ESCALA = 1.12, TRANS = 1.9;   // passagem mais longa: acelera e desacelera sem pressa   // folga para a câmera andar; duração da passagem (s)
 let Q = [], els = [], atual = 0, t0 = 0, fim = false, audio = null;
 const pai = m => parent !== window && parent.postMessage(Object.assign({cutscene: true}, m), '*');
 
 function tamanho(){ const W = innerWidth, H = innerHeight, r = 1584/672; let w = W * ESCALA, h = w / r; if (h < H * ESCALA){ h = H * ESCALA; w = h * r; } return {w, h, W, H}; }
 // posição da câmera dentro de um quadro: u vai de 0 a 1; a velocidade é maior no começo e no fim (chega rápido, desacelera sem parar, acelera para sair)
 function pose(q, u){
-  const {w, h, W, H} = tamanho(), fx = (w - W) / 2, fy = (h - H) / 2, k = .62;
+  const {w, h, W, H} = tamanho(), fx = (w - W) / 2 * .8, fy = (h - H) / 2 * .8, k = .45;   // deriva suave
   const s = u + k * Math.sin(2 * Math.PI * u) / (2 * Math.PI);   // velocidade 1 + k·cos: rápida nas pontas, lenta no meio (nunca para)
   const v = VEL[q.mov] || [0,0];
   let x = -v[0] * fx * (2 * s - 1), y = -v[1] * fy * (2 * s - 1), z = 1;
-  if (q.mov === 'aprox') z = 1 + .16 * s; if (q.mov === 'afasta') z = 1.16 - .16 * s;
+  if (q.mov === 'aprox') z = 1 + .12 * s; if (q.mov === 'afasta') z = 1.12 - .12 * s;
   return {x, y, z, w, h};
 }
 function aplicar(el, p, dx, dy){ el.style.width = p.w + 'px'; el.style.height = p.h + 'px';
   el.style.transform = `translate(calc(-50% + ${p.x + dx}px), calc(-50% + ${p.y + dy}px)) scale(${p.z})`; }
-const dur = q => q.dur || Math.max(6.5, q.texto.length * 0.068);
+const dur = q => q.dur || Math.max(12, q.texto.length * 0.072);   // tempo para ler (ou para a voz) com calma
 function legenda(txt){ leg.classList.remove('on'); setTimeout(() => { leg.textContent = txt; leg.classList.add('on'); }, 350); }
 function tocar(q){ if (audio) audio.pause(); audio = null; if (q.audio){ audio = new Audio(base + q.audio); audio.play().catch(()=>{}); } }
 let tremor = 0;
@@ -77,7 +77,7 @@ function loop(agora){
     const dist = dirv[0] ? W * 1.05 : H * 1.12;
     aplicar(el, pose(q, 1), -dirv[0] * dist * e, -dirv[1] * dist * e);
     const pn = els[atual + 1]; pn.style.display = 'block'; aplicar(pn, pose(prox, 0), dirv[0] * dist * (1 - e), dirv[1] * dist * (1 - e));
-    const b = Math.min(28, vel * 9); blur.setAttribute('stdDeviation', dirv[0] ? `${b} 0` : `0 ${b}`);
+    const b = Math.min(22, vel * 7); blur.setAttribute('stdDeviation', dirv[0] ? `${b} 0` : `0 ${b}`);
     if (tt >= 1){ el.style.display = 'none'; blur.setAttribute('stdDeviation', '0 0'); quadro(atual + 1); }
   }
   requestAnimationFrame(loop);

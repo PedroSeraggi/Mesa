@@ -39,30 +39,28 @@ descobre a verdade. No Mundo 4, chega à Mesa para enfrentar Bolas.
 
 ## 0. Abertura da campanha (depois de escolher a cor do deck)
 
-**Quadro 1** — *O vazio entre os mundos: um mar de névoa e estrelas; ao longe, três mundos flutuam como ilhas (um verde, um
-roxo, um vermelho). No centro, uma pedra enorme e plana, gravada com runas: a Mesa.* Câmera: desce lentamente do céu até a pedra.
-> "Antes dos reis e dos deuses, os primeiros magos se reuniram sobre uma pedra no centro de todas as coisas. Ali, dividiram a
-> mana entre os mundos... para que nenhum ser jamais tivesse todo o poder."
+Narração detalhada, ritmo calmo (~2min20). O quadro 1 aparece duas vezes (primeiro descendo, depois aproximando).
 
-**Quadro 2** — *Sobre a Mesa, um vulto encapuzado com o amuleto em M brilhando, sozinho, vigiando o horizonte.* Câmera: aproxima
-devagar.
-> "Chamaram aquele lugar de a Mesa. E deixaram nela um guardião."
+**Parte 1** — imagem `q1.jpg`, câmera: desce
+> "Antes dos reis, antes dos deuses, antes mesmo de existirem nomes para as coisas, havia apenas o vazio entre os mundos. Um mar de névoa e estrelas. E, flutuando no centro dele, uma pedra. Foi ali que os primeiros magos se reuniram, vindos de terras que nunca tinham se visto."
 
-**Quadro 3** — *O céu escurece. Uma sombra de asas imensas cobre as estrelas; só se vê um olho dourado, do tamanho de uma lua.*
-Câmera: sobe, revelando a sombra.
-> "Mas há quem não aceite dividir. Um dragão mais velho que muitos mundos... Nicol Bolas."
+**Parte 2** — imagem `q1.jpg`, câmera: aprox
+> "Eles tinham visto o que a mana fazia com quem a tinha demais. Reinos queimados, céus rasgados, mundos inteiros engolidos pela ambição de um só. Então, sobre aquela pedra, fizeram um pacto: dividiram a mana entre os mundos... para que nenhum ser jamais tivesse todo o poder."
 
-**Quadro 4** — *Uma garra gigante atinge a Mesa; o guardião é arremessado no vazio, o amuleto se apagando.* Câmera: tremor e
-queda para baixo.
-> "Ele não podia entrar nos mundos. O pacto o impedia. Então atacou primeiro quem o protegia."
+**Parte 3** — imagem `q2.jpg`, câmera: aprox
+> "Gravaram o pacto em runas, e cada mundo ficou guardando um pedaço dele. Chamaram aquele lugar de a Mesa. E, para que o pacto nunca fosse quebrado, deixaram sobre ela um guardião. Por eras, ele vigiou em silêncio. E por eras, os mundos viveram em paz."
 
-**Quadro 5** — *Três silhuetas recebem um brilho dourado da garra do dragão: um goblin baixo, um horror de muitas patas, uma
-mulher de vestido vermelho.* Câmera: desliza da esquerda para a direita passando pelos três.
-> "E escolheu três comandantes. Um para cada mundo. Cada um com uma missão: quebrar o pacto por dentro."
+**Parte 4** — imagem `q3.jpg`, câmera: desce
+> "Mas há quem não aceite dividir. Alguém que já era antigo quando os primeiros magos nasceram. Que viu impérios subirem e caírem como estações do ano. Que nunca esqueceu o poder que lhe foi tirado naquele dia... Nicol Bolas."
 
-**Quadro 6** — *Amanhecer. O guardião caído na grama diante dos portões de pedra de Akros; soldados ao longe.* Câmera: sobe da
-grama até os portões.
-> "Muito longe dali, nos portões de Akros... alguém acordou sem lembrar o próprio nome."
+**Parte 5** — imagem `q4.jpg`, câmera: desce + tremor
+> "O dragão não podia entrar nos mundos. O pacto o impedia. Mas a Mesa ficava no meio do caminho. Então, numa noite sem estrelas, ele atacou primeiro quem a protegia. A pedra rachou, as runas se apagaram uma a uma... e o guardião foi lançado no vazio."
+
+**Parte 6** — imagem `q5.jpg`, câmera: dir
+> "E, das sombras, Bolas chamou três comandantes. Um goblin ambicioso, que venderia a própria mãe por uma coroa. Uma rainha do abismo, feita de metal e fome. E uma senhora da noite, que já tinha vivido tempo demais. A cada um, ele deu poder. E uma única ordem: quebrar o pacto por dentro."
+
+**Parte 7** — imagem `q6.jpg`, câmera: esq
+> "Muito longe dali, numa manhã fria, nos portões da antiga cidade de Akros, os guardas encontraram alguém caído na grama. Uma capa gasta. Um amuleto que brilhava sem motivo. E nenhuma lembrança. Ele não sabia o próprio nome. Mas a história dele... estava só começando."
 
 ---
 

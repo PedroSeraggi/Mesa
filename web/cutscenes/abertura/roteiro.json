@@ -1,11 +1,12 @@
 {
   "titulo": "A Mesa",
   "quadros": [
-    {"img": "q1.jpg", "mov": "desce", "texto": "Antes dos reis e dos deuses, os primeiros magos se reuniram sobre uma pedra no centro de todas as coisas. Ali, dividiram a mana entre os mundos... para que nenhum ser jamais tivesse todo o poder."},
-    {"img": "q2.jpg", "mov": "aprox", "texto": "Chamaram aquele lugar de a Mesa. E deixaram nela um guardião."},
-    {"img": "q3.jpg", "mov": "desce", "texto": "Mas há quem não aceite dividir. Um dragão mais velho que muitos mundos... Nicol Bolas."},
-    {"img": "q4.jpg", "mov": "desce", "tremor": true, "texto": "Ele não podia entrar nos mundos. O pacto o impedia. Então atacou primeiro quem o protegia."},
-    {"img": "q5.jpg", "mov": "dir", "texto": "E escolheu três comandantes. Um para cada mundo. Cada um com uma missão: quebrar o pacto por dentro."},
-    {"img": "q6.jpg", "mov": "esq", "texto": "Muito longe dali, nos portões de Akros... alguém acordou sem lembrar o próprio nome."}
+    {"img": "q1.jpg", "mov": "desce", "texto": "Antes dos reis, antes dos deuses, antes mesmo de existirem nomes para as coisas, havia apenas o vazio entre os mundos. Um mar de névoa e estrelas. E, flutuando no centro dele, uma pedra. Foi ali que os primeiros magos se reuniram, vindos de terras que nunca tinham se visto."},
+    {"img": "q1.jpg", "mov": "aprox", "texto": "Eles tinham visto o que a mana fazia com quem a tinha demais. Reinos queimados, céus rasgados, mundos inteiros engolidos pela ambição de um só. Então, sobre aquela pedra, fizeram um pacto: dividiram a mana entre os mundos... para que nenhum ser jamais tivesse todo o poder."},
+    {"img": "q2.jpg", "mov": "aprox", "texto": "Gravaram o pacto em runas, e cada mundo ficou guardando um pedaço dele. Chamaram aquele lugar de a Mesa. E, para que o pacto nunca fosse quebrado, deixaram sobre ela um guardião. Por eras, ele vigiou em silêncio. E por eras, os mundos viveram em paz."},
+    {"img": "q3.jpg", "mov": "desce", "texto": "Mas há quem não aceite dividir. Alguém que já era antigo quando os primeiros magos nasceram. Que viu impérios subirem e caírem como estações do ano. Que nunca esqueceu o poder que lhe foi tirado naquele dia... Nicol Bolas."},
+    {"img": "q4.jpg", "mov": "desce", "tremor": true, "texto": "O dragão não podia entrar nos mundos. O pacto o impedia. Mas a Mesa ficava no meio do caminho. Então, numa noite sem estrelas, ele atacou primeiro quem a protegia. A pedra rachou, as runas se apagaram uma a uma... e o guardião foi lançado no vazio."},
+    {"img": "q5.jpg", "mov": "dir", "texto": "E, das sombras, Bolas chamou três comandantes. Um goblin ambicioso, que venderia a própria mãe por uma coroa. Uma rainha do abismo, feita de metal e fome. E uma senhora da noite, que já tinha vivido tempo demais. A cada um, ele deu poder. E uma única ordem: quebrar o pacto por dentro."},
+    {"img": "q6.jpg", "mov": "esq", "texto": "Muito longe dali, numa manhã fria, nos portões da antiga cidade de Akros, os guardas encontraram alguém caído na grama. Uma capa gasta. Um amuleto que brilhava sem motivo. E nenhuma lembrança. Ele não sabia o próprio nome. Mas a história dele... estava só começando."}
   ]
 }
