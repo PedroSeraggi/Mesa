@@ -32,6 +32,7 @@ public class GerarPool {
             Map<String, String> x = new LinkedHashMap<>();
             x.put("nome", nome); x.put("set", c.getSetCode()); x.put("num", c.getCardNumber());
             x.put("tipo", String.valueOf(c.getTypes())); x.put("raridade", String.valueOf(c.getRarity()));
+            x.put("subtipos", String.valueOf(c.getSubTypes())); x.put("cmc", String.valueOf(c.getManaValue()));
             StringBuilder cores = new StringBuilder();
             if (c.getColor().isWhite()) cores.append('W'); if (c.getColor().isBlue()) cores.append('U'); if (c.getColor().isBlack()) cores.append('B');
             if (c.getColor().isRed()) cores.append('R'); if (c.getColor().isGreen()) cores.append('G');

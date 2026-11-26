@@ -4314,30 +4314,19 @@ function desenharLoja(cx){
   $('#ljColecao').onclick = ()=>verColecao();
 }
 function atualizarOuroMenu(r){ if (amigos && amigos.foto){ amigos.foto.ouro = r.ouro; amigos.foto.boosters = r.boosters; desenharBtnOuro(); } }
-// abrir booster: o pacote rasga e as 15 cartas aparecem viradas; clique para revelar (ou "Revelar todas")
+// abrir booster: tela própria (booster.html) por cima da Mesa: pacote 3D, arrastar até o círculo, cartas com brilho da raridade
 function animarBooster(cartas){
-  let el = $('#abrirBooster'); if (el) el.remove();
-  el = document.createElement('div'); el.id = 'abrirBooster'; document.body.appendChild(el);
-  el.innerHTML = `<div class="pacote pacoteGrande"><i>MUNDO 1</i></div><div class="dica">Clique no pacote para abrir</div>`;
-  const ordem = {comum:0, incomum:1, especial:2, rara:3, mitica:4};
-  const lista = [...cartas].sort((a,b)=>ordem[a.faixa]-ordem[b.faixa]);   // as melhores por último, como num pacote de verdade
-  lista.forEach(c=>{ const i = new Image(); i.src = imgCarta(c); });   // já começa a baixar as imagens enquanto o pacote está fechado
-  el.querySelector('.pacoteGrande').onclick = ev=>{
-    ev.currentTarget.classList.add('rasga');
-    try { if (cfgApp.somFx !== false) tocarBum(.35 * Math.min(1, (cfgApp.volFx ?? 50) / 50), 1.4); } catch(e){}
-    setTimeout(()=>{
-      el.innerHTML = `<div class="leque">${lista.map((c,i)=>`<div class="cartaBooster f-${c.faixa}" style="--d:${i*.06}s" data-img="${esc(imgCarta(c))}"><div class="gira"><div class="lado costas"></div><div class="lado face" style="background-image:url('${imgCarta(c)}')"></div></div>${c.nova ? '<span class="nova">NOVA</span>' : ''}</div>`).join('')}</div>
-        <div class="linhaBts"><button id="abRevelar">Revelar todas</button><button class="pri oculto" id="abPronto">Pronto</button></div>`;
-      const verificar = ()=>{ if (!el.querySelector('.cartaBooster:not(.virada)')){ $('#abRevelar').classList.add('oculto'); $('#abPronto').classList.remove('oculto'); } };
-      el.querySelectorAll('.cartaBooster').forEach(c=>{
-        c.onclick = ()=>{ if (!c.classList.contains('virada')){ c.classList.add('virada'); if (/f-(rara|mitica)/.test(c.className)) try { tocarBum(.3, 1.6); } catch(e){} verificar(); } };
-        c.onmouseenter = ev=>{ if (!c.classList.contains('virada')) return; const h = $('#hover'); h.innerHTML = `<img src="${c.dataset.img}" style="width:250px;border-radius:12px">`; h.classList.remove('oculto'); posicionarHover(ev); };
-        c.onmouseleave = esconderHover;
-      });
-      $('#abRevelar').onclick = ()=>{ el.querySelectorAll('.cartaBooster:not(.virada)').forEach((c,i)=>setTimeout(()=>c.click(), i*90)); };
-      $('#abPronto').onclick = ()=>{ el.remove(); esconderHover(); abrirLoja(); };
-    }, 650);
+  let fr = $('#frameBooster'); if (fr) fr.remove();
+  fr = document.createElement('iframe'); fr.id = 'frameBooster'; fr.src = 'booster.html';
+  fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9300;background:transparent';
+  const dados = {mundo: 'Mundo 1', cartas: cartas.map(c=>({nome: c.nome, faixa: c.faixa, nova: !!c.nova, img: new URL(imgCarta(c), location.href).href}))};
+  const ouvir = e=>{
+    if (!e.data || !e.data.booster) return;
+    if (e.data.booster === 'pronta') fr.contentWindow.postMessage(dados, '*');
+    if (e.data.booster === 'pronto'){ window.removeEventListener('message', ouvir); fr.remove(); abrirLoja(); }
   };
+  window.addEventListener('message', ouvir);
+  document.body.appendChild(fr);
 }
 // coleção: todas as cartas que a pessoa tem, com filtro por raridade
 async function verColecao(){
