@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia: abrir booster</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=EB+Garamond&display=swap" rel="stylesheet">
+<style>
+:root{--ff:'Cinzel',serif}
+*{box-sizing:border-box}
+body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color:#eee;background:radial-gradient(ellipse at 50% 45%,#2a1638 0%,#120a18 55%,#06030a 100%);user-select:none}
+#palco{position:absolute;inset:0}
+#palco.treme{animation:treme .5s cubic-bezier(.36,.07,.19,.97)}
+@keyframes treme{10%{transform:translate(-8px,5px)}25%{transform:translate(9px,-6px)}40%{transform:translate(-7px,-4px)}55%{transform:translate(6px,6px)}70%{transform:translate(-4px,3px)}85%{transform:translate(3px,-2px)}}
+/* encaixe no centro (onde se solta o pacote) */
+.encaixe{position:absolute;left:50%;top:46%;width:250px;height:250px;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle,#3a2450 0%,#1a0e24 60%,transparent 72%);box-shadow:inset 0 0 0 3px #c9a24a55,0 0 60px #7a4ad044;transition:box-shadow .3s}
+.encaixe::before{content:'';position:absolute;inset:18px;border-radius:50%;border:2px dashed #c9a24a55;animation:gira 20s linear infinite}
+.encaixe.ativo{box-shadow:inset 0 0 0 3px #ffd04a,0 0 90px #ffb84a88}
+@keyframes gira{to{transform:rotate(360deg)}}
+.dica{position:absolute;left:0;right:0;bottom:8%;text-align:center;font-family:var(--ff);letter-spacing:.2em;font-size:13px;color:#d9c8e8b0;text-transform:uppercase}
+/* pacote */
+.pacote{position:absolute;width:150px;height:210px;border-radius:9px;cursor:grab;z-index:5;
+  background:linear-gradient(160deg,#6a2a7a,#2a1238 55%,#160a1e);box-shadow:inset 0 0 0 2px #c9a24aaa,0 16px 30px #000c;transition:transform .15s}
+.pacote:active{cursor:grabbing}
+.pacote::before{content:'';position:absolute;left:0;right:0;top:0;height:16px;border-radius:9px 9px 0 0;background:repeating-linear-gradient(90deg,#c9a24a 0 5px,#8a6a28 5px 10px)}
+.pacote::after{content:'M';position:absolute;inset:0;display:grid;place-items:center;font-family:var(--ff);font-weight:800;font-size:72px;color:#ffe08a;text-shadow:0 0 18px #ff9a3a}
+.pacote i{position:absolute;left:0;right:0;bottom:16px;text-align:center;font-style:normal;font-family:var(--ff);font-size:11px;letter-spacing:.22em;color:#e8d4f0}
+.pacote.flutua{animation:flutua 2.2s ease-in-out infinite}
+@keyframes flutua{50%{transform:translateY(-10px) rotate(-1deg)}}
+.pacote.explode{animation:explode .55s ease-in forwards;cursor:default}
+@keyframes explode{30%{transform:scale(1.12) rotate(-3deg)}60%{transform:scale(1.2) rotate(3deg);filter:brightness(1.6)}100%{transform:scale(1.7);opacity:0;filter:brightness(4)}}
+.clarao{position:absolute;left:50%;top:46%;width:80vmin;height:80vmin;border-radius:50%;transform:translate(-50%,-50%) scale(.2);background:radial-gradient(circle,#fff6d0 0%,#ffcf6a88 25%,transparent 65%);animation:clarao .9s ease-out forwards;pointer-events:none}
+@keyframes clarao{20%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.8)}}
+/* cartas viradas */
+.carta{position:absolute;width:118px;aspect-ratio:63/88;perspective:900px;cursor:pointer;transform:translate(-50%,-50%) scale(.2);opacity:0;left:50%;top:46%;
+  transition:left .6s cubic-bezier(.2,.9,.3,1.1),top .6s cubic-bezier(.2,.9,.3,1.1),transform .6s cubic-bezier(.2,.9,.3,1.1),opacity .3s;transition-delay:var(--d)}
+.carta.posta{opacity:1;transform:translate(-50%,-50%) rotate(var(--r))}
+.carta .gira{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.3,1.3,.5,1)}
+.carta.virada .gira{transform:rotateY(180deg)}
+.carta .lado{position:absolute;inset:0;border-radius:6px;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#000 center/cover;box-shadow:0 8px 16px #000c}
+.carta .costas{background-image:url('https://backs.scryfall.io/large/0/a/0aeebaf5-8c7d-4636-9e82-8c27447861f7.jpg')}
+.carta .frente{transform:rotateY(180deg)}
+/* brilho da raridade: aparece ao passar o mouse na carta virada para baixo (como no Hearthstone) */
+.carta .aura{position:absolute;inset:-6px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none;box-shadow:0 0 0 2px var(--cor),0 0 26px 8px var(--cor)}
+.carta:not(.virada):hover .aura{opacity:1;animation:pulsa 1s ease-in-out infinite}
+.carta:not(.virada):hover{z-index:3}
+@keyframes pulsa{50%{box-shadow:0 0 0 2px var(--cor),0 0 40px 14px var(--cor)}}
+.carta.comum{--cor:#ffffff44}.carta.incomum{--cor:#9fd0ffaa}.carta.rara{--cor:#ffd04acc}.carta.mitica{--cor:#ff6a1add}.carta.especial{--cor:#b07ae0cc}
+/* explosão ao virar */
+.carta .estouro{position:absolute;left:50%;top:50%;width:260px;height:260px;border-radius:50%;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;background:radial-gradient(circle,var(--cor) 0%,transparent 65%)}
+.carta.virada .estouro{animation:estouro .7s ease-out}
+@keyframes estouro{0%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.6)}}
+.carta.mitica.virada .estouro{animation:estouro 1s ease-out;width:520px;height:520px}
+/* selo de nível na carta virada */
+.carta .selo{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%) rotateY(180deg);backface-visibility:hidden;opacity:0;white-space:nowrap;
+  font-family:var(--ff);font-weight:800;font-size:9.5px;letter-spacing:.16em;padding:2px 9px;border-radius:999px;box-shadow:0 2px 6px #000a}
+.carta.virada .selo{opacity:1;transform:translateX(-50%);transition:opacity .3s .35s}
+.comum .selo{background:#5a5650;color:#e8e2d8}
+.incomum .selo{background:linear-gradient(#d8e4ee,#8a9aa8);color:#1a2430}
+.rara .selo{background:linear-gradient(#ffe48a,#b8862a);color:#2a1a04}
+.mitica .selo{background:linear-gradient(#ffb04a,#d0401a);color:#fff;box-shadow:0 0 12px #ff6a1a}
+.especial .selo{background:linear-gradient(#d0a8f0,#7a4ab0);color:#fff}
+.carta .nova{position:absolute;top:-8px;right:-6px;background:#3f9a5a;color:#fff;font-family:var(--ff);font-size:9px;letter-spacing:.1em;padding:2px 7px;border-radius:999px;opacity:0}
+.carta.virada .nova{opacity:1;transition:opacity .3s .4s}
+.faisca{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--cor);box-shadow:0 0 8px var(--cor);pointer-events:none;animation:faisca .9s ease-out forwards}
+@keyframes faisca{from{opacity:1;transform:translate(0,0)}to{opacity:0;transform:translate(var(--x),var(--y))}}
+#pronto{position:absolute;left:50%;bottom:5%;transform:translateX(-50%);font-family:var(--ff);font-size:16px;padding:10px 46px;border-radius:9px;border:1px solid #E4C874;background:linear-gradient(#e0b050,#a87a28);color:#1a1008;cursor:pointer;display:none}
+#novo{position:fixed;left:14px;top:12px;font-family:var(--ff);background:#3a2a18;border:1px solid #E4C874;color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer;z-index:10}
+</style></head><body>
+<button id="novo">Novo pacote</button>
+<div id="palco"></div>
+<script>
+const img = n => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n).replace(/'/g,'%27')}&format=image&version=normal`;
+// um pacote de exemplo do Mundo 1 (na Mesa vem do servidor)
+const PACOTE = [
+  ...['Llanowar Elves','Shock','Divination','Mind Rot','Pacifism','Giant Growth','Doom Blade','Cancel','Lava Axe','Elvish Visionary'].map(n=>({nome:n, faixa:'comum'})),
+  ...['Sengir Vampire','Prized Unicorn','Serra Angel'].map(n=>({nome:n, faixa:'incomum'})),
+  {nome:'Baneslayer Angel', faixa:'mitica'},
+  {nome:'Reliquary Tower', faixa:'especial', nova:true}
+];
+PACOTE.forEach((c,i)=>{ if (i % 3 === 0) c.nova = true; });
+const NOMES = {comum:'COMUM', incomum:'INCOMUM', rara:'RARA', mitica:'MÍTICA', especial:'ESPECIAL'};
+let AC = null; const ac = ()=> AC || (AC = new (window.AudioContext||window.webkitAudioContext)());
+function bum(tom=1, vol=.6){ try { const a = new Audio('sons/impacto/bum.ogg'); a.volume = vol; a.playbackRate = tom; a.preservesPitch = false; a.play().catch(()=>{}); } catch(e){} }
+function brilhoSom(nivel){   // "plim" que sobe com a raridade
+  try { const a = ac(), t = a.currentTime; const notas = {comum:[523], incomum:[523,659], rara:[523,659,784], especial:[587,740,880], mitica:[523,659,784,1046]}[nivel];
+    notas.forEach((hz,k)=>{ const o = a.createOscillator(), g = a.createGain(); o.type = 'triangle'; o.frequency.value = hz; const t0 = t + k*.06;
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.12, t0+.02); g.gain.exponentialRampToValueAtTime(.001, t0+.6); o.connect(g).connect(a.destination); o.start(t0); o.stop(t0+.7); }); } catch(e){}
+}
+function montar(){
+  const palco = document.getElementById('palco');
+  palco.innerHTML = `<div class="encaixe" id="encaixe"></div><div class="pacote flutua" id="pacote" style="left:12%;top:60%"><i>MUNDO 1</i></div>
+    <div class="dica" id="dica">Arraste o pacote até o círculo</div><button id="pronto">Pronto</button>`;
+  const pac = document.getElementById('pacote'), enc = document.getElementById('encaixe');
+  let arrastando = false, ox = 0, oy = 0;
+  pac.onpointerdown = ev=>{ arrastando = true; pac.classList.remove('flutua'); const r = pac.getBoundingClientRect(); ox = ev.clientX - r.left; oy = ev.clientY - r.top; pac.setPointerCapture(ev.pointerId); };
+  pac.onpointermove = ev=>{ if (!arrastando) return; pac.style.left = (ev.clientX - ox) + 'px'; pac.style.top = (ev.clientY - oy) + 'px';
+    const e = enc.getBoundingClientRect(), d = Math.hypot(ev.clientX - (e.left + e.width/2), ev.clientY - (e.top + e.height/2)); enc.classList.toggle('ativo', d < 130); };
+  pac.onpointerup = ev=>{ arrastando = false; const e = enc.getBoundingClientRect(), d = Math.hypot(ev.clientX - (e.left + e.width/2), ev.clientY - (e.top + e.height/2));
+    if (d < 130){ pac.style.left = (e.left + e.width/2 - 75) + 'px'; pac.style.top = (e.top + e.height/2 - 105) + 'px'; abrir(); } else { enc.classList.remove('ativo'); pac.classList.add('flutua'); } };
+  pac.ondblclick = ()=>{ const e = enc.getBoundingClientRect(); pac.style.left = (e.left + e.width/2 - 75) + 'px'; pac.style.top = (e.top + e.height/2 - 105) + 'px'; abrir(); };
+}
+function abrir(){
+  const palco = document.getElementById('palco'), pac = document.getElementById('pacote');
+  pac.onpointerdown = pac.onpointermove = pac.onpointerup = pac.ondblclick = null;
+  document.getElementById('dica').textContent = '';
+  pac.classList.add('explode'); bum(1.2, .5);
+  setTimeout(()=>{
+    palco.insertAdjacentHTML('beforeend', '<div class="clarao"></div>');
+    palco.classList.remove('treme'); void palco.offsetWidth; palco.classList.add('treme');
+    document.getElementById('encaixe').style.opacity = .25;
+    // posições: as 10 comuns numa faixa em cima, as 5 melhores num arco embaixo (como no Hearthstone)
+    const W = innerWidth, H = innerHeight;
+    const cartas = PACOTE.map((c,i)=>{
+      let x, y, r;
+      if (i < 10){ const k = i - 4.5; x = W/2 + k * Math.min(124, W/11); y = H*.24 + Math.abs(k)*3; r = k*1.2; }
+      else { const k = i - 12; x = W/2 + k * Math.min(160, W/6); y = H*.62 + Math.abs(k)*14; r = k*5; }
+      return `<div class="carta ${c.faixa}" style="--d:${i*.05}s;--r:${r}deg" data-x="${x}" data-y="${y}">
+        <div class="aura"></div><div class="estouro"></div>
+        <div class="gira"><div class="lado costas"></div><div class="lado frente" style="background-image:url('${img(c.nome)}')"></div></div>
+        <span class="selo">${NOMES[c.faixa]}</span>${c.nova?'<span class="nova">NOVA</span>':''}</div>`;
+    }).join('');
+    palco.insertAdjacentHTML('beforeend', cartas);
+    const els = [...palco.querySelectorAll('.carta')];
+    requestAnimationFrame(()=>requestAnimationFrame(()=>els.forEach(el=>{ el.style.left = el.dataset.x + 'px'; el.style.top = el.dataset.y + 'px'; el.classList.add('posta'); })));
+    els.forEach(el=>el.onclick = ()=>{
+      if (el.classList.contains('virada')) return;
+      el.classList.add('virada');
+      const nivel = PACOTE[els.indexOf(el)].faixa; brilhoSom(nivel);
+      if (nivel === 'mitica'){ bum(.85, .8); palco.classList.remove('treme'); void palco.offsetWidth; palco.classList.add('treme'); }
+      else if (nivel === 'rara' || nivel === 'especial') bum(1.4, .35);
+      if (nivel !== 'comum'){ const r = el.getBoundingClientRect(); const n = nivel === 'mitica' ? 40 : 18;
+        for (let i=0;i<n;i++){ const f = document.createElement('div'); f.className = 'faisca'; f.style.setProperty('--cor', getComputedStyle(el).getPropertyValue('--cor'));
+          f.style.left = (r.left + r.width/2) + 'px'; f.style.top = (r.top + r.height/2) + 'px'; const g = Math.random()*Math.PI*2, d = 60 + Math.random()*(nivel==='mitica'?260:140);
+          f.style.setProperty('--x', Math.cos(g)*d + 'px'); f.style.setProperty('--y', Math.sin(g)*d + 'px'); palco.appendChild(f); setTimeout(()=>f.remove(), 1000); } }
+      if (!palco.querySelector('.carta:not(.virada)')) document.getElementById('pronto').style.display = 'block';
+    });
+    document.getElementById('pronto').onclick = montar;
+  }, 520);
+}
+document.getElementById('novo').onclick = montar;
+montar();
+</script>
+</body></html>
