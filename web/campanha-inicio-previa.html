@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia: comece sua jornada</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/mana-font@1.18.0/css/mana.min.css" rel="stylesheet">
 <style>
 :root{--ff:'Cinzel',serif}
 *{box-sizing:border-box}
@@ -24,7 +25,8 @@ h1{margin:0;font-family:var(--ff);font-weight:900;font-size:clamp(28px,4vw,54px)
 .parede:hover .est{filter:brightness(.6) saturate(.8)}
 .parede .est:hover{filter:none;transform:translateY(-10px) scale(1.06);z-index:2;box-shadow:0 0 0 2px var(--brilho),0 0 50px var(--brilho),0 30px 50px #000d}
 /* cor se mexendo por dentro */
-.est::before{content:'';position:absolute;inset:-50%;background:conic-gradient(from 0deg,transparent 0 60%,color-mix(in srgb,var(--brilho) 40%,transparent) 75%,transparent 90%);animation:gira 9s linear infinite;mix-blend-mode:screen;opacity:.55}
+.est::before{content:'';position:absolute;left:0;right:0;top:0;height:200%;background:linear-gradient(180deg,transparent 0%,color-mix(in srgb,var(--brilho) 22%,transparent) 25%,transparent 50%,color-mix(in srgb,var(--brilho) 22%,transparent) 75%,transparent 100%);animation:sobeBrilho 7s linear infinite;pointer-events:none}
+@keyframes sobeBrilho{from{transform:translateY(0)}to{transform:translateY(-50%)}}
 @keyframes gira{to{transform:rotate(360deg)}}
 .est::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,#ffffff06 0 2px,transparent 2px 6px),linear-gradient(90deg,#0006,transparent 20%,transparent 80%,#0006);pointer-events:none}
 /* linha de luz vertical */
@@ -36,12 +38,27 @@ h1{margin:0;font-family:var(--ff);font-weight:900;font-size:clamp(28px,4vw,54px)
 .est .cmd{position:relative;z-index:1;margin:14px auto 0;width:78%;aspect-ratio:626/457;border-radius:8px;background:#000 center/cover;
   box-shadow:0 0 0 2px color-mix(in srgb,var(--brilho) 70%,#fff),0 8px 18px #000c;transition:transform .4s}
 .est:hover .cmd{transform:translateY(-3px) scale(1.04)}
-/* símbolo de mana */
-.est .simbolo{position:relative;z-index:1;width:56%;aspect-ratio:1;margin:12% auto 0;border-radius:50%;display:grid;place-items:center;
-  background:radial-gradient(circle,#0008 30%,transparent 70%);animation:flutua 3.2s ease-in-out infinite;animation-delay:var(--e)}
-.est .simbolo img{width:78%;filter:drop-shadow(0 0 10px var(--brilho)) drop-shadow(0 0 2px #000);transition:filter .4s,transform .4s}
-.est:hover .simbolo img{filter:drop-shadow(0 0 22px var(--brilho)) drop-shadow(0 0 44px var(--brilho));transform:scale(1.1)}
-@keyframes flutua{50%{transform:translateY(-8px)}}
+/* símbolo de mana: painel escuro + símbolo grande preenchido por textura viva da cor */
+.est .simbolo{position:relative;z-index:1;width:72%;aspect-ratio:.82;margin:9% auto 0;border-radius:10px;display:grid;place-items:center;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 55%,color-mix(in srgb,var(--brilho) 22%,#000) 0%,#000 70%);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--brilho) 45%,transparent),inset 0 0 30px #000,0 10px 22px #000c;animation:flutua 3.4s ease-in-out infinite;animation-delay:var(--e)}
+.est .simbolo i{font-size:clamp(70px,8vw,112px);line-height:1;color:transparent;-webkit-background-clip:text;background-clip:text;
+  background-image:var(--tex);background-size:var(--tam,200% 200%);animation:textura var(--vel,6s) linear infinite;
+  filter:drop-shadow(0 0 6px var(--brilho)) drop-shadow(0 0 18px color-mix(in srgb,var(--brilho) 60%,transparent));transition:filter .4s,transform .4s}
+.est:hover .simbolo i{transform:scale(1.08);filter:drop-shadow(0 0 10px var(--brilho)) drop-shadow(0 0 34px var(--brilho)) drop-shadow(0 0 60px var(--brilho))}
+.est .simbolo::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 55%,color-mix(in srgb,var(--brilho) 30%,transparent),transparent 60%);opacity:.4;animation:respira 2.8s ease-in-out infinite;pointer-events:none}
+.est:hover .simbolo::after{opacity:.9}
+@keyframes respira{50%{opacity:.15}}
+@keyframes flutua{50%{transform:translateY(-6px)}}
+@keyframes textura{to{background-position:var(--fim,200% 200%)}}
+/* textura de cada cor */
+.W .simbolo{--tex:repeating-conic-gradient(from 0deg at 50% 50%,#fffbe6 0deg 8deg,#f0c84a 8deg 16deg,#fff4c0 16deg 24deg);--tam:100% 100%;--vel:14s;--fim:0 0}
+.W .simbolo i{animation:giraLuz 14s linear infinite}
+@keyframes giraLuz{to{filter:drop-shadow(0 0 6px #fff2b0) drop-shadow(0 0 18px #fff2b099) hue-rotate(0deg)}}
+.U .simbolo{--tex:repeating-linear-gradient(170deg,#0a3a7a 0 10px,#2a8ae0 10px 18px,#9fe0ff 18px 21px,#1a5ab0 21px 32px);--tam:100% 300%;--vel:4s;--fim:0 300%}
+.B .simbolo{--tex:radial-gradient(circle at 30% 30%,#e8d8ff 0 6%,transparent 12%),radial-gradient(circle at 70% 60%,#8a5ab0 0 10%,transparent 22%),linear-gradient(160deg,#2a1a34,#b090d0 40%,#3a2a48 60%,#e0d0f0);--tam:200% 200%;--vel:9s;--fim:-200% 200%}
+.R .simbolo{--tex:linear-gradient(0deg,#5a0a02 0%,#d02a0a 25%,#ff7a1a 45%,#ffd04a 60%,#ff7a1a 75%,#d02a0a 90%,#5a0a02 100%);--tam:100% 220%;--vel:1.6s;--fim:0 -220%}
+.G .simbolo{--tex:radial-gradient(circle at 20% 30%,#d8ffb0 0 4%,transparent 8%),radial-gradient(circle at 70% 70%,#9aff6a 0 3%,transparent 7%),linear-gradient(170deg,#0a3a14,#3a9a3a 40%,#8ae05a 55%,#1a5a24);--tam:200% 200%;--vel:8s;--fim:200% -200%}
 /* nome e descrição */
 .est .rot{position:absolute;z-index:1;left:0;right:0;bottom:0;padding:14px 12px 16px;text-align:center;background:linear-gradient(0deg,#000d,#0008 60%,transparent)}
 .est .rot b{display:block;font-family:var(--ff);font-weight:800;font-size:16px;letter-spacing:.14em;color:#fff;text-shadow:0 0 12px var(--brilho)}
@@ -84,7 +101,7 @@ document.getElementById('parede').innerHTML = CORES.map((c,i)=>`
   <div class="est ${c.k}" data-k="${c.k}" style="--e:${(.2 + i*.12).toFixed(2)}s">
     <div class="linha"></div>
     <div class="cmd" style="background-image:url('${art(c.cmd)}')"></div>
-    <div class="simbolo"><img src="https://svgs.scryfall.io/card-symbols/${c.k}.svg" alt="${c.nome}"></div>
+    <div class="simbolo"><i class="ms ms-${c.k.toLowerCase()}" title="${c.nome}"></i></div>
     <div class="rot"><b>${c.nome.toUpperCase()}</b><small>${c.cmd.split(',')[0]}</small><p>${c.txt}</p><em>CLIQUE PARA ESCOLHER</em></div>
   </div>`).join('');
 // poeira dourada
