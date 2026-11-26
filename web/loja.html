@@ -165,6 +165,7 @@ const MOEDA = '<svg class="moeda" viewBox="0 0 24 24"><defs><radialGradient id="
 const fmt = n => Number(n||0).toLocaleString('pt-BR');
 const pai = m => parent.postMessage(Object.assign({loja2: true}, m), '*');
 let D = null, ocupado = false;
+document.getElementById('saldo').textContent = '…';
 function aviso(t){ const m = document.getElementById('msg'); m.textContent = t; m.style.opacity = 1; clearTimeout(aviso.t); aviso.t = setTimeout(()=>m.style.opacity = 0, 2600); }
 function desenhar(){
   document.getElementById('saldo').innerHTML = `${MOEDA}${fmt(D.ouro)}`;

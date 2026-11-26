@@ -4535,8 +4535,7 @@ function mostrarCampanha(c){
 }
 // a loja (loja.html por cima da Mesa): booster 3D no pedestal, seus boosters, Bazar e coleção
 async function abrirLoja(){
-  lojaInfo = await post('/api/loja', {acao:'saldo'});
-  if (lojaInfo.erro){ avisoLocal(lojaInfo.erro); return; }
+  const carregando = post('/api/loja', {acao:'saldo'});   // a tela aparece na hora; os dados chegam logo depois
   let fr = $('#frameLoja'); if (fr) fr.remove();
   fr = document.createElement('iframe'); fr.id = 'frameLoja'; fr.src = 'loja.html';
   fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9290;background:#060302';
@@ -4546,7 +4545,7 @@ async function abrirLoja(){
     if (!e.data || !e.data.loja2) return;
     if (!fr.isConnected || e.source !== fr.contentWindow){ if (!fr.isConnected) window.removeEventListener('message', ouvir); return; }
     const a = e.data.acao;
-    if (a === 'pronta') mandar({dados: lojaInfo});
+    if (a === 'pronta'){ lojaInfo = await carregando; if (lojaInfo.erro){ fechar(); avisoLocal(lojaInfo.erro); return; } mandar({dados: lojaInfo}); }
     if (a === 'fechar') fechar();
     if (a === 'comprar'){ const r = await post('/api/loja', {acao:'comprarBooster'}); if (r.erro){ mandar({erro: r.erro}); return; } lojaInfo = r; atualizarOuroMenu(r); mandar({dados: r}); }
     if (a === 'abrir'){ const r = await post('/api/loja', {acao:'abrirBooster'}); if (r.erro){ mandar({erro: r.erro}); return; } lojaInfo = r; atualizarOuroMenu(r); fechar(); animarBooster(r.cartas || []); }
