@@ -1,0 +1,154 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia: Mundo 1</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--ff:'Cinzel',serif;--fc:'EB Garamond',serif;--ouro:#E4C874;--ouro2:#c9a24a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#070504;color:#eee;font-family:var(--fc)}
+/* fundo: arte do comandante selecionado, mexendo devagar (parallax) */
+#fundo{position:fixed;inset:-6%;display:flex;transition:opacity .6s;will-change:transform}
+#fundo div{flex:1;background:center 30%/cover no-repeat;animation:respiraFundo 18s ease-in-out infinite alternate}
+#fundo div+div{border-left:2px solid #000}
+@keyframes respiraFundo{from{transform:scale(1)}to{transform:scale(1.07)}}
+#fundo.troca{opacity:0}
+#sombra{position:fixed;inset:0;pointer-events:none;background:
+  linear-gradient(90deg,#070504f0 0%,#070504c0 26%,transparent 45%,transparent 62%,#070504b0 80%),
+  linear-gradient(0deg,#070504 0%,#070504cc 18%,transparent 45%),
+  linear-gradient(180deg,#070504aa,transparent 16%)}
+#brasas{position:fixed;inset:0;pointer-events:none}
+/* topo */
+.topo{position:fixed;top:0;left:0;right:0;height:72px;display:flex;align-items:center;padding:0 28px;gap:22px;z-index:3}
+.topo h1{margin:0;font-family:var(--ff);font-weight:900;font-size:26px;letter-spacing:.16em;color:var(--ouro);text-shadow:0 0 18px #c9a24a66}
+.topo h1 small{display:block;font-size:11px;letter-spacing:.32em;color:#a8957d;font-weight:600}
+.topo .esp{flex:1}
+.ouro{display:flex;align-items:center;gap:7px;font-family:var(--ff);font-weight:700;color:#ffe08a;background:#0009;border:1px solid #c9a24a66;border-radius:999px;padding:5px 14px 5px 7px}
+.ouro svg{width:22px;height:22px}
+.jog{display:flex;align-items:center;gap:9px;font-family:var(--ff);font-size:14px;color:#eee;background:#0009;border:1px solid #ffffff22;border-radius:999px;padding:4px 14px 4px 4px}
+.jog i{width:28px;height:28px;border-radius:50%;background:#3a2a14;color:var(--ouro);display:grid;place-items:center;font-style:normal;font-weight:800}
+.voltar{font-family:var(--ff);background:#0009;border:1px solid #c9a24a66;color:var(--ouro);padding:7px 14px;border-radius:9px;cursor:pointer;letter-spacing:.08em}
+/* lista de batalhas */
+#lista{position:fixed;left:24px;top:84px;bottom:86px;width:360px;overflow-y:auto;padding:6px 10px 6px 4px;z-index:2;scrollbar-width:thin;scrollbar-color:#c9a24a55 transparent}
+.bat{position:relative;display:flex;align-items:center;gap:12px;margin:0 0 8px;padding:7px;border-radius:11px;cursor:pointer;
+  background:linear-gradient(90deg,#1e1610ee,#140e09dd);border:1px solid #4a3a2899;transition:transform .25s,box-shadow .25s,border-color .25s,margin .25s}
+.bat:hover{border-color:#c9a24aaa;transform:translateX(4px)}
+.bat .mini{width:62px;height:46px;border-radius:7px;background:#000 center/cover;flex:none;box-shadow:0 0 0 1px #0008}
+.bat .num{position:absolute;left:-2px;top:-6px;font-family:var(--ff);font-size:10px;font-weight:800;color:#140e09;background:var(--ouro2);border-radius:6px;padding:1px 5px}
+.bat .tx{min-width:0;flex:1}
+.bat b{display:block;font-family:var(--ff);font-size:14px;letter-spacing:.04em;color:#f0e6d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bat small{display:block;font-size:13px;color:#a8957d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bat .est{flex:none;font-size:16px;width:22px;text-align:center}
+.bat.feita .est{color:#7ad08a}
+.bat.feita .mini{filter:saturate(.7)}
+/* chefões (3 bots) */
+.bat.tres{border-color:#8a3a2a99;background:linear-gradient(90deg,#2a1210ee,#160a08dd)}
+.bat.tres .mini{background-size:cover;display:flex;overflow:hidden}
+.bat.tres .mini span{flex:1;background:center/cover}
+.bat.tres .num{background:#d0603a;color:#fff}
+/* a atual: maior e brilhando */
+.bat.atual{padding:10px;margin:10px 0 14px;border-color:var(--ouro);box-shadow:0 0 0 1px var(--ouro),0 0 26px #f0c44a55;animation:pulsoAtual 2.4s ease-in-out infinite}
+.bat.atual .mini{width:84px;height:62px}
+.bat.atual b{font-size:16px}
+@keyframes pulsoAtual{50%{box-shadow:0 0 0 1px var(--ouro),0 0 40px #f0c44a99}}
+/* bloqueadas: escuras */
+.bat.bloq{cursor:default;filter:brightness(.42) saturate(.3)}
+.bat.bloq:hover{transform:none;border-color:#4a3a2899}
+/* selecionada (a que está no fundo) */
+.bat.sel:not(.atual){border-color:#E4C874cc;box-shadow:0 0 0 1px #E4C87488}
+/* painel da direita: lore e começar */
+#painel{position:fixed;right:32px;top:50%;transform:translateY(-50%);width:min(400px,32vw);z-index:2;padding:24px 26px;border-radius:16px;
+  background:linear-gradient(180deg,#140e09e8,#0a0705f0);border:1px solid #c9a24a66;box-shadow:0 20px 50px #000c,inset 0 1px 0 #ffffff10;backdrop-filter:blur(3px)}
+#painel .cap{font-family:var(--ff);font-size:12px;letter-spacing:.3em;color:var(--ouro2)}
+#painel h2{margin:4px 0 2px;font-family:var(--ff);font-weight:800;font-size:24px;color:#fff;letter-spacing:.04em}
+#painel .cmds{font-size:15px;color:#d9c8b0;font-style:italic}
+#painel .lore{margin:16px 0 0;font-size:17px;line-height:1.5;color:#efe4cc;max-height:34vh;overflow-y:auto}
+#painel .lore::first-letter{font-family:var(--ff);font-size:42px;float:left;line-height:.9;margin:4px 8px 0 0;color:var(--ouro)}
+#painel .premio{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 0;font-size:14px;color:#d9c8b0}
+#painel .premio span{display:flex;align-items:center;gap:5px;background:#0006;border:1px solid #ffffff18;border-radius:8px;padding:4px 9px}
+#painel .premio svg{width:16px;height:16px}
+#comecar{display:block;width:100%;margin-top:20px;padding:16px;font-family:var(--ff);font-weight:900;font-size:22px;letter-spacing:.2em;color:#1a1006;cursor:pointer;
+  border:0;border-radius:12px;background:linear-gradient(180deg,#ffe08a,#e0a83a 55%,#b8802a);box-shadow:0 6px 0 #6a4a14,0 10px 30px #f0c44a55;transition:transform .15s,filter .2s}
+#comecar:hover{filter:brightness(1.1);transform:translateY(-2px)}
+#comecar:active{transform:translateY(3px);box-shadow:0 2px 0 #6a4a14}
+#comecar.de-novo{background:linear-gradient(180deg,#e8dcc4,#b8a888);box-shadow:0 6px 0 #5a4a34}
+/* título grande embaixo, sobre a arte */
+#nomeGrande{position:fixed;left:410px;bottom:34px;z-index:2;pointer-events:none}
+#nomeGrande b{display:block;font-family:var(--ff);font-weight:900;font-size:clamp(28px,3.4vw,52px);line-height:1.02;color:#fff;text-shadow:0 4px 30px #000}
+#nomeGrande small{font-family:var(--ff);font-size:14px;letter-spacing:.24em;color:var(--ouro)}
+.editar{position:fixed;left:28px;bottom:26px;z-index:3;font-family:var(--ff);font-weight:700;letter-spacing:.14em;font-size:15px;background:#140e09e8;border:1px solid var(--ouro2);color:var(--ouro);padding:12px 30px;border-radius:12px;cursor:pointer}
+.editar:hover{background:#2a1e10;box-shadow:0 0 20px #c9a24a44}
+@media (max-width:1100px){#nomeGrande{display:none}#lista{width:300px}}
+</style></head><body>
+<div id="fundo"></div><div id="sombra"></div><canvas id="brasas"></canvas>
+<div class="topo">
+  <button class="voltar">← Menu</button>
+  <h1><small>MUNDO 1</small>TERRAS DE ORIGEM</h1>
+  <div class="esp"></div>
+  <div class="ouro"><svg viewBox="0 0 24 24"><defs><radialGradient id="mg" cx="35%" cy="30%"><stop offset="0" stop-color="#fff6c8"/><stop offset=".45" stop-color="#f0c44a"/><stop offset="1" stop-color="#9a6a18"/></radialGradient></defs><circle cx="12" cy="12" r="10.5" fill="url(#mg)" stroke="#7a5414" stroke-width="1.2"/><path d="M8 16V8.4l4 4.6 4-4.6V16" fill="none" stroke="#7a5414" stroke-width="1.8" stroke-linejoin="round"/></svg>2.332</div>
+  <div class="jog"><i>T</i>Twelvez</div>
+</div>
+<div id="lista"></div>
+<div id="nomeGrande"></div>
+<div id="painel"></div>
+<button class="editar">EDITAR DECK</button>
+<script>
+const art = n => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n).replace(/'/g,'%27')}&format=image&version=art_crop`;
+const BAT = [
+ {n:1, d:[['Soldados de Akros','Kytheon, Hero of Akros']], lore:'Sua jornada começa nos portões de Akros. O jovem Kytheon não deixa nenhum estranho passar sem provar seu valor, e os soldados dele lutam ombro a ombro. Vença e as estradas se abrem para você.'},
+ {n:2, d:[['Horda de Zumbis','Liliana, Heretical Healer']], lore:'Na estrada para o leste, os mortos não ficam no chão. Uma curandeira chamada Liliana tentou salvar o irmão e acabou descobrindo outro dom. Agora a horda dela anda pelos campos à noite.'},
+ {n:3, d:[['Bando Goblin','Pia and Kiran Nalaar']], lore:'Em Ghirapur, os inventores Pia e Kiran soltaram suas máquinas, e um bando de goblins veio junto atrás de confusão. Eles querem ver do que o seu deck é feito, de preferência pegando fogo.'},
+ {n:4, d:[['Elfos da Floresta','Dwynen, Gilt-Leaf Daen']], lore:'A floresta de Lorwyn não gosta de visitantes. Dwynen comanda os elfos Gilt-Leaf e acredita que só os belos merecem passar. Você vai ter que convencê-la com força, não com palavras.'},
+ {n:5, d:[['Maré dos Merfolk','Jalira, Master Polymorphist'],['Feras Selvagens','Yisan, the Wanderer Bard'],['Guerreiros Ancestrais','Kurkesh, Onakke Ancient']], lore:'Três líderes ouviram falar de você e não gostaram. Jalira transforma tudo o que toca, Yisan chama as feras com o seu canto e Kurkesh guarda o poder dos antigos. Eles vêm juntos.'},
+ {n:6, d:[['Corte dos Vampiros','Kothophed, Soul Hoarder']], lore:'O castelo de Kothophed coleciona almas como quem coleciona moedas. A corte dele é educada, elegante e está com muita sede. Não aceite o convite para jantar.'},
+ {n:7, d:[['Círculo dos Magos','Talrand, Sky Summoner']], lore:'Talrand lê o céu e cada feitiço que lança vira um dragão de vento. O círculo de magos dele estuda há séculos. Você estudou o seu deck?'},
+ {n:8, d:[['Fúria Elemental','Nissa, Vastwood Seer']], lore:'A terra acordou. Nissa ouve a voz de Zendikar e os elementais respondem ao chamado dela. Cada terreno que ela toca ganha vida para te esmagar.'},
+ {n:9, d:[['Oficina dos Golens','Alhammarret, High Arbiter']], lore:'Em Ghirapur, o grande árbitro Alhammarret decide quem pode lutar e o que pode ser usado. As máquinas dele não se cansam e não perdoam erros.'},
+ {n:10, d:[['Ordem dos Cavaleiros','Hixus, Prison Warden'],['Véu das Ilusões',"Jace, Vryn's Prodigy"],['Enxame de Insetos',"Yeva, Nature's Herald"]], lore:'O carcereiro Hixus quer te prender, o jovem Jace quer entrar na sua mente e Yeva solta o enxame da floresta. Metade do mundo já ouviu o seu nome. Esta é a prova do meio do caminho.'},
+ {n:11, d:[['Colmeia dos Slivers','Sliver Hivelord']], lore:'Nas cavernas, algo se mexe como um só corpo. Cada Sliver que nasce deixa todos os outros mais fortes. O Hivelord é o coração da colmeia, e ela não para de crescer.'},
+ {n:12, d:[['Pacto de Sangue','Ob Nixilis, Unshackled']], lore:'Ob Nixilis quebrou as próprias correntes e agora cobra um preço de quem cruza o caminho dele. Toda carta que você busca vai custar caro. Lembre-se: ele também paga.'},
+ {n:13, d:[['Ninho dos Dragões','Chandra, Fire of Kaladesh']], lore:'Uma garota em Kaladesh não consegue controlar o próprio fogo. Os dragões sentiram e vieram até ela. Chandra não quer te machucar, mas o fogo não pergunta.'},
+ {n:14, d:[['Coro dos Anjos','Avacyn, Guardian Angel']], lore:'Os sinos de Innistrad tocam e Avacyn desce com o seu coro. O anjo guardião protege tudo o que é dela, e agora você está no território dela.'},
+ {n:15, d:[['Legião de Nefarox','Nefarox, Overlord of Grixis'],['Exército de Krenko','Krenko, Mob Boss'],['Tropa de Elite de Odric','Odric, Master Tactician']], lore:'O fim das Terras de Origem. Nefarox desceu de Grixis, Krenko juntou todos os goblins que sobraram e Odric marcha com a tropa de elite. Os três sabem que você é a maior ameaça. Vença e o próximo mundo se abre.'},
+];
+const ATUAL = 4;   // prévia: já venceu as batalhas 1 a 3
+let sel = ATUAL;
+const MOEDA = document.querySelector('.ouro svg').outerHTML;
+function desenharLista(){
+  document.getElementById('lista').innerHTML = BAT.map(b=>{
+    const tres = b.d.length > 1, st = b.n < ATUAL ? 'feita' : b.n === ATUAL ? 'atual' : 'bloq';
+    const mini = tres ? `<div class="mini">${b.d.map(x=>`<span style="background-image:url('${art(x[1])}')"></span>`).join('')}</div>` : `<div class="mini" style="background-image:url('${art(b.d[0][1])}')"></div>`;
+    const nome = tres ? 'Batalha dos três' : b.d[0][0];
+    const cmd = tres ? b.d.map(x=>x[1].split(',')[0]).join(' · ') : b.d[0][1];
+    return `<div class="bat ${st}${tres?' tres':''}${b.n===sel?' sel':''}" data-n="${b.n}"><span class="num">${b.n}</span>${mini}<div class="tx"><b>${nome}</b><small>${cmd}</small></div><span class="est">${st==='feita'?'✓':st==='bloq'?'🔒':''}</span></div>`;
+  }).join('');
+  document.querySelectorAll('.bat').forEach(e=>e.onclick=()=>{ const n=+e.dataset.n; if (n>ATUAL || n===sel) return; sel=n; mostrar(); desenharLista(); });
+}
+function mostrar(){
+  const b = BAT[sel-1], tres = b.d.length > 1, f = document.getElementById('fundo');
+  f.classList.add('troca');
+  setTimeout(()=>{ f.innerHTML = b.d.map(x=>`<div style="background-image:url('${art(x[1])}')"></div>`).join(''); f.classList.remove('troca'); }, 350);
+  document.getElementById('nomeGrande').innerHTML = `<small>BATALHA ${b.n}${tres?' · TRÊS OPONENTES':''}</small><b>${tres?'Batalha dos três':b.d[0][1].split(',')[0]}</b>`;
+  const ganho = tres ? 500 : 250, feita = b.n < ATUAL;
+  document.getElementById('painel').innerHTML = `<div class="cap">BATALHA ${b.n} DE 15</div><h2>${tres?'Batalha dos três':b.d[0][0]}</h2>
+    <div class="cmds">${b.d.map(x=>x[1]).join(' · ')}</div>
+    <p class="lore">${b.lore}</p>
+    <div class="premio"><span>${MOEDA} ${ganho} na vitória</span>${feita?'<span>✓ Já vencida</span>':'<span>🎁 1 booster na primeira vitória</span>'}</div>
+    <button id="comecar" class="${feita?'de-novo':''}">${feita?'JOGAR DE NOVO':'COMEÇAR'}</button>`;
+}
+desenharLista(); mostrar();
+// parallax: o fundo acompanha o mouse devagar
+let mx=0,my=0,px=0,py=0; addEventListener('mousemove',e=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5});
+const fundo=document.getElementById('fundo');
+// brasas subindo
+const cv=document.getElementById('brasas'),g=cv.getContext('2d'); let B=[];
+function tam(){cv.width=innerWidth;cv.height=innerHeight} tam(); addEventListener('resize',tam);
+for(let i=0;i<70;i++)B.push(nova(true));
+function nova(qq){return{x:Math.random()*innerWidth,y:qq?Math.random()*innerHeight:innerHeight+10,v:.4+Math.random()*1.1,r:.8+Math.random()*2.2,o:Math.random()*Math.PI*2,a:.4+Math.random()*.6}}
+(function loop(){
+  px+=(mx-px)*.04; py+=(my-py)*.04; fundo.style.transform=`translate(${-px*30}px,${-py*20}px)`;
+  g.clearRect(0,0,cv.width,cv.height);
+  for(const b of B){ b.y-=b.v; b.o+=.02; b.x+=Math.sin(b.o)*.5; if(b.y<-10)Object.assign(b,nova(false));
+    const al=b.a*Math.min(1,(b.y/innerHeight)*1.6); g.beginPath(); g.fillStyle=`rgba(255,${140+Math.floor(b.r*30)},60,${al})`; g.shadowColor='#ff8a2a'; g.shadowBlur=8; g.arc(b.x,b.y,b.r,0,7); g.fill(); }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body></html>
