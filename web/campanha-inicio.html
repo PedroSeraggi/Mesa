@@ -100,7 +100,10 @@ h1{margin:0;font-family:var(--fa);font-weight:400;font-size:clamp(30px,4.4vw,60p
 #jornada{position:fixed;inset:0;z-index:6;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center}
 #jornada b{font-family:var(--fa);font-weight:400;font-size:clamp(26px,4vw,48px);letter-spacing:.14em;color:#fff;text-shadow:0 0 30px var(--brilho);animation:titulo 1.4s ease-out both}
 #jornada p{font-style:italic;font-size:19px;color:#f0e6d0;max-width:620px;animation:titulo 1.4s .5s ease-out both}
-#jornada button{margin-top:16px;font-family:var(--ff);background:#0008;border:1px solid var(--brilho);color:#fff;padding:9px 26px;border-radius:9px;cursor:pointer;animation:titulo 1s 1.2s ease-out both}
+#jornada .jBts{display:flex;gap:12px;margin-top:16px}
+#jornada #jTroca{background:transparent;border-color:#ffffff55;color:#ffffffcc}
+#jornada #jTroca:hover{border-color:#fff;color:#fff}
+#jornada button{font-family:var(--ff);background:#0008;border:1px solid var(--brilho);color:#fff;padding:9px 26px;border-radius:9px;cursor:pointer;animation:titulo 1s 1.2s ease-out both}
 </style></head><body>
 <div id="fundo"></div><div class="nevoa n1"></div><div class="nevoa n2"></div><div id="veu"></div><svg id="runas" viewBox="0 0 400 400"></svg>
 <div id="cena">
@@ -110,7 +113,7 @@ h1{margin:0;font-family:var(--fa);font-weight:400;font-size:clamp(30px,4.4vw,60p
   <div class="parede" id="parede"></div>
 </div>
 <button id="fechar">← Voltar</button><div id="flash"></div><img id="cartaCmd" alt="">
-<div id="jornada"><b id="jTit"></b><p id="jTxt"></p><button id="jVolta">Começar</button></div>
+<div id="jornada"><b id="jTit"></b><p id="jTxt"></p><div class="jBts"><button id="jTroca">Escolher outra cor</button><button id="jVolta">Começar</button></div></div>
 <script>
 const art = n => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n).replace(/'/g,'%27')}&format=image&version=art_crop`;
 const CORES = [
@@ -155,6 +158,11 @@ const pai = m => parent.postMessage(Object.assign({campanha: true}, m), '*');
 document.getElementById('fechar').onclick = () => pai({acao: 'fechar'});
 document.getElementById('jVolta').onclick = () => { if (ocupado) return; ocupado = true; document.getElementById('jVolta').textContent = 'Preparando...'; pai({acao: 'escolher', cor: escolhida}); };
 document.querySelectorAll('.est').forEach(el => el.addEventListener('click', () => { escolhida = el.dataset.k; document.getElementById('fechar').style.display = 'none'; }));
+// mudou de ideia: a câmera volta para os estandartes
+document.getElementById('jTroca').onclick = () => { if (ocupado) return;
+  document.getElementById('jornada').style.display = 'none'; document.getElementById('flash').style.opacity = 0;
+  const cena = document.getElementById('cena'); cena.style.transform = ''; cena.classList.remove('zoom');
+  document.getElementById('fechar').style.display = ''; escolhida = null; };
 // o Mesa responde se deu errado: volta para a escolha
 window.addEventListener('message', e => { if (e.data && e.data.erro){ ocupado = false; document.getElementById('jVolta').textContent = 'Começar'; document.getElementById('jTxt').textContent = e.data.erro; } });
 </script>
