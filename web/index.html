@@ -2798,7 +2798,10 @@ async function escolherArte(i){
   // garante que a linha destacada fique visível na lista
   setTimeout(()=>document.querySelector('.edLinha.arteAtiva')?.scrollIntoView({block:'nearest', behavior:'smooth'}), 50);
   box.innerHTML = `<div class="dicaMenu">Carregando as artes de ${esc(c.nome)}...</div>`;
-  let lista = [], url = 'https://api.scryfall.com/cards/search?order=released&dir=desc&unique=prints&q=' + encodeURIComponent(`!"${c.nome}" game:paper`);
+  // inclui as edições de Magic Online (ex.: Vintage Masters, a arte que o XMage usa para Savannah/Scrubland) e as
+  // "extras" do Scryfall (30th Anniversary, promos...): só com game:paper sobravam as artes antigas de 1993-94
+  let lista = [], url = 'https://api.scryfall.com/cards/search?order=released&dir=desc&unique=prints&include_extras=true&include_variations=true&q='
+    + encodeURIComponent(`!"${c.nome}" (game:paper or game:mtgo) -is:oversized -layout:art_series`);
   try {
     while (url && lista.length < 175){
       const r = await fetch(url); if (!r.ok) break;
