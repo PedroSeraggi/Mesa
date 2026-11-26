@@ -151,12 +151,45 @@ let PACOTE = [], MUNDO = 'MUNDO 1', NOME_MUNDO = '';
 const img = c => c.img;
 const NOMES = {comum:'COMUM', incomum:'INCOMUM', rara:'RARA', mitica:'MÍTICA', especial:'ESPECIAL'};
 let AC = null; const ac = ()=> AC || (AC = new (window.AudioContext||window.webkitAudioContext)());
-function bum(tom=1, vol=.6){ return; try { const a = new Audio('sons/impacto/bum.ogg'); a.volume = vol; a.playbackRate = tom; a.preservesPitch = false; a.play().catch(()=>{}); } catch(e){} }
-function brilhoSom(nivel){   // "plim" que sobe com a raridade (desligado por enquanto)
-  return; try { const a = ac(), t = a.currentTime; const notas = {comum:[523], incomum:[523,659], rara:[523,659,784], especial:[587,740,880], mitica:[523,659,784,1046]}[nivel];
-    notas.forEach((hz,k)=>{ const o = a.createOscillator(), g = a.createGain(); o.type = 'triangle'; o.frequency.value = hz; const t0 = t + k*.06;
-      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.12, t0+.02); g.gain.exponentialRampToValueAtTime(.001, t0+.6); o.connect(g).connect(a.destination); o.start(t0); o.stop(t0+.7); }); } catch(e){}
+// ---------- sons da abertura (arquivos Kenney/impacto + síntese) ----------
+function arq(u, vol=.6, tom=1){ try { const a = new Audio(u); a.volume = vol; a.playbackRate = tom; a.preservesPitch = false; a.play().catch(()=>{}); } catch(e){} }
+function bum(tom=1, vol=.6){ arq('sons/impacto/bum.ogg', vol, tom); }
+function ruido(a, dur){ const n = a.createBuffer(1, a.sampleRate*dur, a.sampleRate), d = n.getChannelData(0); for (let i=0;i<d.length;i++) d[i] = Math.random()*2-1; const s = a.createBufferSource(); s.buffer = n; return s; }
+function brilhoSom(nivel){   // "plim" que sobe com a raridade
+  try { const a = ac(), t = a.currentTime; const notas = {comum:[784], incomum:[659,988], rara:[523,659,784,1046], especial:[587,740,880,1175], mitica:[523,659,784,1046,1318,1568]}[nivel] || [784];
+    const vol = {comum:.05, incomum:.07}[nivel] || .11;
+    notas.forEach((hz,k)=>{ const o = a.createOscillator(), g = a.createGain(); o.type = 'triangle'; o.frequency.value = hz; const t0 = t + k*.07;
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol, t0+.02); g.gain.exponentialRampToValueAtTime(.001, t0+1.1); o.connect(g).connect(a.destination); o.start(t0); o.stop(t0+1.2); }); } catch(e){}
 }
+const SOM = {
+  pegar(){ arq('sons/kenney/rpg/cloth' + (1 + Math.floor(Math.random()*4)) + '.ogg', .5); },
+  virar(){ arq('sons/kenney/rpg/bookFlip' + (1 + Math.floor(Math.random()*3)) + '.ogg', .55, .95 + Math.random()*.15); },
+  zum: null,
+  zumbido(on){   // runas zumbindo enquanto o pacote está sobre o círculo
+    try { const a = ac(), t = a.currentTime;
+      if (on && !this.zum){ const g = a.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.09, t+.4); g.connect(a.destination);
+        const os = [110, 165, 220.5].map(hz=>{ const o = a.createOscillator(); o.type = 'sine'; o.frequency.value = hz; o.connect(g); o.start(); return o; });
+        const lfo = a.createOscillator(), lg = a.createGain(); lfo.frequency.value = 5; lg.gain.value = 4; lfo.connect(lg); os.forEach(o=>lg.connect(o.frequency)); lfo.start();
+        this.zum = {g, os: [...os, lfo]}; }
+      if (!on && this.zum){ const z = this.zum; this.zum = null; z.g.gain.cancelScheduledValues(t); z.g.gain.setTargetAtTime(0, t, .12); z.os.forEach(o=>o.stop(t+.6)); } } catch(e){}
+  },
+  carrega(){   // carta rara juntando luz: som subindo
+    try { const a = ac(), t = a.currentTime, o = a.createOscillator(), g = a.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(180, t); o.frequency.exponentialRampToValueAtTime(900, t+.6);
+      const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(400, t); f.frequency.exponentialRampToValueAtTime(3000, t+.6);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.07, t+.5); g.gain.linearRampToValueAtTime(0, t+.65); o.connect(f).connect(g).connect(a.destination); o.start(t); o.stop(t+.7); } catch(e){}
+  },
+  abrir(){   // rasgo do papel + explosão + brilho
+    this.zumbido(false);
+    try { const a = ac(), t = a.currentTime;
+      const r = ruido(a, .45), f = a.createBiquadFilter(), g = a.createGain(); f.type = 'bandpass'; f.Q.value = 3; f.frequency.setValueAtTime(900, t); f.frequency.exponentialRampToValueAtTime(4200, t+.35);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.35, t+.03); g.gain.exponentialRampToValueAtTime(.001, t+.45); r.connect(f).connect(g).connect(a.destination); r.start(t);
+      const w = ruido(a, 1.6), wf = a.createBiquadFilter(), wg = a.createGain(); wf.type = 'lowpass'; wf.frequency.setValueAtTime(300, t+.4); wf.frequency.exponentialRampToValueAtTime(5000, t+.9); wf.frequency.exponentialRampToValueAtTime(200, t+1.9);
+      wg.gain.setValueAtTime(0, t+.4); wg.gain.linearRampToValueAtTime(.22, t+.8); wg.gain.exponentialRampToValueAtTime(.001, t+2); w.connect(wf).connect(wg).connect(a.destination); w.start(t+.4);
+    } catch(e){}
+    setTimeout(()=>bum(1, .55), 450);
+    setTimeout(()=>brilhoSom('rara'), 650);
+  },
+};
 // energia: partículas douradas que nascem em volta do círculo e espiralam até o centro
 const ENERGIA = {fim: false, disparo: 0};
 (function(){
@@ -191,23 +224,23 @@ function montar(){
     <div class="dica" id="dica">Arraste o pacote até o círculo de runas</div><button id="pronto">Pronto</button>`;
   const pac = document.getElementById('pacote'), enc = document.getElementById('encaixe');
   let arrastando = false, ox = 0, oy = 0;
-  pac.onpointerdown = ev=>{ arrastando = true; pac.classList.remove('flutua'); const r = pac.getBoundingClientRect(); ox = ev.clientX - r.left; oy = ev.clientY - r.top; pac.setPointerCapture(ev.pointerId); };
+  pac.onpointerdown = ev=>{ arrastando = true; SOM.pegar(); pac.classList.remove('flutua'); const r = pac.getBoundingClientRect(); ox = ev.clientX - r.left; oy = ev.clientY - r.top; pac.setPointerCapture(ev.pointerId); };
   const pkt = pac.querySelector('.pkt');
   palco.onmousemove = ev=>{ if (arrastando || !document.getElementById('pacote')) return; const r = pac.getBoundingClientRect();
     const dx = (ev.clientX - (r.left + r.width/2)) / innerWidth, dy = (ev.clientY - (r.top + r.height/2)) / innerHeight;
     pkt.style.setProperty('--ry', (-18 + dx*50) + 'deg'); pkt.style.setProperty('--rx', (-dy*30) + 'deg'); pkt.querySelector('.frente').style.setProperty('--brilho', (45 + dx*60) + '%'); };
   pac.onpointermove = ev=>{ if (!arrastando) return;
     pkt.style.setProperty('--ry', (ev.movementX * 2) + 'deg'); pkt.style.setProperty('--rx', (-ev.movementY * 2) + 'deg'); pac.style.left = (ev.clientX - ox) + 'px'; pac.style.top = (ev.clientY - oy) + 'px';
-    const e = enc.getBoundingClientRect(), d = Math.hypot(ev.clientX - (e.left + e.width/2), ev.clientY - (e.top + e.height/2)); enc.classList.toggle('ativo', d < 170); };
+    const e = enc.getBoundingClientRect(), d = Math.hypot(ev.clientX - (e.left + e.width/2), ev.clientY - (e.top + e.height/2)); enc.classList.toggle('ativo', d < 170); SOM.zumbido(d < 170); };
   pac.onpointerup = ev=>{ arrastando = false; const e = enc.getBoundingClientRect(), d = Math.hypot(ev.clientX - (e.left + e.width/2), ev.clientY - (e.top + e.height/2));
-    if (d < 170){ pac.style.left = (e.left + e.width/2 - 85) + 'px'; pac.style.top = (e.top + e.height/2 - 135) + 'px'; abrir(); } else { enc.classList.remove('ativo'); pac.classList.add('flutua'); } };
+    if (d < 170){ pac.style.left = (e.left + e.width/2 - 85) + 'px'; pac.style.top = (e.top + e.height/2 - 135) + 'px'; abrir(); } else { enc.classList.remove('ativo'); SOM.zumbido(false); pac.classList.add('flutua'); } };
   pac.ondblclick = ()=>{ const e = enc.getBoundingClientRect(); pac.style.left = (e.left + e.width/2 - 85) + 'px'; pac.style.top = (e.top + e.height/2 - 135) + 'px'; abrir(); };
 }
 function abrir(){
   const palco = document.getElementById('palco'), pac = document.getElementById('pacote');
   pac.onpointerdown = pac.onpointermove = pac.onpointerup = pac.ondblclick = null;
   document.getElementById('dica').textContent = '';
-  pac.classList.add('explode'); document.getElementById('encaixe').classList.add('dispara'); ENERGIA.disparo = 1; bum(1.2, .5); palco.onmousemove = null;
+  pac.classList.add('explode'); document.getElementById('encaixe').classList.add('dispara'); ENERGIA.disparo = 1; SOM.abrir(); palco.onmousemove = null;
   setTimeout(()=>pac.remove(), 600);   // some de verdade: não fica por cima das cartas roubando o mouse
   setTimeout(()=>{
     palco.insertAdjacentHTML('beforeend', '<div class="clarao"></div>');
@@ -250,9 +283,9 @@ function abrir(){
       const nivel = ordem[els.indexOf(el)].faixa;
       if (el.classList.contains('carrega')) return;   // ainda juntando luz
       if (nivel !== 'comum' && nivel !== 'incomum' && !el.classList.contains('revela')){   // rara/mítica/especial: suspense antes de virar
-        el.classList.add('carrega'); setTimeout(()=>{ el.classList.remove('carrega'); el.classList.add('revela'); el.click(); }, 620); return; }
+        el.classList.add('carrega'); SOM.carrega(); setTimeout(()=>{ el.classList.remove('carrega'); el.classList.add('revela'); el.click(); }, 620); return; }
       if (el.classList.contains('virada')) return;
-      el.classList.add('virada'); brilhoSom(nivel); if (el.matches(':hover')) setTimeout(()=>el.onmouseenter(), 600);
+      el.classList.add('virada'); SOM.virar(); brilhoSom(nivel); if (el.matches(':hover')) setTimeout(()=>el.onmouseenter(), 600);
       if (nivel === 'mitica'){ bum(.85, .8); palco.classList.remove('treme'); void palco.offsetWidth; palco.classList.add('treme'); }
       else if (nivel === 'rara' || nivel === 'especial') bum(1.4, .35);
       if (nivel !== 'comum'){ const r = el.getBoundingClientRect(); const n = nivel === 'mitica' ? 40 : 18;

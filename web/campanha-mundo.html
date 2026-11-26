@@ -161,7 +161,7 @@ const pai = m => parent.postMessage(Object.assign({campanha: true}, m), '*');
 document.querySelector('.voltar').onclick = () => pai({acao: 'fechar'});
 document.querySelector('.editar').onclick = () => pai({acao: 'editar'});
 document.querySelector('.editar.bazar').onclick = () => pai({acao: 'bazar'});
-document.getElementById('painel').addEventListener('click', e => { if (e.target.id === 'comecar') pai({acao: 'jogar', batalha: sel}); });
+document.getElementById('painel').addEventListener('click', e => { if (e.target.id === 'comecar') pai({acao: 'jogar', batalha: sel, oponentes: BAT[sel-1].d}); });
 // o Mesa manda o estado: {batalha, ouro, nome}
 addEventListener('message', e => { const d = e.data; if (!d || d.estado === undefined) return;
   ATUAL = d.estado.batalha || 1; sel = Math.min(15, ATUAL);   // 16 = Mundo 1 concluído

@@ -4366,13 +4366,13 @@ function avisarLiderChefe(){
 // ---------------- tela de entrada do Chefe do dia (VS) ----------------
 // Fundo escurece, os dois comandantes entram flutuando com brilho, o VS bate com choque de espadas.
 // Fica no mínimo 6 s e segura ("Embaralhando...") até a partida estar pronta.
-function telaVsChefe(cmdEu, cmdChefe){
+function telaVsChefe(cmdEu, cmdChefe, papelDir){
   let vs = $('#vsChefe');
   if (!vs){ vs = document.createElement('div'); vs.id = 'vsChefe'; document.body.appendChild(vs); }
   vs.innerHTML = `<div class="vsFundo"></div><canvas class="vsFaiscas"></canvas><div class="vsRisco"></div>
     <div class="vsPalco">
       <div class="vsLado esq"><div class="vsFlutua"><div class="vsCarta" style="background-image:url('${imgCarta(cmdEu)}')"></div></div><div class="vsNome">${esc(cmdEu.nome||'')}</div><div class="vsPapel">Você</div></div>
-      <div class="vsLado dir"><div class="vsFlutua"><div class="vsCarta" style="background-image:url('${imgCarta(cmdChefe)}')"></div></div><div class="vsNome">${esc(cmdChefe.nome||'')}</div><div class="vsPapel">Chefe do dia</div></div>
+      <div class="vsLado dir"><div class="vsFlutua"><div class="vsCarta" style="background-image:url('${imgCarta(cmdChefe)}')"></div></div><div class="vsNome">${esc(cmdChefe.nome||'')}</div><div class="vsPapel">${esc(papelDir || 'Chefe do dia')}</div></div>
     </div><div class="vsMeio">VS</div><div class="vsCarregando">Embaralhando<i>.</i><i>.</i><i>.</i></div>`;
   vs.className = ''; void vs.offsetWidth; vs.classList.add('on');
   const cv = vs.querySelector('.vsFaiscas'), cx = cv.getContext('2d'); cv.width = innerWidth; cv.height = innerHeight;
@@ -4570,7 +4570,12 @@ function mostrarCampanha(c){
     const a = e.data.acao;
     if (a === 'pronta') fr.contentWindow.postMessage({estado: c, ouro: f.ouro || 0, nome: (perfilAtual && perfilAtual.nome) || ''}, '*');
     if (a === 'fechar'){ window.removeEventListener('message', ouvir); fr.remove(); }
-    if (a === 'jogar'){ window.removeEventListener('message', ouvir); fr.remove(); post('/api/campanha', {acao:'jogar', n: e.data.batalha}).then(r=>{ if (r && r.erro) avisoLocal(r.erro); }); }
+    if (a === 'jogar'){ window.removeEventListener('message', ouvir); fr.remove();
+      // mesma entrada do Chefe do dia: o seu comandante contra o da batalha, até a partida ficar pronta
+      const ops = e.data.oponentes || [], n = e.data.batalha;
+      const papel = ops.length > 1 ? `${ops[0][0]} e mais ${ops.length - 1}` : (ops[0] ? ops[0][0] : `Batalha ${n}`);
+      const fechar = ops[0] ? telaVsChefe(c.comandante || {nome: ''}, {nome: ops[0][1]}, papel) : null;
+      post('/api/campanha', {acao:'jogar', n}).then(r=>{ if (r && r.erro){ avisoLocal(r.erro); if (fechar) fechar(); } }); }
     if (a === 'editar'){ window.removeEventListener('message', ouvir); fr.remove(); abrirEditorDeck(); }
     if (a === 'bazar') abrirBazar();
   };
