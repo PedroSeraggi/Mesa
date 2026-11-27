@@ -1120,6 +1120,8 @@ public class Ponte implements MageClient {
 
     /** Nome usado no servidor do XMage: só letras e números. */
     String nomeServidor() {
+        String fixo = System.getProperty("mesa.nomeServidor");   // PTB/testes: outro nome no XMage (o mesmo nome não pode entrar duas vezes)
+        if (fixo != null && !fixo.trim().isEmpty()) return fixo.trim();
         String n = semAcento(perfil().get("nome").getAsString()).replaceAll("[^A-Za-z0-9_]", "");
         if (n.length() < 3) n = "Voce";
         return n.length() > 14 ? n.substring(0, 14) : n;
