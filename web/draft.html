@@ -382,8 +382,10 @@ $('pronto').onclick = async () => {
 // ---------- ciclo: segue o estado do draft ----------
 let fase = null;
 async function ciclo(){
-  const e = await post({acao:'estado'}); if (e.erro && !e.fase){ erro(e.erro); }
+  let e; try { e = await post({acao:'estado'}); } catch(x){ mostrar('tInicio'); erro('A Mesa não respondeu. Feche e abra a Mesa de novo.'); return; } if (e.erro && !e.fase){ erro(e.erro); }
   const f = e.fase || '';
+  if (!['', 'sala', 'escolhendo', 'montando', 'jogando'].includes(f) || !('pacote' in e)){   // Mesa sem o draft (versão antiga aberta)
+    mostrar('tInicio'); erro('Esta Mesa está desatualizada para o draft. Feche e abra a Mesa de novo.'); fase = f; return; }
   if (f === '') { mostrar('tInicio'); if (fase !== '') desenharInicio(); }
   else if (f === 'sala') { mostrar('tSala'); desenharSala(); }
   else if (f === 'escolhendo') { mostrar('tEscolhe'); desenharEscolha(e); }

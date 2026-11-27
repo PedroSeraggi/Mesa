@@ -2232,7 +2232,7 @@ public class Ponte implements MageClient {
         usarPcLocal = false;
         sairDoJogoAtual(); sairDaSala(); conectar();
         DeckCardLists meu = carregarDeck(meuDeck);
-        MatchOptions op = opcoesCommander(PREFIXO_PARTIDA_DRAFT + draftMesa, Math.max(2, humanos), 0);
+        MatchOptions op = opcoesCommander(PREFIXO_PARTIDA_DRAFT + perfil().get("nome").getAsString() + " #" + draftMesa.toString().substring(0, 6), Math.max(2, humanos), 0);
         op.setDeckType("Constructed - Freeform Unlimited");   // deck de 60 com comandante: o Commander normal exige 100
         modo2v2 = false; vitoriaTime = false; timesJogo = null;
         TableView t = session.createTable(roomId, op);
@@ -2415,9 +2415,9 @@ public class Ponte implements MageClient {
                 String arq = salvarDeckDraft(b);
                 if (draftDono) criarPartidaDraft(arq, draftHumanos);
                 else {
-                    UUID achou = null; String alvo = PREFIXO_PARTIDA_DRAFT + draftMesa;
+                    UUID achou = null; String alvo = " #" + draftMesa.toString().substring(0, 6);
                     for (int i = 0; i < 240 && achou == null; i++) {   // espera o dono terminar o deck dele (até 4 min)
-                        for (TableView t : session.getTables(roomId)) if (alvo.equals(t.getTableName()) && t.getTableState() != TableState.FINISHED) achou = t.getTableId();
+                        for (TableView t : session.getTables(roomId)) if (t.getTableName() != null && t.getTableName().startsWith(PREFIXO_PARTIDA_DRAFT) && t.getTableName().endsWith(alvo) && t.getTableState() != TableState.FINISHED) achou = t.getTableId();
                         if (achou == null) Thread.sleep(1000);
                     }
                     if (achou == null) throw new IllegalStateException("O dono do draft ainda não terminou o deck. Tente de novo em instantes.");
