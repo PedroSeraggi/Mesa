@@ -44,10 +44,22 @@ A chave do Oráculo (Gemini) **não** fica no repositório: crie um arquivo `.en
    - `XMage\` (sem `mage-client\sample-decks`, sem logs; copie com a Mesa **fechada**, senão o banco do XMage está travado);
    - `mesa-xmage\` com `classes\`, `web\` (sem `index-antes-*`), ícones (sem `decks\`: a Mesa não leva decks prontos) e um `versao.txt` contendo `1.1`;
    - `Abrir Mesa.vbs` e `Criar atalho na area de trabalho.vbs`.
+   - em `XMage\xmage\mage-server\plugins\`, o **bot da Mesa** (`mage-player-ai-mesa-1.4.63.jar`, veja abaixo).
 2. Em `instalador\mesa-instalador.iss`, troque `#define Versao "1.1"` e gere com o **Inno Setup 6** (`ISCC.exe mesa-instalador.iss`).
 3. Publique: `gh release create v1.1 Instalar-Mesa-1.1.exe --title "Mesa 1.1" --notes "o que mudou"`.
 
 A Mesa de todo mundo consulta `api.github.com/repos/PedroSeraggi/Mesa/releases/latest` ao abrir e oferece **Atualizar agora** (rota `/api/atualizar`, que só aceita downloads deste repositório).
+
+## Partidas contra bots e o bot da Mesa
+
+Partidas contra bots e o **Chefe do dia** rodam no **XMage do próprio PC**: a ponte liga o servidor local em segundo plano quando a Mesa abre. Assim cada pessoa roda o próprio bot e o Zera não fica sobrecarregado quando várias pessoas jogam ao mesmo tempo. Se o PC não tiver o XMage da Mesa, a partida vai para o Zera. Para forçar o Zera, coloque `"botsNoServidor": true` no `config.json`. O XP e a vitória contra o chefe continuam indo para o servidor de amigos, pela ponte.
+
+O **bot da Mesa** (`servidor-xmage-plugin/src/mage/player/ai/MesaComputerPlayer.java`) é a mesma IA "mad" do XMage, com duas mudanças:
+
+- quando tem algo na pilha e ele não tem resposta possível (só habilidades de mana), **passa na hora** em vez de simular todas as jogadas;
+- pensa **no máximo 10 s por decisão** (o XMage usa nível × 3, ou seja, 30 s para o chefe de nível 10). A profundidade continua sendo o nível.
+
+Para gerar o jar: `servidor-xmage-plugin\compilar-bot.cmd` (precisa de JDK e do XMage na pasta ao lado). Copie `mage-player-ai-mesa-1.4.63.jar` para `XMage\xmage\mage-server\plugins\` do pacote do instalador. Não precisa mexer no `config.xml`: ao ligar o XMage local, a ponte troca a classe do "Computer - mad" pela do bot da Mesa e mantém a IA original numa linha antes. Se o jar sumir, ela desfaz a troca. No Zera, a instalação é opcional e manual: copie o jar para `plugins/` e faça a mesma troca no `config.xml`.
 
 ## Combinados
 
