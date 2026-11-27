@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia: montar o deck do draft</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Metamorphous&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/mana-font@1.18.0/css/mana.min.css" rel="stylesheet">
+<style>
+:root{--ouro:#E4C874;--ouro2:#c9a24a;--fa:'Metamorphous',serif;--ff:'Cinzel',serif}
+*{box-sizing:border-box}
+body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color:#f0e6d0;user-select:none;display:flex;flex-direction:column;
+  background:radial-gradient(ellipse at 40% 40%,#2a1a0e 0%,#120a06 55%,#060403 100%)}
+#topo{flex:none;height:64px;display:flex;align-items:center;gap:18px;padding:0 26px}
+#topo .tit{font-family:var(--fa);font-size:22px;color:var(--ouro)}
+#topo .sub{font-style:italic;color:#c9b48a}
+#topo .tempo{margin-left:auto;font-family:var(--ff);font-size:13px;letter-spacing:.1em;color:#d8c8a8}
+#topo .tempo b{color:var(--ouro);font-size:16px}
+main{flex:1;min-height:0;display:flex;gap:18px;padding:0 26px 22px}
+
+/* ---------- escolhas do draft ---------- */
+#pool{flex:1;min-width:0;display:flex;flex-direction:column;border-radius:14px;padding:14px 16px;position:relative;
+  background:linear-gradient(180deg,#1e120ae0,#140a06e0);box-shadow:inset 0 0 0 1px #00000099,0 10px 26px #000a}
+#pool::after,#deck::after{content:'';position:absolute;inset:5px;border-radius:10px;box-shadow:inset 0 0 0 1px #c9a24a30;pointer-events:none}
+.cabP{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.cabP h3{margin:0;font-family:var(--ff);font-size:13px;letter-spacing:.2em;color:var(--ouro2)}
+.cabP .dica{font-size:14px;font-style:italic;color:#a8987a}
+.filtros{margin-left:auto;display:flex;gap:5px}
+.filtros button{width:30px;height:30px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;font-size:15px;background:#0006;box-shadow:inset 0 0 0 1px #c9a24a44;color:#ddd;transition:transform .15s,box-shadow .15s}
+.filtros button.on{box-shadow:inset 0 0 0 2px var(--ouro),0 0 10px #e8b84a66;transform:scale(1.08)}
+.grade{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:12px;padding:4px 2px 4px;scrollbar-width:thin;scrollbar-color:#c9a24a55 transparent}
+.carta{position:relative;aspect-ratio:63/88;border-radius:6px;cursor:pointer;background:#111 center/cover;box-shadow:0 6px 14px #000c;transition:transform .18s,box-shadow .18s,filter .25s,opacity .25s}
+.carta:hover{transform:translateY(-6px);box-shadow:0 0 0 2px var(--ouro),0 0 20px #e8b84a77,0 12px 20px #000c}
+.carta.noDeck{filter:brightness(.38) saturate(.5)}
+.carta.noDeck::after{content:'NO DECK';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--ff);font-size:11px;letter-spacing:.15em;color:#ffe9a8;text-shadow:0 0 8px #000}
+.carta.foraCor{opacity:.28;cursor:not-allowed}
+.carta.foraCor:hover{transform:none;box-shadow:0 6px 14px #000c}
+.carta .ehCmd{position:absolute;left:50%;top:-9px;transform:translateX(-50%);font-family:var(--ff);font-size:9px;letter-spacing:.12em;padding:2px 8px;border-radius:5px;white-space:nowrap;
+  color:#2a1606;background:linear-gradient(180deg,#ffe9a8,#c9a24a);box-shadow:0 2px 6px #000a;cursor:pointer}
+
+/* ---------- deck ---------- */
+#deck{width:340px;flex:none;display:flex;flex-direction:column;position:relative;border-radius:14px;overflow:hidden;
+  background:linear-gradient(180deg,#2a1810,#140a06);box-shadow:inset 0 0 0 1px #00000099,inset 0 0 40px #000a,0 20px 40px #000}
+.cmdBox{position:relative;height:150px;flex:none;background:#000 center 22%/cover;display:flex;align-items:flex-end;padding:12px 16px}
+.cmdBox::before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#140a06 4%,#140a0699 55%,transparent)}
+.cmdBox::after{content:'';position:absolute;left:14px;right:14px;bottom:0;height:1px;background:linear-gradient(90deg,transparent,#e8c870aa,transparent)}
+.cmdBox div{position:relative}
+.cmdBox small{display:block;font-family:var(--ff);font-size:11px;letter-spacing:.2em;color:var(--ouro2)}
+.cmdBox b{display:block;font-family:var(--fa);font-size:21px;color:var(--ouro);text-shadow:0 2px 6px #000}
+.cmdBox .id{margin-top:3px;font-size:16px;display:flex;gap:3px}
+.cmdBox.vazio{background:repeating-linear-gradient(135deg,#1a0e08 0 12px,#140a06 12px 24px)}
+.cmdBox.vazio b{font-size:17px;color:#c9b48a}
+#curva{flex:none;display:flex;align-items:flex-end;gap:4px;height:58px;padding:10px 16px 4px}
+#curva div{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:#9a8a6a}
+#curva i{display:block;width:100%;border-radius:3px 3px 0 0;background:linear-gradient(180deg,#e8c870,#8a6a2a);min-height:2px;transition:height .3s}
+#lista{flex:1;overflow-y:auto;padding:6px 12px;scrollbar-width:thin;scrollbar-color:#c9a24a55 transparent}
+.lin{display:flex;align-items:center;gap:8px;height:30px;margin-bottom:3px;padding:0 10px 0 6px;border-radius:5px;cursor:pointer;
+  background:linear-gradient(90deg,#1e120a 40%,#1e120a00 80%),var(--arte) right 35%/60% auto no-repeat,#1e120a;box-shadow:inset 0 1px 0 #ffffff0d,inset 0 -1px 0 #00000080}
+.lin:hover{filter:brightness(1.25);box-shadow:inset 3px 0 0 #e05a3a}
+.lin .mv{width:22px;height:24px;flex:none;display:grid;place-items:center;font-family:var(--ff);font-size:12px;color:#fff;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:linear-gradient(160deg,#9fd0ff,#3a80d0 35%,#1a4a9a 70%,#0a2a6a)}
+.lin span{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px #000}
+/* terrenos básicos: + e - por cor */
+#basicos{flex:none;padding:10px 14px 6px;display:flex;flex-wrap:wrap;gap:6px;position:relative}
+#basicos::before{content:'';position:absolute;left:14px;right:14px;top:0;height:1px;background:linear-gradient(90deg,transparent,#e8c87066,transparent)}
+.bas{display:flex;align-items:center;gap:4px;padding:3px 4px 3px 7px;border-radius:8px;background:#0005;box-shadow:inset 0 0 0 1px #c9a24a33}
+.bas i{font-size:16px}
+.bas b{min-width:18px;text-align:center;font-family:var(--ff);font-size:13px}
+.bas button{width:20px;height:20px;border:0;border-radius:5px;cursor:pointer;background:#3a2210;color:#f0d890;font-weight:700;line-height:1}
+.bas button:hover{background:#5a3418}
+#sugerir{font-family:var(--ff);font-size:11px;letter-spacing:.08em;border:0;border-radius:8px;padding:5px 10px;cursor:pointer;color:#f0d890;background:linear-gradient(180deg,#3a2210,#1e1008);box-shadow:inset 0 1px 0 #ffd88a33,0 2px 0 #0c0603}
+.pe{flex:none;display:flex;align-items:center;gap:10px;padding:12px 16px 14px;position:relative}
+.pe::before{content:'';position:absolute;left:14px;right:14px;top:0;height:1px;background:linear-gradient(90deg,transparent,#e8c870aa,transparent)}
+.pe .conta b{font-family:var(--ff);font-size:22px;color:var(--ouro)}
+.pe .conta b.ok{color:#8ad08a}
+.pe .conta small{display:block;font-size:12.5px;color:#a8987a}
+#pronto{margin-left:auto;font-family:var(--fa);font-size:18px;letter-spacing:.08em;color:#2a1606;padding:11px 24px;border:0;border-radius:12px;cursor:pointer;
+  background:linear-gradient(180deg,#ffe9a8,#e8b84a 55%,#b8862a);box-shadow:0 5px 0 #6a4410,0 0 24px #e8b84a55}
+#pronto:disabled{filter:grayscale(.8) brightness(.6);cursor:not-allowed;box-shadow:0 5px 0 #3a2a10}
+#avisos{flex:none;padding:0 16px 6px;font-size:13px;color:#ffb070;min-height:6px}
+#zoom{position:fixed;z-index:30;width:290px;border-radius:14px;pointer-events:none;display:none;box-shadow:0 0 0 2px var(--ouro),0 20px 50px #000}
+</style></head><body>
+<div id="topo"><div class="tit">Monte o seu deck</div><div class="sub">Escolha um comandante entre as suas lendas e complete 60 cartas</div>
+  <div class="tempo">Os outros: <b>2 de 3</b> prontos</div></div>
+<main>
+  <section id="pool">
+    <div class="cabP"><h3>SUAS ESCOLHAS DO DRAFT</h3><span class="dica" id="dicaPool">Clique numa lenda em "Comandante" para começar</span>
+      <div class="filtros" id="filtros"></div></div>
+    <div class="grade" id="grade"></div>
+  </section>
+  <aside id="deck">
+    <div class="cmdBox vazio" id="cmdBox"><div><small>COMANDANTE</small><b>Ainda não escolhido</b></div></div>
+    <div id="curva"></div>
+    <div id="lista"></div>
+    <div id="basicos"></div>
+    <div id="avisos"></div>
+    <div class="pe"><div class="conta"><b id="total">0</b><span style="color:#a8987a"> / 60</span><small id="detalhe"></small></div><button id="pronto" disabled>Pronto</button></div>
+  </aside>
+</main>
+<img id="zoom" alt="">
+<script>
+const img = (n, v='normal') => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n).replace(/'/g,'%27')}&format=image&version=${v}`;
+// escolhas de um draft de exemplo: [nome, identidade de cor, valor de mana, lenda]
+const POOL = [
+ ['Atraxa, Praetors\' Voice','WUBG',4,1],['Edgar Markov','WBR',6,1],['Krenko, Mob Boss','R',4,1],['Najeela, the Blade-Blossom','WUBRG',3,1],['Selvala, Heart of the Wilds','G',3,1],
+ ['Talrand, Sky Summoner','U',4,1],['Toski, Bearer of Secrets','G',4,1],['Sheoldred, the Apocalypse','B',4,1],
+ ['Sol Ring','',1,0],['Arcane Signet','',2,0],['Lightning Greaves','',2,0],['Command Tower','',0,0],['Mana Crypt','',0,0],
+ ['Swords to Plowshares','W',1,0],['Smothering Tithe','W',4,0],['Counterspell','U',2,0],['Rhystic Study','U',3,0],['Cyclonic Rift','U',2,0],
+ ['Demonic Tutor','B',2,0],['Feed the Swarm','B',2,0],['Lightning Bolt','R',1,0],['Ragavan, Nimble Pilferer','R',1,1],['Kenrith, the Returned King','R',5,1],
+ ['Cultivate','G',3,0],['Beast Within','G',3,0],['Llanowar Elves','G',1,0],['Anguished Unmaking','WB',3,0],['Kaalia of the Vast','WBR',4,1],
+ ['Thalia, Guardian of Thraben','W',2,1],['Meren of Clan Nel Toth','BG',4,1],['Birds of Paradise','G',1,0],['Path to Exile','W',1,0],['Ponder','U',1,0],
+ ['Dark Ritual','B',1,0],['Goblin Matron','R',3,0],['Eternal Witness','G',3,0],['Heroic Intervention','G',2,0],['Wrath of God','W',4,0],
+ ['Mystic Remora','U',1,0],['Bloodline Keeper','B',4,0],['Goblin Bombardment','R',2,0],['Sylvan Library','G',1,0],['Teferi\'s Protection','W',3,0],
+ ['Fact or Fiction','U',4,0],['Toxic Deluge','B',3,0],
+];
+const BASICO = {W:['Plains','ms-w'],U:['Island','ms-u'],B:['Swamp','ms-b'],R:['Mountain','ms-r'],G:['Forest','ms-g']};
+let cmd = null, deck = new Set(), bas = {W:0,U:0,B:0,R:0,G:0}, filtro = '';
+const ident = () => cmd ? cmd[1] : null;
+const cabe = c => !cmd || [...c[1]].every(x => cmd[1].includes(x));   // dentro da identidade de cor do comandante
+
+document.getElementById('filtros').innerHTML = ['','W','U','B','R','G','C'].map(k=>`<button data-f="${k}" class="${k===filtro?'on':''}" title="${k||'Todas'}">${k===''?'<i class="ms ms-multicolor"></i>':k==='C'?'<i class="ms ms-c"></i>':`<i class="ms ms-${k.toLowerCase()}"></i>`}</button>`).join('');
+document.querySelectorAll('#filtros button').forEach(b=>b.onclick=()=>{ filtro = b.dataset.f; document.querySelectorAll('#filtros button').forEach(x=>x.classList.toggle('on', x===b)); desenhar(); });
+const som = n => { try { const a = new Audio(n); a.volume = .45; a.play().catch(()=>{}); } catch(e){} };
+
+function desenhar(){
+  const g = document.getElementById('grade');
+  const l = POOL.filter(c => !filtro || (filtro === 'C' ? !c[1] : c[1].includes(filtro))).filter(c => c !== cmd);
+  g.innerHTML = l.map(c => `<div class="carta ${deck.has(c)?'noDeck':''} ${cabe(c)?'':'foraCor'}" data-n="${c[0].replace(/"/g,'&quot;')}" style="background-image:url('${img(c[0])}')">${c[3]?'<span class="ehCmd" title="Usar como comandante">COMANDANTE</span>':''}</div>`).join('');
+  g.querySelectorAll('.carta').forEach(el=>{
+    const c = POOL.find(x=>x[0]===el.dataset.n);
+    el.onmouseenter = () => { const z = document.getElementById('zoom'), r = el.getBoundingClientRect(); z.src = img(c[0]);
+      z.style.left = (r.right + 300 < innerWidth - 360 ? r.right + 12 : r.left - 302) + 'px'; z.style.top = Math.max(10, Math.min(innerHeight - 420, r.top - 40)) + 'px'; z.style.display = 'block'; };
+    el.onmouseleave = () => document.getElementById('zoom').style.display = 'none';
+    el.onclick = ev => {
+      if (ev.target.classList.contains('ehCmd')) return virarCmd(c);
+      if (!cabe(c)) return;
+      if (deck.has(c)) deck.delete(c); else deck.add(c);
+      som('sons/kenney/rpg/bookPlace' + (1 + Math.floor(Math.random()*3)) + '.ogg'); desenhar();
+    };
+  });
+  document.getElementById('dicaPool').textContent = cmd ? `Cartas fora das cores do ${cmd[0].split(',')[0]} ficam apagadas` : 'Clique em "Comandante" numa lenda para começar';
+  desenharDeck();
+}
+function virarCmd(c){
+  if (cmd) deck.add(cmd);   // o comandante antigo volta para o deck
+  cmd = c; deck.delete(c);
+  [...deck].forEach(x => { if (!cabe(x)) deck.delete(x); });   // tira o que saiu da identidade de cor
+  Object.keys(bas).forEach(k => { if (!c[1].includes(k)) bas[k] = 0; });
+  som('sons/kenney/rpg/metalLatch.ogg'); desenhar();
+}
+function desenharDeck(){
+  const box = document.getElementById('cmdBox');
+  if (cmd){ box.classList.remove('vazio'); box.style.backgroundImage = `url('${img(cmd[0], 'art_crop')}')`;
+    box.innerHTML = `<div><small>COMANDANTE</small><b>${cmd[0].split(',')[0]}</b><div class="id">${[...cmd[1]].map(k=>`<i class="ms ms-${k.toLowerCase()} ms-cost"></i>`).join('') || '<i class="ms ms-c ms-cost"></i>'}</div></div>`; }
+  const l = [...deck].sort((a,b)=>a[2]-b[2] || a[0].localeCompare(b[0]));
+  document.getElementById('lista').innerHTML = l.map(c=>`<div class="lin" data-n="${c[0].replace(/"/g,'&quot;')}" style="--arte:url('${img(c[0],'art_crop')}')"><div class="mv">${c[2]}</div><span>${c[0]}</span></div>`).join('')
+    || '<div style="padding:16px;color:#8a7a5a;font-style:italic;text-align:center">Clique nas cartas da esquerda para colocar no deck</div>';
+  document.querySelectorAll('.lin').forEach(el=>el.onclick=()=>{ deck.delete(POOL.find(x=>x[0]===el.dataset.n)); desenhar(); });
+  // curva de mana (sem terrenos básicos)
+  const cv = Array(7).fill(0); l.forEach(c=>cv[Math.min(6, c[2])]++); const mx = Math.max(1, ...cv);
+  document.getElementById('curva').innerHTML = cv.map((n,i)=>`<div><i style="height:${Math.round(n/mx*34)}px"></i>${i===6?'6+':i}</div>`).join('');
+  // terrenos básicos das cores do comandante
+  const cores = cmd ? [...cmd[1]] : [];
+  document.getElementById('basicos').innerHTML = cores.length ? cores.map(k=>`<div class="bas"><i class="ms ${BASICO[k][1]} ms-cost"></i><b>${bas[k]}</b><button data-k="${k}" data-d="-1">−</button><button data-k="${k}" data-d="1">+</button></div>`).join('') + '<button id="sugerir" title="Completa as 60 com básicos, divididos pelas cores das cartas">Completar</button>'
+    : '<span style="font-size:13px;color:#8a7a5a;font-style:italic">Os terrenos básicos aparecem quando você escolher o comandante</span>';
+  document.querySelectorAll('.bas button').forEach(b=>b.onclick=()=>{ bas[b.dataset.k] = Math.max(0, bas[b.dataset.k] + +b.dataset.d); desenharDeck(); });
+  const sg = document.getElementById('sugerir'); if (sg) sg.onclick = completar;
+  const nb = Object.values(bas).reduce((a,b)=>a+b,0), total = (cmd ? 1 : 0) + deck.size + nb;
+  const t = document.getElementById('total'); t.textContent = total; t.classList.toggle('ok', total === 60 && !!cmd);
+  document.getElementById('detalhe').textContent = `${cmd?'1 comandante · ':''}${deck.size} cartas · ${nb} básicos`;
+  const av = []; if (!cmd) av.push('Escolha um comandante.'); else if (total < 60) av.push(`Faltam ${60 - total} cartas.`); else if (total > 60) av.push(`Sobram ${total - 60} cartas.`);
+  document.getElementById('avisos').textContent = av.join(' ');
+  document.getElementById('pronto').disabled = !(cmd && total === 60);
+}
+// completa até 60 com básicos, na proporção dos símbolos de cor das cartas do deck
+function completar(){
+  const cores = [...cmd[1]]; if (!cores.length) return;
+  const falta = 60 - 1 - deck.size; if (falta <= 0) return;
+  const peso = {}; cores.forEach(k=>peso[k] = 1); [...deck, cmd].forEach(c=>[...c[1]].forEach(k=>{ if (peso[k] !== undefined) peso[k] += 2; }));
+  const soma = cores.reduce((s,k)=>s+peso[k],0); let usados = 0;
+  cores.forEach((k,i)=>{ bas[k] = i === cores.length - 1 ? falta - usados : Math.round(falta * peso[k] / soma); usados += bas[k]; });
+  som('sons/kenney/rpg/handleCoins.ogg'); desenharDeck();
+}
+document.getElementById('pronto').onclick = () => { som('sons/kenney/interface/confirmation_002.ogg'); document.getElementById('pronto').textContent = 'Esperando os outros...'; document.getElementById('pronto').disabled = true; };
+desenhar();
+</script>
+</body></html>
