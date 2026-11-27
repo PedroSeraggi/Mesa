@@ -59,7 +59,7 @@ O **bot da Mesa** (`servidor-xmage-plugin/src/mage/player/ai/MesaComputerPlayer.
 - quando tem algo na pilha e ele não tem resposta possível (só habilidades de mana), **passa na hora** em vez de simular todas as jogadas;
 - pensa **no máximo 10 s por decisão** (o XMage usa nível × 3, ou seja, 30 s para o chefe de nível 10). A profundidade continua sendo o nível.
 
-Para gerar o jar: `servidor-xmage-plugin\compilar-bot.cmd` (precisa de JDK e do XMage na pasta ao lado). Copie `mage-player-ai-mesa-1.4.63.jar` para `XMage\xmage\mage-server\plugins\` do pacote do instalador. Não precisa mexer no `config.xml`: ao ligar o XMage local, a ponte troca a classe do "Computer - mad" pela do bot da Mesa e mantém a IA original numa linha antes. Se o jar sumir, ela desfaz a troca. No Zera, a instalação é opcional e manual: copie o jar para `plugins/` e faça a mesma troca no `config.xml`.
+Para gerar o jar: `servidor-xmage-plugin\compilar-bot.cmd` (precisa de JDK e do XMage na pasta ao lado). Copie `mage-player-ai-mesa-1.4.63.jar` para `XMage\xmage\mage-server\plugins\` do pacote do instalador. Não precisa mexer no `config.xml`: ao ligar o XMage local, a ponte aponta a linha do "Computer - mad" para o jar da Mesa (o XMage só aceita os nomes de bot que já conhece, então não dá para criar outra linha; por isso o `compilar-bot.cmd` põe as classes da IA original dentro do mesmo jar). Se o jar sumir, ela volta para a IA original. No Zera, a instalação é opcional e manual: copie o jar para `plugins/` e faça a mesma troca no `config.xml`.
 
 ## Combinados
 
