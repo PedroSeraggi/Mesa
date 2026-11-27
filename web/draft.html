@@ -171,7 +171,7 @@ h2{margin:0 0 6px;font-family:var(--fa);font-weight:400;font-size:30px;color:var
 
 <!-- criar ou entrar -->
 <div class="tela" id="tInicio"><div class="col">
-  <div class="tit"><h2>Draft de Commander</h2><div class="sub">Abram pacotes de um cubo, escolham uma carta por vez e montem um deck de 60 com uma das lendas que pegaram.</div></div>
+  <div class="tit"><h2>Draft de Commander</h2><div class="sub">Abram pacotes de um cubo, escolham uma carta por vez e montem um deck de 60 com uma das lendas que pegaram. O deck vale só para a partida do draft.</div></div>
   <div class="painel"><h3>CRIAR UM DRAFT</h3>
     <div class="cuboEsc" id="cuboEsc"><div class="cuboArte" id="cuboArte"></div><div class="cuboTx"><small>CUBO</small><b id="cuboNome">Carregando...</b><span id="cuboResumo"></span></div><button class="btCouro" id="trocarCubo">Trocar</button></div>
     <div class="campo">Jogadores <select id="lugares"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
@@ -229,7 +229,6 @@ const $ = id => document.getElementById(id);
 function erro(t){ const e = $('erro'); e.textContent = t; e.style.display = 'block'; clearTimeout(erro.t); erro.t = setTimeout(()=>e.style.display = 'none', 6000); }
 (function(){ const R = 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ'; $('runas').innerHTML = '<circle cx="200" cy="200" r="196"/><circle cx="200" cy="200" r="176"/><circle cx="200" cy="200" r="120"/><path id="rc" d="M200 200 m-186 0 a186 186 0 1 1 372 0 a186 186 0 1 1 -372 0"/><text font-size="13" font-family="serif"><textPath href="#rc" textLength="1160" lengthAdjust="spacing">' + R + R + '</textPath></text>'; })();
 function mostrar(id){ document.querySelectorAll('.tela').forEach(t=>t.classList.toggle('on', t.id === id)); }
-$('campoBots').style.display = '';
 const ENTRAR = new URLSearchParams(location.search).get('entrar');
 const zoom = (el, c) => { el.onmouseenter = () => { const z = $('zoom'), r = el.getBoundingClientRect(); z.src = img(c);
   z.style.left = (r.right + 300 < innerWidth ? r.right + 12 : Math.max(8, r.left - 302)) + 'px'; z.style.top = Math.max(10, Math.min(innerHeight - 420, r.top - 40)) + 'px'; z.style.display = 'block'; };
@@ -275,7 +274,7 @@ $('trocarCubo').onclick = abrirCubos;
 post({acao:'infoCubos'}).then(l => { if (!Array.isArray(l)) return; CUBOS = l.sort((a,b)=>b.lendas-a.lendas); if (!CUBOS.find(c=>c.nome===cuboSel) && CUBOS[0]) cuboSel = CUBOS[0].nome; desenharCuboEsc(); });
 $('criar').onclick = async () => {
   $('criar').disabled = true;
-  const r = await post({acao:'criar', cubo: cuboSel, lugares: +$('lugares').value, bots: +$('bots').value});
+  const r = await post({acao:'criar', cubo: cuboSel, lugares: +$('lugares').value});
   $('criar').disabled = false; if (r.erro) erro(r.erro); else ciclo();
 };
 async function desenharInicio(){

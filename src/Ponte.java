@@ -93,6 +93,8 @@ public class Ponte implements MageClient {
             }
         }
         Ponte p = new Ponte();
+        // decks de draft valem só para a partida do draft: se a Mesa fechou no meio, apaga os que sobraram
+        try (DirectoryStream<Path> ds = Files.newDirectoryStream(DECKS, "Draft - *.dck")) { for (Path f : ds) Files.deleteIfExists(f); } catch (Exception ignored) { }
         p.iniciarWeb();
         new Thread(p::lacoAmigos, "amigos").start();
         // já liga o XMage deste PC em segundo plano: partidas contra bots e o Chefe do dia rodam aqui, e assim
@@ -2215,6 +2217,11 @@ public class Ponte implements MageClient {
     volatile List<String> draftJogadores = new ArrayList<>();
     volatile String draftCubo = "", draftErro = null;
     volatile boolean draftDono = false;
+    volatile String draftDeckArq = null;   // deck de 60 do draft: apagado quando a partida final acaba
+    void apagarDeckDraft() {
+        String a = draftDeckArq; draftDeckArq = null;
+        if (a != null) try { Files.deleteIfExists(DECKS.resolve(a)); System.out.println("Deck do draft apagado: " + a); } catch (Exception ignored) { }
+    }
     volatile int draftHumanos = 2;
     static final String PREFIXO_DRAFT = "Draft · ", PREFIXO_PARTIDA_DRAFT = "Partida do draft · ";
 
@@ -2370,6 +2377,10 @@ public class Ponte implements MageClient {
             if (!"POST".equals(ex.getRequestMethod())) { json(ex, 200, estadoDraft()); return; }
             JsonObject b = corpo(ex); String acao = b.has("acao") ? b.get("acao").getAsString() : "estado";
             draftErro = null;
+            if (Arrays.asList("cubos", "infoCubos", "lista", "criar", "entrar").contains(acao) && draftMesa == null) {
+                if ("jogo".equals(fase) && usarPcLocal) throw new IllegalStateException("Termine a partida que está rodando no seu PC antes de entrar num draft.");
+                usarPcLocal = false;   // o draft é no servidor do grupo (todo mundo precisa estar no mesmo)
+            }
             if (acao.equals("cubos")) { conectar(); json(ex, 200, Arrays.asList(session.getDraftCubes())); return; }
             if (acao.equals("infoCubos")) {   // detalhes de cada cubo (só os que o servidor também tem)
                 conectar(); Set<String> doServidor = new HashSet<>(Arrays.asList(session.getDraftCubes()));
@@ -2381,7 +2392,7 @@ public class Ponte implements MageClient {
                 conectar();
                 if (draftMesa != null) { try { session.leaveTable(roomId, draftMesa); } catch (Exception ignored) { } draftMesa = null; draftId = null; }   // draft antigo desta Mesa
                 String cubo = b.has("cubo") ? b.get("cubo").getAsString() : "Legendary Cube";
-                int lugares = b.has("lugares") ? b.get("lugares").getAsInt() : 2, bots = b.has("bots") ? b.get("bots").getAsInt() : 0;
+                int lugares = Math.max(2, Math.min(8, b.has("lugares") ? b.get("lugares").getAsInt() : 2)), bots = 0;   // só gente: os bots de draft não jogam a partida final
                 TournamentTypeView tipo = null;
                 for (TournamentTypeView t : session.getTournamentTypes()) if (t.getName().equals("Booster Draft Elimination (Cube)")) tipo = t;
                 if (tipo == null) throw new IllegalStateException("O servidor não tem o draft de cubo.");
@@ -2427,7 +2438,7 @@ public class Ponte implements MageClient {
                 json(ex, 200, r); return;
             }
             if (acao.equals("pronto")) {   // deck de 60 pronto: o dono cria a partida final, os outros entram nela
-                String arq = salvarDeckDraft(b);
+                String arq = salvarDeckDraft(b); draftDeckArq = arq;
                 if (draftDono && draftHumanos <= 1) {   // draft só com bots: guarda o deck, sem partida final
                     draftFase = ""; draftMesa = null; draftId = null;
                     Map<String, Object> r = new LinkedHashMap<>(); r.put("ok", true); r.put("deck", arq); r.put("sozinho", true);
@@ -3033,6 +3044,7 @@ public class Ponte implements MageClient {
             try { turnos = ((Number) jogo.get("turno")).intValue(); } catch (Exception ignored) { }
             registrarPartida(false, turnos);
         }
+        if (g != null && draftDeckArq != null && draftDeckArq.equals(deckAtual)) { apagarDeckDraft(); draftFase = ""; draftMesa = null; draftId = null; }   // saiu da partida do draft
         gameId = null;
         tableId = null;
         gameChatId = null;
@@ -3424,6 +3436,7 @@ public class Ponte implements MageClient {
                 int turnos = 0;
                 try { turnos = ((Number) jogo.get("turno")).intValue(); } catch (Exception ignored) { }
                 if (!assistindo) registrarPartida(g.getWins() > 0, turnos);
+                if (draftDeckArq != null && draftDeckArq.equals(deckAtual)) { apagarDeckDraft(); draftFase = ""; draftMesa = null; draftId = null; }   // o deck do draft só vale para aquela partida
                 mudou();
                 break;
             }
