@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Draft de Commander</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Metamorphous&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/mana-font@1.18.0/css/mana.min.css" rel="stylesheet">
+<style>
+:root{--ouro:#E4C874;--ouro2:#c9a24a;--fa:'Metamorphous',serif;--ff:'Cinzel',serif}
+*{box-sizing:border-box}
+body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color:#f0e6d0;user-select:none;
+  background:radial-gradient(ellipse at 50% 40%,#2a1a0e 0%,#120a06 55%,#060403 100%)}
+#runas{position:fixed;left:50%;top:46%;width:min(120vh,1200px);aspect-ratio:1;transform:translate(-50%,-50%);opacity:.08;animation:gira 200s linear infinite;pointer-events:none}
+#runas *{stroke:#e8c870;fill:none}#runas text{fill:#e8c870;stroke:none}
+@keyframes gira{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.tela{position:fixed;inset:0;display:none}.tela.on{display:block}
+#fechar{position:fixed;top:14px;right:18px;z-index:50;font-family:var(--ff);font-size:13px;letter-spacing:.08em;color:#f0d890;padding:7px 14px;border:0;border-radius:9px;cursor:pointer;
+  background:linear-gradient(180deg,#3a2210,#1e1008);box-shadow:inset 0 1px 0 #ffd88a33,0 3px 0 #0c0603}
+.btOuro{font-family:var(--fa);font-size:19px;letter-spacing:.08em;color:#2a1606;padding:12px 34px;border:0;border-radius:12px;cursor:pointer;
+  background:linear-gradient(180deg,#ffe9a8,#e8b84a 55%,#b8862a);box-shadow:0 6px 0 #6a4410,0 0 30px #e8b84a55}
+.btOuro:disabled{filter:grayscale(.8) brightness(.6);cursor:not-allowed;box-shadow:0 6px 0 #3a2a10}
+.btOuro:active:not(:disabled){transform:translateY(4px);box-shadow:0 2px 0 #6a4410}
+.btCouro{font-family:var(--ff);font-size:13px;letter-spacing:.08em;color:#f0d890;padding:9px 16px;border:0;border-radius:10px;cursor:pointer;
+  background:linear-gradient(180deg,#3a2210,#1e1008);box-shadow:inset 0 1px 0 #ffd88a33,inset 0 0 0 1px #0008,0 4px 0 #0c0603}
+.btCouro:hover{filter:brightness(1.18)}
+.painel{position:relative;border-radius:14px;padding:18px 20px;background:linear-gradient(180deg,#1e120ae8,#140a06e8);box-shadow:inset 0 0 0 1px #00000099,0 10px 26px #000a}
+.painel::after{content:'';position:absolute;inset:5px;border-radius:10px;box-shadow:inset 0 0 0 1px #c9a24a30;pointer-events:none}
+h2{margin:0 0 6px;font-family:var(--fa);font-weight:400;font-size:30px;color:var(--ouro)}
+.sub{font-style:italic;color:#c9b48a;font-size:16px}
+#erro{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;display:none;padding:10px 18px;border-radius:10px;background:#3a0e06f0;box-shadow:0 0 0 1px #ff6a3a88;color:#ffd0b8}
+
+/* ---------- início: criar ou entrar ---------- */
+#tInicio .col{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(860px,92vw);display:grid;grid-template-columns:1fr 1fr;gap:18px}
+#tInicio .tit{grid-column:1/-1;text-align:center;margin-bottom:6px}
+#tInicio h3{margin:0 0 12px;font-family:var(--ff);font-size:13px;letter-spacing:.2em;color:var(--ouro2)}
+.campo{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;font-size:16px}
+.campo select{background:#0007;color:#f0e6d0;border:0;box-shadow:inset 0 0 0 1px #c9a24a55;border-radius:8px;padding:6px 10px;font:15px 'EB Garamond'}
+.abertos{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto}
+.aberto{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:#0005;box-shadow:inset 0 0 0 1px #c9a24a2a}
+.aberto b{font-family:var(--ff);font-size:14px;color:#f0d890}.aberto small{display:block;color:#a8987a;font-size:13px}
+.aberto .btCouro{margin-left:auto}
+.vazio{color:#8a7a5a;font-style:italic;padding:10px 0}
+
+/* ---------- sala de espera ---------- */
+#tSala .col{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,92vw);text-align:center}
+.lugares{display:flex;flex-direction:column;gap:8px;margin:18px 0 20px;text-align:left}
+.lugar{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;background:#0005;box-shadow:inset 0 0 0 1px #c9a24a2a;font-size:17px}
+.lugar .av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-family:var(--ff);color:#1a1208;background:var(--ouro)}
+.lugar.livre{color:#7a6a4a;font-style:italic}.lugar.livre .av{background:#2a1a0e;color:#6a5a3a}
+
+/* ---------- escolhendo ---------- */
+#topo{position:absolute;left:0;right:0;top:0;height:64px;display:flex;align-items:center;gap:22px;padding:0 120px 0 26px;z-index:5;background:linear-gradient(180deg,#0c0704f0,#0c070400)}
+#topo .tit{font-family:var(--fa);font-size:22px;color:var(--ouro)}
+#topo .cubo{font-size:15px;color:#c9b48a;font-style:italic}
+.pacotes{display:flex;gap:8px}
+.pacotes i{width:22px;height:30px;border-radius:4px;background:linear-gradient(160deg,#5a3a18,#2a1808);box-shadow:inset 0 0 0 1px #c9a24a55}
+.pacotes i.on{background:linear-gradient(160deg,#ffe9a8,#c9a24a);box-shadow:0 0 12px #e8b84a88}.pacotes i.feito{opacity:.35}
+#topo .escolha{font-family:var(--ff);font-size:14px;letter-spacing:.1em;color:#d8c8a8}
+#relogio{margin-left:auto;position:relative;width:48px;height:48px}
+#relogio svg{width:100%;height:100%;transform:rotate(-90deg)}
+#relogio circle{fill:none;stroke-width:4}#relogio .f{stroke:#3a2a18}#relogio .t{stroke:var(--ouro);stroke-linecap:round;transition:stroke .3s}
+#relogio.pouco .t{stroke:#ff6a3a}
+#relogio b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--ff);font-size:15px}
+#roda{position:absolute;left:26px;top:84px;width:220px;z-index:4}
+#roda h3{margin:0 0 8px;font-family:var(--ff);font-size:12px;letter-spacing:.2em;color:var(--ouro2)}
+.jog{display:flex;align-items:center;gap:10px;padding:6px 4px;border-radius:8px;font-size:15px}
+.jog .av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-family:var(--ff);font-size:12px;color:#1a1208;background:var(--ouro);flex:none}
+.jog.eu{background:#e8b84a14;box-shadow:inset 0 0 0 1px #e8b84a40}
+#pacote{position:absolute;left:270px;right:26px;top:80px;bottom:230px;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:14px 12px;padding:10px}
+.carta{position:relative;width:clamp(110px,10.5vw,150px);aspect-ratio:63/88;border-radius:6px;cursor:pointer;background:#111 center/cover;
+  box-shadow:0 8px 18px #000c;transition:transform .2s cubic-bezier(.2,.9,.3,1.3),box-shadow .2s,opacity .3s,filter .3s;animation:entra .5s cubic-bezier(.2,.9,.3,1.1) both;animation-delay:var(--d)}
+@keyframes entra{from{opacity:0;transform:translateY(30px)}}
+.carta:hover{transform:translateY(-10px) scale(1.06);box-shadow:0 0 0 2px var(--ouro),0 0 26px #e8b84a88,0 16px 26px #000c;z-index:2}
+.carta.lenda::before{content:'COMANDANTE';position:absolute;left:50%;top:-11px;transform:translateX(-50%);z-index:1;font-family:var(--ff);font-size:9px;letter-spacing:.14em;padding:2px 8px;border-radius:5px;color:#2a1606;background:linear-gradient(180deg,#ffe9a8,#c9a24a);box-shadow:0 2px 6px #000a;white-space:nowrap}
+.carta.marcada{box-shadow:0 0 0 3px #ffe08a,0 0 40px #ffd34acc,0 16px 26px #000c;transform:translateY(-12px) scale(1.08)}
+.carta.sai{opacity:0;transform:scale(.6);pointer-events:none}
+#confirmar{position:absolute;left:calc(50% + 122px);bottom:244px;transform:translateX(-50%);z-index:6;display:none}
+#aviso{position:absolute;left:calc(50% + 122px);top:44%;transform:translate(-50%,-50%);z-index:6;display:none;text-align:center;font-family:var(--fa);font-size:22px;color:var(--ouro)}
+#aviso small{display:block;font-family:'EB Garamond',serif;font-size:16px;color:#c9b48a;font-style:italic;margin-top:6px}
+#picks{position:absolute;left:0;right:0;bottom:0;height:220px;z-index:4;padding:12px 26px 14px;background:linear-gradient(0deg,#0c0704,#0c0704ee 70%,#0c070400);display:flex;flex-direction:column}
+#picks .cab{display:flex;align-items:baseline;gap:16px;margin-bottom:8px}
+#picks h3{margin:0;font-family:var(--ff);font-size:13px;letter-spacing:.2em;color:var(--ouro2)}
+#picks .conta{font-size:15px;color:#d8c8a8}#picks .conta b{color:var(--ouro)}
+.colunas{flex:1;display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;padding-top:4px;scrollbar-width:thin;scrollbar-color:#c9a24a55 transparent}
+.coluna{flex:none;display:flex;flex-direction:column;align-items:center}
+.coluna small{font-family:var(--ff);font-size:11px;letter-spacing:.1em;color:#9a8a6a;margin-bottom:4px}
+.mini{width:86px;aspect-ratio:63/88;border-radius:4px;background:#111 center/cover;box-shadow:0 3px 8px #000c;margin-top:-92px;transition:transform .2s;cursor:pointer}
+.mini:first-child{margin-top:0}.mini:hover{transform:translateY(-6px);z-index:3;position:relative}
+.mini.lenda{box-shadow:0 0 0 2px #e8b84a,0 3px 8px #000c}
+.voa{position:fixed;z-index:20;border-radius:6px;background:#111 center/cover;pointer-events:none;box-shadow:0 0 30px #ffd34a;transition:all .55s cubic-bezier(.5,0,.3,1)}
+
+/* ---------- montando ---------- */
+#tMonta{display:none;flex-direction:column}#tMonta.on{display:flex}
+#tMonta .topoM{flex:none;height:64px;display:flex;align-items:center;gap:18px;padding:0 120px 0 26px}
+#tMonta .topoM .tit{font-family:var(--fa);font-size:22px;color:var(--ouro)}
+#tMonta main{flex:1;min-height:0;display:flex;gap:18px;padding:0 26px 22px}
+#pool{flex:1;min-width:0;display:flex;flex-direction:column;padding:14px 16px}
+.cabP{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.cabP h3{margin:0;font-family:var(--ff);font-size:13px;letter-spacing:.2em;color:var(--ouro2)}
+.filtros{margin-left:auto;display:flex;gap:5px}
+.filtros button{width:30px;height:30px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;font-size:15px;background:#0006;box-shadow:inset 0 0 0 1px #c9a24a44;color:#ddd}
+.filtros button.on{box-shadow:inset 0 0 0 2px var(--ouro),0 0 10px #e8b84a66}
+#explica{margin:0 0 10px;padding:8px 14px;border-radius:9px;background:#0005;box-shadow:inset 0 0 0 1px #c9a24a33;font-size:14.5px;color:#d8c8a8}#explica b{color:var(--ouro)}
+.grade{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:14px 12px;padding:10px 2px 4px;scrollbar-width:thin;scrollbar-color:#c9a24a55 transparent}
+.grade .carta{width:auto;animation:none}
+.carta.noDeck{box-shadow:0 0 0 3px #e8c870,0 0 18px #e8b84a88,0 6px 14px #000c}
+.carta.noDeck::after{content:'✓';position:absolute;right:-8px;top:-8px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:15px;font-weight:700;color:#2a1606;background:linear-gradient(180deg,#ffe9a8,#c9a24a);box-shadow:0 2px 6px #000a}
+.carta.foraCor{filter:grayscale(1) brightness(.4);opacity:.45;cursor:not-allowed}
+.grade .carta.lenda::before{display:none}
+.ehCmd{position:absolute;left:50%;top:-9px;transform:translateX(-50%);z-index:1;font-family:var(--ff);font-size:9px;letter-spacing:.12em;padding:2px 8px;border-radius:5px;white-space:nowrap;color:#2a1606;background:linear-gradient(180deg,#ffe9a8,#c9a24a);box-shadow:0 2px 6px #000a;cursor:pointer}
+.secao{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:6px 0 -2px;font-family:var(--ff);font-size:12px;letter-spacing:.18em;color:var(--ouro2)}
+.secao::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,#c9a24a66,transparent)}
+.secao small{font-family:'EB Garamond',serif;font-style:italic;letter-spacing:0;font-size:13px;color:#a8987a}
+#deck{width:340px;flex:none;display:flex;flex-direction:column;padding:0;overflow:hidden}
+.cmdBox{position:relative;height:150px;flex:none;background:#000 center 22%/cover;display:flex;align-items:flex-end;padding:12px 16px}
+.cmdBox::before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#140a06 4%,#140a0699 55%,transparent)}
+.cmdBox div{position:relative}
+.cmdBox small{display:block;font-family:var(--ff);font-size:11px;letter-spacing:.2em;color:var(--ouro2)}
+.cmdBox b{display:block;font-family:var(--fa);font-size:21px;color:var(--ouro);text-shadow:0 2px 6px #000}
+.cmdBox .id{margin-top:3px;font-size:16px;display:flex;gap:3px}
+.cmdBox.vazio{background:repeating-linear-gradient(135deg,#1a0e08 0 12px,#140a06 12px 24px)}.cmdBox.vazio b{font-size:17px;color:#c9b48a}
+#curva{flex:none;display:flex;align-items:flex-end;gap:4px;height:58px;padding:10px 16px 4px}
+#curva div{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:#9a8a6a}
+#curva i{display:block;width:100%;border-radius:3px 3px 0 0;background:linear-gradient(180deg,#e8c870,#8a6a2a);min-height:2px}
+#lista{flex:1;overflow-y:auto;padding:6px 12px;scrollbar-width:thin;scrollbar-color:#c9a24a55 transparent}
+.lin{display:flex;align-items:center;gap:8px;height:30px;margin-bottom:3px;padding:0 10px 0 6px;border-radius:5px;cursor:pointer;
+  background:linear-gradient(90deg,#1e120a 40%,#1e120a00 80%),var(--arte) right 35%/60% auto no-repeat,#1e120a;box-shadow:inset 0 1px 0 #ffffff0d,inset 0 -1px 0 #00000080}
+.lin:hover{filter:brightness(1.25);box-shadow:inset 3px 0 0 #e05a3a}
+.lin .mv{width:22px;height:24px;flex:none;display:grid;place-items:center;font-family:var(--ff);font-size:12px;color:#fff;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:linear-gradient(160deg,#9fd0ff,#3a80d0 35%,#1a4a9a 70%,#0a2a6a)}
+.lin span{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px #000}
+#basicos{flex:none;padding:10px 14px 6px;display:flex;flex-wrap:wrap;gap:6px}
+.bas{display:flex;align-items:center;gap:4px;padding:3px 4px 3px 7px;border-radius:8px;background:#0005;box-shadow:inset 0 0 0 1px #c9a24a33}
+.bas b{min-width:18px;text-align:center;font-family:var(--ff);font-size:13px}
+.bas button{width:20px;height:20px;border:0;border-radius:5px;cursor:pointer;background:#3a2210;color:#f0d890;font-weight:700}
+#avisos{flex:none;padding:0 16px 6px;font-size:13px;color:#ffb070;min-height:6px}
+.pe{flex:none;display:flex;align-items:center;gap:10px;padding:12px 16px 14px}
+.pe .conta b{font-family:var(--ff);font-size:22px;color:var(--ouro)}.pe .conta b.ok{color:#8ad08a}
+.pe .conta small{display:block;font-size:12.5px;color:#a8987a}
+#pronto{margin-left:auto;font-size:18px;padding:11px 22px}
+#zoom{position:fixed;z-index:30;width:290px;border-radius:14px;pointer-events:none;display:none;box-shadow:0 0 0 2px var(--ouro),0 20px 50px #000}
+</style></head><body>
+<svg id="runas" viewBox="0 0 400 400"></svg>
+<button id="fechar">Sair do draft</button>
+<div id="erro"></div>
+
+<!-- criar ou entrar -->
+<div class="tela" id="tInicio"><div class="col">
+  <div class="tit"><h2>Draft de Commander</h2><div class="sub">Abram pacotes de um cubo, escolham uma carta por vez e montem um deck de 60 com uma das lendas que pegaram.</div></div>
+  <div class="painel"><h3>CRIAR UM DRAFT</h3>
+    <div class="campo">Cubo <select id="cubo"></select></div>
+    <div class="campo">Jogadores <select id="lugares"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+    <div class="campo" id="campoBots" style="display:none">Bots de draft (teste) <select id="bots"><option>0</option><option>1</option><option>2</option><option>3</option></select></div>
+    <button class="btOuro" id="criar" style="width:100%;margin-top:4px">Criar draft</button></div>
+  <div class="painel"><h3>DRAFTS ABERTOS</h3><div class="abertos" id="abertos"><div class="vazio">Procurando...</div></div></div>
+</div></div>
+
+<!-- sala de espera -->
+<div class="tela" id="tSala"><div class="col painel">
+  <h2>Sala do draft</h2><div class="sub" id="salaSub"></div>
+  <div class="lugares" id="lugaresSala"></div>
+  <button class="btOuro" id="comecar" style="display:none">Começar o draft</button>
+  <div class="sub" id="salaEspera"></div>
+</div></div>
+
+<!-- escolhendo -->
+<div class="tela" id="tEscolhe">
+  <div id="topo"><div class="tit">Draft de Commander</div><div class="cubo" id="nomeCubo"></div><div class="pacotes" id="pacotes"></div><div class="escolha" id="escolha"></div>
+    <div id="relogio"><svg viewBox="0 0 48 48"><circle class="f" cx="24" cy="24" r="20"/><circle class="t" id="arco" cx="24" cy="24" r="20" stroke-dasharray="125.7"/></svg><b id="seg"></b></div></div>
+  <div id="roda" class="painel"><h3>MESA DO DRAFT</h3><div id="jogs"></div></div>
+  <div id="pacote"></div>
+  <button class="btOuro" id="confirmar">Escolher</button>
+  <div id="aviso">Esperando o próximo pacote<small>os outros ainda estão escolhendo</small></div>
+  <div id="picks"><div class="cab"><h3>SUAS ESCOLHAS</h3><div class="conta" id="conta"></div></div><div class="colunas" id="colunas"></div></div>
+</div>
+
+<!-- montando -->
+<div class="tela" id="tMonta">
+  <div class="topoM"><div class="tit">Monte o seu deck</div><div class="sub">Escolha um comandante entre as suas lendas e complete 60 cartas</div></div>
+  <main>
+    <section id="pool" class="painel">
+      <div class="cabP"><h3>SUAS ESCOLHAS DO DRAFT</h3><div class="filtros" id="filtros"></div></div>
+      <div id="explica">Use as cartas que <b>você escolheu no draft</b>. Clique numa carta para colocar ou tirar do deck. O que faltar para 60 é completado com <b>terrenos básicos</b>.</div>
+      <div class="grade" id="grade"></div>
+    </section>
+    <aside id="deck" class="painel">
+      <div class="cmdBox vazio" id="cmdBox"><div><small>COMANDANTE</small><b>Clique em "Comandante" numa lenda</b></div></div>
+      <div id="curva"></div><div id="lista"></div><div id="basicos"></div><div id="avisos"></div>
+      <div class="pe"><div class="conta"><b id="total">0</b><span style="color:#a8987a"> / 60</span><small id="detalhe"></small></div><button class="btOuro" id="pronto" disabled>Pronto</button></div>
+    </aside>
+  </main>
+</div>
+<img id="zoom" alt="">
+<script>
+const img = (c, v) => `/img?s=${encodeURIComponent(c.set||'')}&n=${encodeURIComponent(c.num||'')}&nm=${encodeURIComponent(c.nome||'').replace(/'/g,'%27')}${v?'&v='+v:''}`;
+const post = (b) => fetch('/api/draft', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(b)}).then(r=>r.json());
+const pai = m => parent !== window && parent.postMessage(Object.assign({draft: true}, m), '*');
+const som = n => { try { if (parent !== window && parent.Sons && n === 'carta'){ parent.Sons.tocar('maoCarta'); return; } const a = new Audio(n); a.volume = .45; a.play().catch(()=>{}); } catch(e){} };
+const $ = id => document.getElementById(id);
+function erro(t){ const e = $('erro'); e.textContent = t; e.style.display = 'block'; clearTimeout(erro.t); erro.t = setTimeout(()=>e.style.display = 'none', 6000); }
+(function(){ const R = 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ'; $('runas').innerHTML = '<circle cx="200" cy="200" r="196"/><circle cx="200" cy="200" r="176"/><circle cx="200" cy="200" r="120"/><path id="rc" d="M200 200 m-186 0 a186 186 0 1 1 372 0 a186 186 0 1 1 -372 0"/><text font-size="13" font-family="serif"><textPath href="#rc" textLength="1160" lengthAdjust="spacing">' + R + R + '</textPath></text>'; })();
+function mostrar(id){ document.querySelectorAll('.tela').forEach(t=>t.classList.toggle('on', t.id === id)); }
+if (new URLSearchParams(location.search).has('teste')) $('campoBots').style.display = '';
+const zoom = (el, c) => { el.onmouseenter = () => { const z = $('zoom'), r = el.getBoundingClientRect(); z.src = img(c);
+  z.style.left = (r.right + 300 < innerWidth ? r.right + 12 : Math.max(8, r.left - 302)) + 'px'; z.style.top = Math.max(10, Math.min(innerHeight - 420, r.top - 40)) + 'px'; z.style.display = 'block'; };
+  el.onmouseleave = () => $('zoom').style.display = 'none'; };
+
+// ---------- início ----------
+post({acao:'cubos'}).then(l => { if (!Array.isArray(l)) return; $('cubo').innerHTML = l.sort().map(n=>`<option ${n==='Legendary Cube'?'selected':''}>${n}</option>`).join(''); });
+$('criar').onclick = async () => {
+  $('criar').disabled = true;
+  const r = await post({acao:'criar', cubo: $('cubo').value, lugares: +$('lugares').value, bots: +$('bots').value});
+  $('criar').disabled = false; if (r.erro) erro(r.erro); else ciclo();
+};
+async function desenharInicio(){
+  const r = await post({acao:'lista'}); if (r.erro){ $('abertos').innerHTML = `<div class="vazio">${r.erro}</div>`; return; }
+  $('abertos').innerHTML = (r.abertos||[]).map(d=>`<div class="aberto"><div><b>Draft de ${d.nome}</b><small>${d.jogadores.join(', ')} · ${d.livres} lugar${d.livres===1?'':'es'} livre${d.livres===1?'':'s'}</small></div><button class="btCouro" data-m="${d.mesa}">Entrar</button></div>`).join('')
+    || '<div class="vazio">Nenhum draft esperando gente agora. Crie um e chame os amigos.</div>';
+  $('abertos').querySelectorAll('[data-m]').forEach(b=>b.onclick = async () => { const x = await post({acao:'entrar', mesa: b.dataset.m}); if (x.erro) erro(x.erro); else ciclo(); });
+}
+// ---------- sala ----------
+async function desenharSala(){
+  const r = await post({acao:'lista'}); const m = r.meu; if (!m) return;
+  $('salaSub').textContent = `Draft de ${m.nome}`;
+  const nomes = m.jogadores; let h = nomes.map(n=>`<div class="lugar"><div class="av">${(n[0]||'?').toUpperCase()}</div>${n}</div>`).join('');
+  for (let i = 0; i < m.livres; i++) h += '<div class="lugar livre"><div class="av">?</div>Lugar livre</div>';
+  $('lugaresSala').innerHTML = h;
+  $('comecar').style.display = r.dono ? '' : 'none'; $('comecar').disabled = m.livres > 0;
+  $('salaEspera').textContent = r.dono ? (m.livres > 0 ? `Esperando ${m.livres} jogador${m.livres===1?'':'es'} entrar...` : 'Todos chegaram!') : 'Esperando o dono começar o draft...';
+}
+$('comecar').onclick = async () => { const r = await post({acao:'comecar'}); if (r.erro) erro(r.erro); };
+
+// ---------- escolhendo ----------
+let marcada = null, ultimoPacote = '', esperando = false;
+function desenharEscolha(e){
+  $('nomeCubo').textContent = e.cubo || '';
+  const pn = e.pacoteN || 1, cn = e.cartaN || 1;
+  $('pacotes').innerHTML = [1,2,3].map(i=>`<i class="${i===pn?'on':i<pn?'feito':''}"></i>`).join('');
+  $('escolha').textContent = `PACOTE ${pn} DE 3 · ESCOLHA ${cn}`;
+  $('jogs').innerHTML = (e.jogadores||[]).map(n=>`<div class="jog"><div class="av">${(n[0]||'?').toUpperCase()}</div>${n}</div>`).join('');
+  const t = e.tempo || 0; $('arco').style.strokeDashoffset = 125.7 * (1 - Math.min(1, t / 60)); $('seg').textContent = t; $('relogio').classList.toggle('pouco', t <= 10);
+  const chave = (e.pacote||[]).map(c=>c.id).join(',');
+  if (e.minhaVez && e.pacote.length && chave !== ultimoPacote){
+    ultimoPacote = chave; esperando = false; marcada = null; $('aviso').style.display = 'none'; $('confirmar').style.display = 'none';
+    $('pacote').innerHTML = e.pacote.map((c,i)=>`<div class="carta ${c.lenda?'lenda':''}" data-i="${i}" style="--d:${(i*.04).toFixed(2)}s;background-image:url('${img(c)}')"></div>`).join('');
+    $('pacote').querySelectorAll('.carta').forEach(el=>{ const c = e.pacote[+el.dataset.i]; zoom(el, c);
+      el.onclick = () => { document.querySelectorAll('.carta.marcada').forEach(x=>x.classList.remove('marcada')); el.classList.add('marcada'); marcada = c; $('confirmar').style.display = 'block'; som('carta'); };
+      el.ondblclick = () => { marcada = c; escolher(el); }; });
+  } else if (!e.minhaVez && !esperando){ $('pacote').innerHTML = ''; $('aviso').style.display = 'block'; }
+  desenharPicks(e.escolhas || []);
+}
+async function escolher(el){
+  if (!marcada) return; el = el || document.querySelector('.carta.marcada');
+  const c = marcada; marcada = null; esperando = true; $('confirmar').style.display = 'none'; $('zoom').style.display = 'none';
+  if (el){ const r = el.getBoundingClientRect(), v = document.createElement('div'); v.className = 'voa';
+    v.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;background-image:url('${img(c)}')`; document.body.appendChild(v);
+    const a = $('colunas').getBoundingClientRect(); requestAnimationFrame(()=>{ v.style.left = (a.left + 20) + 'px'; v.style.top = (a.top + 10) + 'px'; v.style.width = '86px'; v.style.height = '120px'; v.style.opacity = .3; });
+    setTimeout(()=>v.remove(), 600); }
+  document.querySelectorAll('#pacote .carta').forEach(x=>x.classList.add('sai'));
+  som('sons/kenney/rpg/bookFlip2.ogg');
+  setTimeout(()=>{ if (esperando) $('aviso').style.display = 'block'; }, 350);
+  const r = await post({acao:'escolher', carta: c.id}); if (r.erro) erro(r.erro);
+}
+$('confirmar').onclick = () => escolher();
+function desenharPicks(l){
+  const g = {}; l.forEach(c=>{ const k = c.lenda ? 'Comandantes' : (c.cor||'').length > 1 ? 'Multicolor' : ({W:'Branco',U:'Azul',B:'Preto',R:'Vermelho',G:'Verde'}[c.cor] || 'Incolor'); (g[k] = g[k] || []).push(c); });
+  const ordem = ['Comandantes','Branco','Azul','Preto','Vermelho','Verde','Multicolor','Incolor'];
+  $('colunas').innerHTML = ordem.filter(k=>g[k]).map(k=>`<div class="coluna"><small>${k} · ${g[k].length}</small><div>${g[k].sort((a,b)=>(a.mv||0)-(b.mv||0)).map(c=>`<div class="mini ${c.lenda?'lenda':''}" data-id="${c.id}" style="background-image:url('${img(c)}')"></div>`).join('')}</div></div>`).join('');
+  $('colunas').querySelectorAll('.mini').forEach(m=>{ const c = l.find(x=>x.id===m.dataset.id); m.onmouseenter = () => { const z = $('zoom'), r = m.getBoundingClientRect(); z.src = img(c); z.style.left = Math.min(innerWidth - 310, r.left) + 'px'; z.style.top = Math.max(10, r.top - 430) + 'px'; z.style.display = 'block'; }; m.onmouseleave = () => $('zoom').style.display = 'none'; });
+  const n = l.filter(c=>c.lenda).length; $('conta').innerHTML = `<b>${l.length}</b> cartas · <b>${n}</b> possíve${n===1?'l':'is'} comandante${n===1?'':'s'}`;
+}
+
+// ---------- montando ----------
+let POOL = null, cmd = null, deck = new Set(), bas = {W:0,U:0,B:0,R:0,G:0}, filtro = '';
+const BAS = {W:'ms-w',U:'ms-u',B:'ms-b',R:'ms-r',G:'ms-g'};
+const ehTerra = c => /LAND/.test(c.tipo||'');
+const cabe = c => !cmd || [...(c.cor||'')].every(x => (cmd.cor||'').includes(x));
+$('filtros').innerHTML = ['','W','U','B','R','G','C'].map(k=>`<button data-f="${k}" class="${k===filtro?'on':''}">${k===''?'<i class="ms ms-multicolor"></i>':`<i class="ms ms-${k.toLowerCase()}"></i>`}</button>`).join('');
+$('filtros').querySelectorAll('button').forEach(b=>b.onclick=()=>{ filtro = b.dataset.f; $('filtros').querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b)); desenharMonta(); });
+function desenharMonta(){
+  const l = POOL.filter(c => c !== cmd && (!filtro || (filtro === 'C' ? !c.cor : (c.cor||'').includes(filtro))));
+  const html = c => `<div class="carta ${deck.has(c)?'noDeck':''} ${cabe(c)?'':'foraCor'}" data-id="${c.id}" style="background-image:url('${img(c)}')">${c.lenda?'<span class="ehCmd">COMANDANTE</span>':''}</div>`;
+  const noD = l.filter(c=>deck.has(c)), res = l.filter(c=>!deck.has(c) && cabe(c)), fora = l.filter(c=>!cabe(c));
+  $('grade').innerHTML = (noD.length ? `<div class="secao">NO DECK · ${noD.length}</div>` + noD.map(html).join('') : '')
+    + `<div class="secao">RESERVA · ${res.length} <small>suas escolhas que ainda não estão no deck</small></div>` + res.map(html).join('')
+    + (fora.length ? `<div class="secao">FORA DAS CORES · ${fora.length} <small>não combinam com o comandante</small></div>` + fora.map(html).join('') : '');
+  $('grade').querySelectorAll('.carta').forEach(el=>{ const c = POOL.find(x=>x.id===el.dataset.id); zoom(el, c);
+    el.onclick = ev => { if (ev.target.classList.contains('ehCmd')) return virarCmd(c); if (!cabe(c)) return;
+      if (deck.has(c)) deck.delete(c); else deck.add(c); som('sons/kenney/rpg/bookPlace' + (1 + Math.floor(Math.random()*3)) + '.ogg'); desenharMonta(); }; });
+  desenharDeck();
+}
+function virarCmd(c){ if (cmd) deck.add(cmd); cmd = c; deck.delete(c); [...deck].forEach(x=>{ if (!cabe(x)) deck.delete(x); }); Object.keys(bas).forEach(k=>{ if (!(c.cor||'').includes(k)) bas[k] = 0; }); som('sons/kenney/rpg/metalLatch.ogg'); desenharMonta(); }
+function desenharDeck(){
+  const box = $('cmdBox');
+  if (cmd){ box.classList.remove('vazio'); box.style.backgroundImage = `url('${img(cmd,'art_crop')}')`;
+    box.innerHTML = `<div><small>COMANDANTE</small><b>${cmd.nome.split(',')[0]}</b><div class="id">${[...(cmd.cor||'')].map(k=>`<i class="ms ms-${k.toLowerCase()} ms-cost"></i>`).join('') || '<i class="ms ms-c ms-cost"></i>'}</div></div>`; }
+  const l = [...deck].sort((a,b)=>(a.mv||0)-(b.mv||0) || a.nome.localeCompare(b.nome));
+  $('lista').innerHTML = l.map(c=>`<div class="lin" data-id="${c.id}" style="--arte:url('${img(c,'art_crop')}')"><div class="mv">${c.mv||0}</div><span>${c.nome}</span></div>`).join('') || '<div style="padding:16px;color:#8a7a5a;font-style:italic;text-align:center">Clique nas cartas da esquerda para colocar no deck</div>';
+  $('lista').querySelectorAll('.lin').forEach(el=>el.onclick=()=>{ deck.delete(POOL.find(x=>x.id===el.dataset.id)); desenharMonta(); });
+  const cv = Array(7).fill(0); l.filter(c=>!ehTerra(c)).forEach(c=>cv[Math.min(6, c.mv||0)]++); const mx = Math.max(1, ...cv);
+  $('curva').innerHTML = cv.map((n,i)=>`<div><i style="height:${Math.round(n/mx*34)}px"></i>${i===6?'6+':i}</div>`).join('');
+  const cores = cmd ? [...(cmd.cor||'')] : [];
+  $('basicos').innerHTML = cores.length ? cores.map(k=>`<div class="bas"><i class="ms ${BAS[k]} ms-cost"></i><b>${bas[k]}</b><button data-k="${k}" data-d="-1">−</button><button data-k="${k}" data-d="1">+</button></div>`).join('') + '<button class="btCouro" id="completar" style="padding:5px 10px;font-size:11px">Completar</button>'
+    : `<span style="font-size:13px;color:#8a7a5a;font-style:italic">${cmd ? 'Comandante incolor: o deck usa só as cartas escolhidas' : 'Os terrenos básicos aparecem quando você escolher o comandante'}</span>`;
+  $('basicos').querySelectorAll('.bas button').forEach(b=>b.onclick=()=>{ bas[b.dataset.k] = Math.max(0, bas[b.dataset.k] + +b.dataset.d); desenharDeck(); });
+  if ($('completar')) $('completar').onclick = completar;
+  const nb = Object.values(bas).reduce((a,b)=>a+b,0), total = (cmd ? 1 : 0) + deck.size + nb;
+  $('total').textContent = total; $('total').classList.toggle('ok', total === 60 && !!cmd);
+  $('detalhe').textContent = `${cmd?'1 comandante · ':''}${deck.size} cartas · ${nb} básicos`;
+  $('avisos').textContent = !cmd ? 'Escolha um comandante.' : total < 60 ? `Faltam ${60 - total} cartas.` : total > 60 ? `Sobram ${total - 60} cartas.` : '';
+  $('pronto').disabled = !(cmd && total === 60);
+}
+function completar(){
+  const cores = [...(cmd.cor||'')]; if (!cores.length) return; const falta = 60 - 1 - deck.size; if (falta <= 0) return;
+  const peso = {}; cores.forEach(k=>peso[k] = 1); [...deck, cmd].forEach(c=>[...(c.cor||'')].forEach(k=>{ if (peso[k] !== undefined) peso[k] += 2; }));
+  const soma = cores.reduce((s,k)=>s+peso[k],0); let usados = 0;
+  cores.forEach((k,i)=>{ bas[k] = i === cores.length - 1 ? falta - usados : Math.round(falta * peso[k] / soma); usados += bas[k]; });
+  som('sons/kenney/rpg/handleCoins.ogg'); desenharDeck();
+}
+$('pronto').onclick = async () => {
+  $('pronto').disabled = true; $('pronto').textContent = 'Esperando os outros...';
+  const r = await post({acao:'pronto', comandante: {nome: cmd.nome, set: cmd.set, num: cmd.num}, cartas: [...deck].map(c=>({nome:c.nome, set:c.set, num:c.num})), basicos: bas});
+  if (r.erro){ erro(r.erro); $('pronto').disabled = false; $('pronto').textContent = 'Pronto'; return; }
+  pai({acao: 'partida'});   // a Mesa mostra a sala da partida final (todos que draftaram)
+};
+
+// ---------- ciclo: segue o estado do draft ----------
+let fase = null;
+async function ciclo(){
+  const e = await post({acao:'estado'}); if (e.erro && !e.fase){ erro(e.erro); }
+  const f = e.fase || '';
+  if (f === '') { mostrar('tInicio'); if (fase !== '') desenharInicio(); }
+  else if (f === 'sala') { mostrar('tSala'); desenharSala(); }
+  else if (f === 'escolhendo') { mostrar('tEscolhe'); desenharEscolha(e); }
+  else if (f === 'montando') { if (fase !== 'montando'){ POOL = e.escolhas || []; cmd = null; deck = new Set(); mostrar('tMonta'); desenharMonta(); } }
+  fase = f;
+}
+ciclo(); setInterval(ciclo, 1000); setInterval(()=>{ if (fase === '') desenharInicio(); }, 5000);
+$('fechar').onclick = async () => { if (fase && fase !== 'jogando' && !confirm('Sair do draft? Você perde o seu lugar.')) return; if (fase && fase !== 'jogando') await post({acao:'sair'}); pai({acao: 'fechar'}); };
+</script>
+</body></html>

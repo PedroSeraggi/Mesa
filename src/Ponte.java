@@ -2199,16 +2199,74 @@ public class Ponte implements MageClient {
     volatile long draftQuando = 0;
     volatile List<String> draftJogadores = new ArrayList<>();
     volatile String draftCubo = "", draftErro = null;
+    volatile boolean draftDono = false;
+    volatile int draftHumanos = 2;
+    static final String PREFIXO_DRAFT = "Draft · ", PREFIXO_PARTIDA_DRAFT = "Partida do draft · ";
 
+    /** Uma impressão qualquer de um terreno básico (para o .dck do draft). */
+    static String linhaBasico(int q, String nome) {
+        try {
+            for (mage.cards.repository.CardInfo ci : mage.cards.repository.CardRepository.instance.findCards(nome))
+                if (ci.getSetCode() != null && !ci.getSetCode().isEmpty()) return q + " [" + ci.getSetCode() + ":" + ci.getCardNumber() + "] " + nome;
+        } catch (Throwable ignored) { }
+        return q + " " + nome;
+    }
+    /** Grava o deck de 60 do draft (comandante no SB:) e devolve o nome do arquivo. */
+    String salvarDeckDraft(JsonObject b) throws IOException {
+        JsonObject cmd = b.getAsJsonObject("comandante");
+        StringBuilder sb = new StringBuilder();
+        for (com.google.gson.JsonElement e : b.getAsJsonArray("cartas")) {
+            JsonObject c = e.getAsJsonObject();
+            sb.append("1 [").append(c.get("set").getAsString()).append(":").append(c.get("num").getAsString()).append("] ").append(c.get("nome").getAsString()).append('\n');
+        }
+        JsonObject bas = b.has("basicos") ? b.getAsJsonObject("basicos") : new JsonObject();
+        String[][] BAS = {{"W", "Plains"}, {"U", "Island"}, {"B", "Swamp"}, {"R", "Mountain"}, {"G", "Forest"}};
+        for (String[] x : BAS) if (bas.has(x[0]) && bas.get(x[0]).getAsInt() > 0) sb.append(linhaBasico(bas.get(x[0]).getAsInt(), x[1])).append('\n');
+        sb.append("SB: 1 [").append(cmd.get("set").getAsString()).append(":").append(cmd.get("num").getAsString()).append("] ").append(cmd.get("nome").getAsString()).append('\n');
+        String arq = arquivoSeguro("Draft - " + cmd.get("nome").getAsString().split(",")[0] + " " + new java.text.SimpleDateFormat("dd-MM HH'h'mm").format(new Date())) + ".dck";
+        Files.write(DECKS.resolve(arq), sb.toString().getBytes(StandardCharsets.UTF_8));
+        return arq;
+    }
+    /** Partida final do draft: Commander com todos que draftaram, cada um com o seu deck de 60 (validação livre). */
+    void criarPartidaDraft(String meuDeck, int humanos) throws Exception {
+        usarPcLocal = false;
+        sairDoJogoAtual(); sairDaSala(); conectar();
+        DeckCardLists meu = carregarDeck(meuDeck);
+        MatchOptions op = opcoesCommander(PREFIXO_PARTIDA_DRAFT + draftMesa, Math.max(2, humanos), 0);
+        op.setDeckType("Constructed - Freeform Unlimited");   // deck de 60 com comandante: o Commander normal exige 100
+        modo2v2 = false; vitoriaTime = false; timesJogo = null;
+        TableView t = session.createTable(roomId, op);
+        if (t == null) throw new IllegalStateException("O servidor recusou criar a partida do draft");
+        tableId = t.getTableId(); donoDaMesa = true;
+        long antes = System.currentTimeMillis();
+        if (!session.joinTable(roomId, tableId, meuNome, PlayerType.HUMAN, 1, meu, "")) throw new IllegalStateException("Seu deck foi recusado." + motivoRecusa(antes));
+        deckAtual = meuDeck; oponentesAtuais = new ArrayList<>();
+        synchronized (trava) { fase = "sala"; erro = null; jogo = null; prompt = null; resultado = null; log.clear(); avisos.clear(); }
+        status("Esperando os outros terminarem o deck...");
+        mudou();
+    }
+
+    final Map<String, Map<String, Object>> cacheCartaDraft = new ConcurrentHashMap<>();
     Map<String, Object> cartaDraft(SimpleCardView s) {
         Map<String, Object> c = new LinkedHashMap<>();
-        c.put("id", s.getId().toString()); c.put("set", s.getExpansionSetCode()); c.put("num", s.getCardNumber());
+        c.put("id", s.getId().toString());
+        Map<String, Object> info = cacheCartaDraft.computeIfAbsent(s.getExpansionSetCode() + ":" + s.getCardNumber(), k -> infoCartaDraft(s));
+        c.putAll(info);
+        return c;
+    }
+    Map<String, Object> infoCartaDraft(SimpleCardView s) {
+        Map<String, Object> c = new LinkedHashMap<>();
+        c.put("set", s.getExpansionSetCode()); c.put("num", s.getCardNumber());
         try {
             mage.cards.repository.CardInfo ci = mage.cards.repository.CardRepository.instance.findCard(s.getExpansionSetCode(), s.getCardNumber());
             if (ci != null) {
                 c.put("nome", ci.getName()); c.put("mv", ci.getManaValue());
                 c.put("tipo", ci.getTypes() == null ? "" : String.valueOf(ci.getTypes()));
                 c.put("lenda", ci.getSupertypes() != null && ci.getSupertypes().contains(SuperType.LEGENDARY) && ci.getTypes() != null && ci.getTypes().contains(CardType.CREATURE));
+                try {   // identidade de cor (para montar o deck de Commander)
+                    mage.filter.FilterMana fm = mage.util.ManaUtil.getColorIdentity(ci.createCard());
+                    c.put("cor", (fm.isWhite() ? "W" : "") + (fm.isBlue() ? "U" : "") + (fm.isBlack() ? "B" : "") + (fm.isRed() ? "R" : "") + (fm.isGreen() ? "G" : ""));
+                } catch (Throwable ignored) { c.put("cor", ""); }
             }
         } catch (Throwable ignored) { }
         return c;
@@ -2244,7 +2302,7 @@ public class Ponte implements MageClient {
                 TournamentTypeView tipo = null;
                 for (TournamentTypeView t : session.getTournamentTypes()) if (t.getName().equals("Booster Draft Elimination (Cube)")) tipo = t;
                 if (tipo == null) throw new IllegalStateException("O servidor não tem o draft de cubo.");
-                mage.game.tournament.TournamentOptions op = new mage.game.tournament.TournamentOptions("Draft da Mesa", "", false);
+                mage.game.tournament.TournamentOptions op = new mage.game.tournament.TournamentOptions(PREFIXO_DRAFT + perfil().get("nome").getAsString(), "", false);
                 op.setTournamentType(tipo.getName());
                 for (int i = 0; i < lugares; i++) op.getPlayerTypes().add(i < lugares - bots ? PlayerType.HUMAN : PlayerType.COMPUTER_DRAFT_BOT);
                 op.setWatchingAllowed(false); op.setPassword("");   // sem senha o XMage quebra a lista de mesas (TableView lê a senha)
@@ -2256,7 +2314,7 @@ public class Ponte implements MageClient {
                 op.setNumberRounds(1);
                 TableView t = session.createTournamentTable(roomId, op);
                 if (t == null) throw new IllegalStateException("O servidor recusou criar o draft.");
-                draftMesa = t.getTableId(); draftCubo = cubo;
+                draftMesa = t.getTableId(); draftCubo = cubo; draftDono = true; draftHumanos = lugares - bots;
                 if (!session.joinTournamentTable(roomId, draftMesa, meuNome, PlayerType.HUMAN, 1, new DeckCardLists(), "")) throw new IllegalStateException("Não consegui entrar no draft.");
                 for (int i = 0; i < bots; i++) session.joinTournamentTable(roomId, draftMesa, "Bot " + (i + 1), PlayerType.COMPUTER_DRAFT_BOT, 5, new DeckCardLists(), "");
                 draftFase = "sala"; draftEscolhas = new ArrayList<>(); draftPacote = new ArrayList<>();
@@ -2264,10 +2322,42 @@ public class Ponte implements MageClient {
             }
             if (acao.equals("entrar")) {
                 conectar();
-                draftMesa = UUID.fromString(b.get("mesa").getAsString());
+                draftMesa = UUID.fromString(b.get("mesa").getAsString()); draftDono = false;
                 if (!session.joinTournamentTable(roomId, draftMesa, meuNome, PlayerType.HUMAN, 1, new DeckCardLists(), "")) throw new IllegalStateException("Não consegui entrar no draft (cheio ou já começou).");
                 draftFase = "sala"; draftEscolhas = new ArrayList<>(); draftPacote = new ArrayList<>();
                 json(ex, 200, estadoDraft()); return;
+            }
+            if (acao.equals("lista")) {   // drafts esperando gente, e a sala do meu draft (quem já entrou)
+                conectar();
+                List<Map<String, Object>> l = new ArrayList<>(); Map<String, Object> meu = null;
+                for (TableView t : session.getTables(roomId)) {
+                    if (!t.isTournament() || t.getTableName() == null || !t.getTableName().startsWith(PREFIXO_DRAFT)) continue;
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    List<String> nomes = new ArrayList<>(); int livres = 0;
+                    for (SeatView sv : t.getSeats()) { if (sv.getPlayerName() == null || sv.getPlayerName().isEmpty()) livres++; else nomes.add(sv.getPlayerName()); }
+                    m.put("mesa", t.getTableId().toString()); m.put("nome", t.getTableName().substring(PREFIXO_DRAFT.length())); m.put("jogadores", nomes);
+                    m.put("lugares", t.getSeats().size()); m.put("livres", livres); m.put("estado", String.valueOf(t.getTableState()));
+                    if (t.getTableId().equals(draftMesa)) meu = m;
+                    else if (t.getTableState() == TableState.WAITING || t.getTableState() == TableState.READY_TO_START) l.add(m);
+                }
+                Map<String, Object> r = new LinkedHashMap<>(); r.put("abertos", l); r.put("meu", meu); r.put("dono", draftDono);
+                json(ex, 200, r); return;
+            }
+            if (acao.equals("pronto")) {   // deck de 60 pronto: o dono cria a partida final, os outros entram nela
+                String arq = salvarDeckDraft(b);
+                if (draftDono) criarPartidaDraft(arq, draftHumanos);
+                else {
+                    UUID achou = null; String alvo = PREFIXO_PARTIDA_DRAFT + draftMesa;
+                    for (int i = 0; i < 240 && achou == null; i++) {   // espera o dono terminar o deck dele (até 4 min)
+                        for (TableView t : session.getTables(roomId)) if (alvo.equals(t.getTableName()) && t.getTableState() != TableState.FINISHED) achou = t.getTableId();
+                        if (achou == null) Thread.sleep(1000);
+                    }
+                    if (achou == null) throw new IllegalStateException("O dono do draft ainda não terminou o deck. Tente de novo em instantes.");
+                    entrarMesa(achou, arq);
+                }
+                draftFase = "jogando";
+                Map<String, Object> r = new LinkedHashMap<>(); r.put("ok", true); r.put("deck", arq);
+                json(ex, 200, r); return;
             }
             if (acao.equals("comecar")) {
                 if (draftMesa == null || !session.startTournament(roomId, draftMesa)) throw new IllegalStateException("Não deu para começar: todos os lugares precisam estar ocupados.");

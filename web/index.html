@@ -1614,6 +1614,7 @@ textarea{font:inherit;background:var(--bg2);color:var(--txt);border:1px solid va
         <button class="btnMenu" data-ir="bots">Jogar com bots</button>
         <button class="btnMenu" data-ir="entrar">Entrar numa sala</button>
         <button class="btnMenu" data-ir="criar">Criar sala</button>
+        <button class="btnMenu" id="mnDraft">Draft de Commander</button>
         <button class="btnMenu voltar" id="mnVoltar">Voltar</button>
       </div>
       <div class="rodapeMenu" id="rodapePerfil"></div>
@@ -4503,6 +4504,17 @@ function telaEscolhaInicial(){
   window.addEventListener('message', ouvir);
   document.body.appendChild(fr);
 }
+// draft de Commander (draft.html por cima da Mesa): criar/entrar, escolher cartas, montar o deck de 60
+function abrirDraft(){
+  let fr = $('#frameDraft'); if (fr) fr.remove();
+  fr = document.createElement('iframe'); fr.id = 'frameDraft'; fr.src = 'draft.html';
+  fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9300;background:#070504';
+  const ouvir = e=>{ if (!e.data || !e.data.draft || e.source !== fr.contentWindow) return;
+    if (e.data.acao === 'fechar' || e.data.acao === 'partida'){ window.removeEventListener('message', ouvir); fr.remove(); } };
+  window.addEventListener('message', ouvir);
+  document.body.appendChild(fr);
+}
+$('#mnDraft').onclick = ()=>abrirDraft();
 // entre a abertura e o Mundo 1: título do mundo saindo do preto e o botão para entrar
 function telaTituloMundo(depois){
   const t = document.createElement('div'); t.id = 'tituloMundo';
