@@ -38,6 +38,28 @@ h2{margin:0 0 6px;font-family:var(--fa);font-weight:400;font-size:30px;color:var
 .aberto .btCouro{margin-left:auto}
 .vazio{color:#8a7a5a;font-style:italic;padding:10px 0}
 
+/* escolha do cubo */
+.cuboEsc{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px;border-radius:12px;background:#0005;box-shadow:inset 0 0 0 1px #c9a24a33}
+.cuboArte{width:64px;height:64px;border-radius:10px;flex:none;background:#2a1a0e center/cover;box-shadow:0 0 0 1px #c9a24a66}
+.cuboTx{flex:1;min-width:0}.cuboTx small{display:block;font-family:var(--ff);font-size:10px;letter-spacing:.2em;color:var(--ouro2)}
+.cuboTx b{display:block;font-family:var(--fa);font-weight:400;font-size:18px;color:var(--ouro);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cuboTx span{font-size:13.5px;color:#c9b48a}
+#cubos{position:fixed;inset:0;z-index:40;display:none;background:#060403f0;padding:70px 40px 30px;overflow-y:auto}
+#cubos.on{display:block}
+#cubos h2{text-align:center}#cubos .sub{text-align:center;margin-bottom:20px}
+.gradeCubos{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px;max-width:1300px;margin:0 auto}
+.cuboC{position:relative;border-radius:14px;overflow:hidden;cursor:pointer;background:linear-gradient(180deg,#1e120a,#140a06);box-shadow:inset 0 0 0 1px #c9a24a40,0 8px 20px #000a;transition:transform .2s,box-shadow .2s}
+.cuboC:hover{transform:translateY(-4px);box-shadow:inset 0 0 0 1px var(--ouro),0 0 24px #e8b84a44,0 12px 24px #000c}
+.cuboC.sel{box-shadow:inset 0 0 0 2px var(--ouro),0 0 30px #e8b84a66}
+.cuboC .tiras{display:flex;height:74px}.cuboC .tiras div{flex:1;background:#2a1a0e center 25%/cover;filter:saturate(.9)}
+.cuboC .corpo{padding:12px 14px 14px}
+.cuboC b{display:block;font-family:var(--fa);font-weight:400;font-size:19px;color:var(--ouro);margin-bottom:2px}
+.cuboC p{margin:0 0 8px;font-size:14px;color:#d8c8a8;line-height:1.3;min-height:36px}
+.selos{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.selos span{font-size:12.5px;padding:2px 8px;border-radius:6px;background:#0006;box-shadow:inset 0 0 0 1px #c9a24a33;color:#e8d8b8}
+.selos span.cmd{background:linear-gradient(180deg,#ffe9a8,#c9a24a);color:#2a1606;box-shadow:none;font-weight:700}
+.barraCores{display:flex;height:7px;border-radius:4px;overflow:hidden;margin-bottom:8px}
+.colecoes{font-size:12.5px;color:#a8987a;line-height:1.35}.colecoes i{font-style:normal;color:#d8c8a8}
 /* ---------- sala de espera ---------- */
 #tSala .col{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,92vw);text-align:center}
 .lugares{display:flex;flex-direction:column;gap:8px;margin:18px 0 20px;text-align:left}
@@ -144,13 +166,14 @@ h2{margin:0 0 6px;font-family:var(--fa);font-weight:400;font-size:30px;color:var
 <div class="tela" id="tInicio"><div class="col">
   <div class="tit"><h2>Draft de Commander</h2><div class="sub">Abram pacotes de um cubo, escolham uma carta por vez e montem um deck de 60 com uma das lendas que pegaram.</div></div>
   <div class="painel"><h3>CRIAR UM DRAFT</h3>
-    <div class="campo">Cubo <select id="cubo"></select></div>
+    <div class="cuboEsc" id="cuboEsc"><div class="cuboArte" id="cuboArte"></div><div class="cuboTx"><small>CUBO</small><b id="cuboNome">Carregando...</b><span id="cuboResumo"></span></div><button class="btCouro" id="trocarCubo">Trocar</button></div>
     <div class="campo">Jogadores <select id="lugares"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
     <div class="campo" id="campoBots" style="display:none">Bots de draft (teste) <select id="bots"><option>0</option><option>1</option><option>2</option><option>3</option></select></div>
     <button class="btOuro" id="criar" style="width:100%;margin-top:4px">Criar draft</button></div>
   <div class="painel"><h3>DRAFTS ABERTOS</h3><div class="abertos" id="abertos"><div class="vazio">Procurando...</div></div></div>
 </div></div>
 
+<div id="cubos"><h2>Escolha o cubo</h2><div class="sub">Cada cubo é uma caixa de cartas montada para draft. Para Commander, prefira os que têm muitas lendas.</div><div class="gradeCubos" id="gradeCubos"></div></div>
 <!-- sala de espera -->
 <div class="tela" id="tSala"><div class="col painel">
   <h2>Sala do draft</h2><div class="sub" id="salaSub"></div>
@@ -202,10 +225,46 @@ const zoom = (el, c) => { el.onmouseenter = () => { const z = $('zoom'), r = el.
   el.onmouseleave = () => $('zoom').style.display = 'none'; };
 
 // ---------- início ----------
-post({acao:'cubos'}).then(l => { if (!Array.isArray(l)) return; $('cubo').innerHTML = l.sort().map(n=>`<option ${n==='Legendary Cube'?'selected':''}>${n}</option>`).join(''); });
+// ---------- cubos: o que tem em cada um ----------
+const DESC = {
+  'Legendary Cube': 'Cheio de criaturas lendárias: quase todo pacote tem um comandante. O melhor para draft de Commander.',
+  'Legendary Cube April 2016': 'Versão antiga do cubo de lendas, com outras escolhas de cartas.',
+  'Modern Cube 2017': 'Cartas fortes das coleções modernas (de 2003 em diante).',
+  'The Pauper Cube (2025 May)': 'Só cartas comuns. Sem lendas: não serve para Commander.',
+  'Cube Tutor 360 Pauper': 'Só cartas comuns, cubo pequeno. Sem lendas.',
+  "The Peasant's Toolbox": 'Comuns e incomuns. Sem lendas.',
+  "Jospeh Vasoli's Peasant Cube": 'Comuns e incomuns, quase sem lendas.',
+  'MTGA Cube 2020 April': 'O cubo do Arena: cartas das coleções de 2018 a 2020.',
+  'MTGO Khans Expanded Cube': 'Tema de Khans of Tarkir: clãs de três cores.',
+  'MTGO Vintage Cube (2025 October)': 'As cartas mais poderosas de toda a história do Magic, incluindo as proibidas.',
+  'MTGO Legacy Cube (2021 August)': 'Cartas muito fortes de todas as épocas, sem as mais quebradas.',
+  "elmikkino's Mono Blue Cube": 'Quase tudo azul. Diferente e desafiador.',
+  "Timothee Simonot's Twisted Color Pie Cube": 'As cores trocam de papel: o verde destrói, o azul ataca...',
+};
+const COR_HEX = {W:'#f4ecd0',U:'#4a90d8',B:'#6a5a7a',R:'#e0582a',G:'#3aa050',M:'#d8b040',C:'#a8a8a8'};
+let CUBOS = [], cuboSel = 'Legendary Cube';
+function desenharCuboEsc(){
+  const c = CUBOS.find(x=>x.nome===cuboSel); if (!c) return;
+  $('cuboNome').textContent = c.nome; $('cuboResumo').textContent = `${c.cartas} cartas · ${c.lendas} lendas · ${c.anoMin}–${c.anoMax}`;
+  $('cuboArte').style.backgroundImage = c.amostra && c.amostra[0] ? `url('${img(c.amostra[0],'art')}')` : '';
+}
+function abrirCubos(){
+  $('gradeCubos').innerHTML = CUBOS.map(c=>{
+    const tot = Object.values(c.cores).reduce((a,b)=>a+b,0) || 1, am = (c.amostra||[]).slice(0,4);
+    return `<div class="cuboC ${c.nome===cuboSel?'sel':''}" data-n="${c.nome.replace(/"/g,'&quot;')}">
+      <div class="tiras">${am.map(n=>`<div style="background-image:url('${img(n,'art')}')"></div>`).join('') || '<div></div>'}</div>
+      <div class="corpo"><b>${c.nome}</b><p>${DESC[c.nome] || 'Cubo de cartas variadas para draft.'}</p>
+      <div class="selos">${c.lendas >= 100 ? '<span class="cmd">Bom para Commander</span>' : ''}<span>${c.cartas} cartas</span><span>${c.lendas} lendas</span><span>${c.anoMin}–${c.anoMax}</span></div>
+      <div class="barraCores">${Object.entries(c.cores).map(([k,n])=>`<div style="flex:${n};background:${COR_HEX[k]}" title="${k}: ${n}"></div>`).join('')}</div>
+      <div class="colecoes">Principais coleções: ${(c.colecoes||[]).slice(0,5).map(x=>`<i>${x.nome||x.codigo}</i> (${x.qtd})`).join(', ')} · ${c.nColecoes} coleções no total</div></div></div>`; }).join('');
+  $('gradeCubos').querySelectorAll('.cuboC').forEach(el=>el.onclick=()=>{ cuboSel = el.dataset.n; $('cubos').classList.remove('on'); desenharCuboEsc(); });
+  $('cubos').classList.add('on');
+}
+$('trocarCubo').onclick = abrirCubos;
+post({acao:'infoCubos'}).then(l => { if (!Array.isArray(l)) return; CUBOS = l.sort((a,b)=>b.lendas-a.lendas); if (!CUBOS.find(c=>c.nome===cuboSel) && CUBOS[0]) cuboSel = CUBOS[0].nome; desenharCuboEsc(); });
 $('criar').onclick = async () => {
   $('criar').disabled = true;
-  const r = await post({acao:'criar', cubo: $('cubo').value, lugares: +$('lugares').value, bots: +$('bots').value});
+  const r = await post({acao:'criar', cubo: cuboSel, lugares: +$('lugares').value, bots: +$('bots').value});
   $('criar').disabled = false; if (r.erro) erro(r.erro); else ciclo();
 };
 async function desenharInicio(){
@@ -288,10 +347,10 @@ function desenharMonta(){
 function virarCmd(c){ if (cmd) deck.add(cmd); cmd = c; deck.delete(c); [...deck].forEach(x=>{ if (!cabe(x)) deck.delete(x); }); Object.keys(bas).forEach(k=>{ if (!(c.cor||'').includes(k)) bas[k] = 0; }); som('sons/kenney/rpg/metalLatch.ogg'); desenharMonta(); }
 function desenharDeck(){
   const box = $('cmdBox');
-  if (cmd){ box.classList.remove('vazio'); box.style.backgroundImage = `url('${img(cmd,'art_crop')}')`;
+  if (cmd){ box.classList.remove('vazio'); box.style.backgroundImage = `url('${img(cmd,'art')}')`;
     box.innerHTML = `<div><small>COMANDANTE</small><b>${cmd.nome.split(',')[0]}</b><div class="id">${[...(cmd.cor||'')].map(k=>`<i class="ms ms-${k.toLowerCase()} ms-cost"></i>`).join('') || '<i class="ms ms-c ms-cost"></i>'}</div></div>`; }
   const l = [...deck].sort((a,b)=>(a.mv||0)-(b.mv||0) || a.nome.localeCompare(b.nome));
-  $('lista').innerHTML = l.map(c=>`<div class="lin" data-id="${c.id}" style="--arte:url('${img(c,'art_crop')}')"><div class="mv">${c.mv||0}</div><span>${c.nome}</span></div>`).join('') || '<div style="padding:16px;color:#8a7a5a;font-style:italic;text-align:center">Clique nas cartas da esquerda para colocar no deck</div>';
+  $('lista').innerHTML = l.map(c=>`<div class="lin" data-id="${c.id}" style="--arte:url('${img(c,'art')}')"><div class="mv">${c.mv||0}</div><span>${c.nome}</span></div>`).join('') || '<div style="padding:16px;color:#8a7a5a;font-style:italic;text-align:center">Clique nas cartas da esquerda para colocar no deck</div>';
   $('lista').querySelectorAll('.lin').forEach(el=>el.onclick=()=>{ deck.delete(POOL.find(x=>x.id===el.dataset.id)); desenharMonta(); });
   const cv = Array(7).fill(0); l.filter(c=>!ehTerra(c)).forEach(c=>cv[Math.min(6, c.mv||0)]++); const mx = Math.max(1, ...cv);
   $('curva').innerHTML = cv.map((n,i)=>`<div><i style="height:${Math.round(n/mx*34)}px"></i>${i===6?'6+':i}</div>`).join('');

@@ -2288,12 +2288,80 @@ public class Ponte implements MageClient {
         r.put("pacoteN", draftPacoteN); r.put("cartaN", draftCartaN); r.put("jogadores", draftJogadores); r.put("erro", draftErro);
         return r;
     }
+
+    // ---------- cubos: abre as listas de cartas que vêm no XMage (plugin de draft) para mostrar o que tem em cada um ----------
+    volatile List<Map<String, Object>> infoCubosCache = null;
+    final Map<String, Date> datasSets = new ConcurrentHashMap<>();
+    final Map<String, Boolean> setPromo = new ConcurrentHashMap<>();
+    synchronized List<Map<String, Object>> infoCubos() throws Exception {
+        if (infoCubosCache != null) return infoCubosCache;
+        Path cacheArq = CACHE.resolve("cubos-v4.json");
+        if (Files.exists(cacheArq)) {
+            try { infoCubosCache = GSON.fromJson(new String(Files.readAllBytes(cacheArq), StandardCharsets.UTF_8), List.class); return infoCubosCache; } catch (Exception ignored) { }
+        }
+        Path srv = XMAGE.resolve("xmage").resolve("mage-server");
+        String cfg = new String(Files.readAllBytes(srv.resolve("config").resolve("config.xml")), StandardCharsets.UTF_8);
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("<draftCube name=\"([^\"]+)\" jar=\"([^\"]+)\" className=\"([^\"]+)\"").matcher(cfg);
+        List<Map<String, Object>> l = new ArrayList<>();
+        Map<String, ClassLoader> loaders = new HashMap<>();
+        while (m.find()) {
+            try {
+                String jar = m.group(2);
+                ClassLoader cl = loaders.computeIfAbsent(jar, j -> { try { return new URLClassLoader(new URL[]{srv.resolve("plugins").resolve(j).toUri().toURL()}, Ponte.class.getClassLoader()); } catch (Exception e) { return null; } });
+                mage.game.draft.DraftCube cubo = (mage.game.draft.DraftCube) cl.loadClass(m.group(3)).getConstructor().newInstance();
+                List<mage.game.draft.DraftCube.CardIdentity> cartas = cubo.getCubeCards();
+                if (cartas == null || cartas.isEmpty()) continue;   // "Cube From Deck": a lista vem de um arquivo
+                int lendas = 0, anoMin = 9999, anoMax = 0; Map<String, Integer> cores = new LinkedHashMap<>(), sets = new HashMap<>();
+                for (String k : new String[]{"W", "U", "B", "R", "G", "M", "C"}) cores.put(k, 0);
+                List<Map<String, Object>> amostra = new ArrayList<>();
+                for (mage.game.draft.DraftCube.CardIdentity ci : cartas) {
+                    List<mage.cards.repository.CardInfo> achadas = mage.cards.repository.CardRepository.instance.findCards(ci.getName());
+                    if (achadas.isEmpty()) continue;
+                    mage.cards.repository.CardInfo info = achadas.get(0);
+                    // coleção onde a carta saiu primeiro (mostra de que época é o cubo)
+                    String origem = null; Date quando = null;
+                    for (mage.cards.repository.CardInfo a2 : achadas) {
+                        if (setPromo.computeIfAbsent(a2.getSetCode(), k -> { try { mage.cards.repository.ExpansionInfo ei = mage.cards.repository.ExpansionRepository.instance.getSetByCode(k);
+                            String n = ei == null ? "" : ei.getName(); return n.contains("Promo") || n.contains("Online") || n.contains("Secret Lair") || n.contains("Judge") || n.contains("Friday Night"); } catch (Throwable t) { return false; } })) continue;
+                        Date dt = datasSets.computeIfAbsent(a2.getSetCode(), k -> { try { mage.cards.repository.ExpansionInfo ei = mage.cards.repository.ExpansionRepository.instance.getSetByCode(k); return ei != null && ei.getReleaseDate() != null ? ei.getReleaseDate() : new Date(); } catch (Throwable t) { return new Date(); } });
+                        if (quando == null || dt.before(quando)) { quando = dt; origem = a2.getSetCode(); }
+                    }
+                    if (origem != null) { sets.merge(origem, 1, Integer::sum); int ano = 1900 + quando.getYear(); anoMin = Math.min(anoMin, ano); anoMax = Math.max(anoMax, ano); }
+                    boolean lenda = info.getSupertypes() != null && info.getSupertypes().contains(SuperType.LEGENDARY) && info.getTypes() != null && info.getTypes().contains(CardType.CREATURE);
+                    if (lenda) { lendas++; if (amostra.size() < 6 && Math.random() < .5) { Map<String, Object> am = new LinkedHashMap<>(); am.put("nome", info.getName()); am.put("set", info.getSetCode()); am.put("num", info.getCardNumber()); amostra.add(am); } }
+                    mage.ObjectColor c = info.getColor();
+                    String k = c == null || c.getColorCount() == 0 ? "C" : c.getColorCount() > 1 ? "M" : c.isWhite() ? "W" : c.isBlue() ? "U" : c.isBlack() ? "B" : c.isRed() ? "R" : "G";
+                    cores.merge(k, 1, Integer::sum);
+                }
+                List<Map<String, Object>> topo = new ArrayList<>();
+                sets.entrySet().stream().sorted((a, b) -> b.getValue() - a.getValue()).limit(6).forEach(e -> {
+                    Map<String, Object> x = new LinkedHashMap<>(); x.put("codigo", e.getKey()); x.put("qtd", e.getValue());
+                    try { mage.cards.repository.ExpansionInfo ei = mage.cards.repository.ExpansionRepository.instance.getSetByCode(e.getKey()); if (ei != null) x.put("nome", ei.getName()); } catch (Throwable ignored) { }
+                    topo.add(x);
+                });
+                Map<String, Object> r = new LinkedHashMap<>();
+                r.put("nome", cubo.getName()); r.put("cartas", cartas.size()); r.put("lendas", lendas); r.put("cores", cores);
+                r.put("colecoes", topo); r.put("nColecoes", sets.size()); r.put("amostra", amostra);
+                r.put("atualizado", cubo.getUpdateInfo()); r.put("anoMin", anoMin); r.put("anoMax", anoMax);
+                l.add(r);
+            } catch (Throwable t) { System.out.println("Cubo " + m.group(1) + ": " + t); }
+        }
+        infoCubosCache = l;
+        try { Files.write(cacheArq, GSON.toJson(l).getBytes(StandardCharsets.UTF_8)); } catch (Exception ignored) { }
+        return l;
+    }
     void rotaDraft(HttpExchange ex) throws IOException {
         try {
             if (!"POST".equals(ex.getRequestMethod())) { json(ex, 200, estadoDraft()); return; }
             JsonObject b = corpo(ex); String acao = b.has("acao") ? b.get("acao").getAsString() : "estado";
             draftErro = null;
             if (acao.equals("cubos")) { conectar(); json(ex, 200, Arrays.asList(session.getDraftCubes())); return; }
+            if (acao.equals("infoCubos")) {   // detalhes de cada cubo (só os que o servidor também tem)
+                conectar(); Set<String> doServidor = new HashSet<>(Arrays.asList(session.getDraftCubes()));
+                List<Map<String, Object>> l = new ArrayList<>();
+                for (Map<String, Object> c : infoCubos()) if (doServidor.contains(String.valueOf(c.get("nome")))) l.add(c);
+                json(ex, 200, l); return;
+            }
             if (acao.equals("criar")) {
                 conectar();
                 if (draftMesa != null) { try { session.leaveTable(roomId, draftMesa); } catch (Exception ignored) { } draftMesa = null; draftId = null; }   // draft antigo desta Mesa
