@@ -2219,6 +2219,7 @@ public class Ponte implements MageClient {
         if (pv.getBooster() != null) for (SimpleCardView s : pv.getBooster().values()) p.add(cartaDraft(s));
         if (pv.getPicks() != null) for (SimpleCardView s : pv.getPicks().values()) e.add(cartaDraft(s));
         draftPacote = p; draftEscolhas = e; draftMinhaVez = pv.isPicking(); draftTempo = pv.getTimeout(); draftQuando = System.currentTimeMillis();
+        if (!p.isEmpty() && draftId != null) { final UUID did = draftId; new Thread(() -> { try { session.setBoosterLoaded(did); } catch (Exception ignored) { } }).start(); }   // como o cliente oficial: avisa que o pacote apareceu
         mudou();
     }
     Map<String, Object> estadoDraft() {
@@ -2237,7 +2238,8 @@ public class Ponte implements MageClient {
             if (acao.equals("cubos")) { conectar(); json(ex, 200, Arrays.asList(session.getDraftCubes())); return; }
             if (acao.equals("criar")) {
                 conectar();
-                String cubo = b.has("cubo") ? b.get("cubo").getAsString() : "MTGO Legendary Cube";
+                if (draftMesa != null) { try { session.leaveTable(roomId, draftMesa); } catch (Exception ignored) { } draftMesa = null; draftId = null; }   // draft antigo desta Mesa
+                String cubo = b.has("cubo") ? b.get("cubo").getAsString() : "Legendary Cube";
                 int lugares = b.has("lugares") ? b.get("lugares").getAsInt() : 2, bots = b.has("bots") ? b.get("bots").getAsInt() : 0;
                 TournamentTypeView tipo = null;
                 for (TournamentTypeView t : session.getTournamentTypes()) if (t.getName().equals("Booster Draft Elimination (Cube)")) tipo = t;
@@ -2279,6 +2281,9 @@ public class Ponte implements MageClient {
             }
             if (acao.equals("sair")) {
                 try { if (draftId != null) session.quitDraft(draftId); } catch (Exception ignored) { }
+                UUID m = b.has("mesa") ? UUID.fromString(b.get("mesa").getAsString()) : draftMesa;
+                try { if (m != null) session.leaveTable(roomId, m); } catch (Exception ignored) { }
+                try { if (m != null) session.removeTable(roomId, m); } catch (Exception ignored) { }
                 draftMesa = null; draftId = null; draftFase = "";
                 json(ex, 200, estadoDraft()); return;
             }
@@ -3244,9 +3249,18 @@ public class Ponte implements MageClient {
                 mudou();
                 break;
             }
+            case START_TOURNAMENT: {   // o torneio (draft) começou: cada jogador precisa entrar nele para o draft andar
+                UUID tid = cb.getObjectId();
+                if (d instanceof TableClientMessage && ((TableClientMessage) d).getGameId() != null) tid = ((TableClientMessage) d).getGameId();
+                System.out.println("Draft: torneio começou " + tid);
+                if (tid != null) session.joinTournament(tid);
+                break;
+            }
             case START_DRAFT: {   // o draft começou: entra nele (os pacotes chegam em DRAFT_INIT / DRAFT_PICK)
                 TableClientMessage m = (TableClientMessage) d;
-                draftId = m.getGameId(); draftFase = "escolhendo";
+                draftId = m.getGameId() != null ? m.getGameId() : m.getCurrentTableId() != null && !m.getCurrentTableId().equals(draftMesa) ? m.getCurrentTableId() : cb.getObjectId();
+                System.out.println("Draft: começou " + draftId + " (jogo " + m.getGameId() + ", mesa " + m.getCurrentTableId() + ", objeto " + cb.getObjectId() + ")");
+                draftFase = "escolhendo";
                 session.joinDraft(draftId);
                 mudou();
                 break;
