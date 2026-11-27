@@ -4512,7 +4512,8 @@ function abrirDraft(entrar){
   fr = document.createElement('iframe'); fr.id = 'frameDraft'; fr.src = 'draft.html' + (entrar ? '?entrar=' + encodeURIComponent(entrar) : '');
   fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9300;background:#070504';
   const ouvir = e=>{ if (!e.data || !e.data.draft || e.source !== fr.contentWindow) return;
-    if (e.data.acao === 'fechar' || e.data.acao === 'partida'){ window.removeEventListener('message', ouvir); fr.remove(); } };
+    if (e.data.acao === 'fechar' || e.data.acao === 'partida'){ window.removeEventListener('message', ouvir); fr.remove(); }
+    if (e.data.acao === 'jogarDeck'){ window.removeEventListener('message', ouvir); fr.remove(); localSet('meuDeck', e.data.deck); fetch('/api/decks').then(r=>r.json()).then(l=>{ decks = l; const b = document.querySelector('[data-ir="bots"]'); if (b) b.click(); }); } };
   window.addEventListener('message', ouvir);
   document.body.appendChild(fr);
 }

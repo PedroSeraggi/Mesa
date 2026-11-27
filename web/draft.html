@@ -71,7 +71,7 @@ h2{margin:0 0 6px;font-family:var(--fa);font-weight:400;font-size:30px;color:var
 .amigoC .btCouro{margin-left:auto;padding:5px 12px;font-size:11px}.amigoC .btCouro.ok{filter:grayscale(1);opacity:.6;pointer-events:none}
 
 /* ---------- escolhendo ---------- */
-#topo{position:absolute;left:0;right:0;top:0;height:64px;display:flex;align-items:center;gap:22px;padding:0 120px 0 26px;z-index:5;background:linear-gradient(180deg,#0c0704f0,#0c070400)}
+#topo{position:absolute;left:0;right:0;top:0;height:64px;display:flex;align-items:center;gap:22px;padding:0 200px 0 26px;z-index:5;background:linear-gradient(180deg,#0c0704f0,#0c070400)}
 #topo .tit{font-family:var(--fa);font-size:22px;color:var(--ouro)}
 #topo .cubo{font-size:15px;color:#c9b48a;font-style:italic}
 .pacotes{display:flex;gap:8px}
@@ -113,7 +113,7 @@ h2{margin:0 0 6px;font-family:var(--fa);font-weight:400;font-size:30px;color:var
 
 /* ---------- montando ---------- */
 #tMonta{display:none;flex-direction:column}#tMonta.on{display:flex}
-#tMonta .topoM{flex:none;height:64px;display:flex;align-items:center;gap:18px;padding:0 120px 0 26px}
+#tMonta .topoM{flex:none;height:64px;display:flex;align-items:center;gap:18px;padding:0 200px 0 26px}
 #tMonta .topoM .tit{font-family:var(--fa);font-size:22px;color:var(--ouro)}
 #tMonta main{flex:1;min-height:0;display:flex;gap:18px;padding:0 26px 22px}
 #pool{flex:1;min-width:0;display:flex;flex-direction:column;padding:14px 16px}
@@ -159,6 +159,10 @@ h2{margin:0 0 6px;font-family:var(--fa);font-weight:400;font-size:30px;color:var
 .pe .conta b{font-family:var(--ff);font-size:22px;color:var(--ouro)}.pe .conta b.ok{color:#8ad08a}
 .pe .conta small{display:block;font-size:12.5px;color:#a8987a}
 #pronto{margin-left:auto;font-size:18px;padding:11px 22px}
+#fimSolo{position:fixed;inset:0;z-index:45;display:none;place-items:center;background:#060403e8}#fimSolo.on{display:grid}
+#fimSolo .painel{width:min(520px,92vw);text-align:center;padding:26px}
+#fimNome{margin:14px 0 20px;font-family:var(--fa);font-size:20px;color:#fff4e0}
+#fimSolo .bts{display:flex;gap:12px;justify-content:center;align-items:center}
 #zoom{position:fixed;z-index:30;width:290px;border-radius:14px;pointer-events:none;display:none;box-shadow:0 0 0 2px var(--ouro),0 20px 50px #000}
 </style></head><body>
 <svg id="runas" viewBox="0 0 400 400"></svg>
@@ -213,6 +217,8 @@ h2{margin:0 0 6px;font-family:var(--fa);font-weight:400;font-size:30px;color:var
     </aside>
   </main>
 </div>
+<div id="fimSolo"><div class="painel"><h2>Deck pronto!</h2><div class="sub">Como só você estava no draft, não tem partida final. O deck foi salvo nos seus decks:</div>
+  <div id="fimNome"></div><div class="bts"><button class="btOuro" id="fimJogar">Jogar com bots agora</button><button class="btCouro" id="fimMenu">Voltar ao menu</button></div></div></div>
 <img id="zoom" alt="">
 <script>
 const img = (c, v) => `/img?s=${encodeURIComponent(c.set||'')}&n=${encodeURIComponent(c.num||'')}&nm=${encodeURIComponent(c.nome||'').replace(/'/g,'%27')}${v?'&v='+v:''}`;
@@ -392,7 +398,8 @@ $('pronto').onclick = async () => {
   $('pronto').disabled = true; $('pronto').textContent = 'Esperando os outros...';
   const r = await post({acao:'pronto', comandante: {nome: cmd.nome, set: cmd.set, num: cmd.num}, cartas: [...deck].map(c=>({nome:c.nome, set:c.set, num:c.num})), basicos: bas});
   if (r.erro){ erro(r.erro); $('pronto').disabled = false; $('pronto').textContent = 'Pronto'; return; }
-  if (r.sozinho){ $('pronto').textContent = 'Deck salvo!'; erro(`Deck salvo como "${r.deck.replace(/\.dck$/,'')}". Sem outros jogadores no draft, não há partida final: use o deck em Jogar com bots.`); setTimeout(()=>pai({acao:'fechar'}), 5000); return; }
+  if (r.sozinho){ $('fimNome').textContent = r.deck.replace(/\.dck$/,''); $('fimSolo').classList.add('on');
+    $('fimJogar').onclick = () => pai({acao: 'jogarDeck', deck: r.deck}); $('fimMenu').onclick = () => pai({acao: 'fechar'}); return; }
   pai({acao: 'partida'});   // a Mesa mostra a sala da partida final (todos que draftaram)
 };
 
