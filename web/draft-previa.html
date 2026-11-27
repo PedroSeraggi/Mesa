@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia: draft de Commander</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Metamorphous&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--ouro:#E4C874;--ouro2:#c9a24a;--fa:'Metamorphous',serif;--ff:'Cinzel',serif}
+*{box-sizing:border-box}
+body{margin:0;height:100vh;overflow:hidden;font-family:'EB Garamond',serif;color:#f0e6d0;user-select:none;
+  background:radial-gradient(ellipse at 50% 40%,#2a1a0e 0%,#120a06 55%,#060403 100%)}
+/* fundo: mesa de madeira escura com runas girando bem fracas */
+#runas{position:fixed;left:50%;top:46%;width:min(120vh,1200px);aspect-ratio:1;transform:translate(-50%,-50%);opacity:.08;animation:gira 200s linear infinite;pointer-events:none}
+#runas *{stroke:#e8c870;fill:none}#runas text{fill:#e8c870;stroke:none}
+@keyframes gira{to{transform:translate(-50%,-50%) rotate(360deg)}}
+
+/* ---------- barra de cima ---------- */
+#topo{position:fixed;left:0;right:0;top:0;height:64px;display:flex;align-items:center;gap:22px;padding:0 26px;z-index:5;
+  background:linear-gradient(180deg,#0c0704f0,#0c070400)}
+#topo .tit{font-family:var(--fa);font-size:22px;color:var(--ouro);text-shadow:0 0 14px #e8b84a44}
+#topo .cubo{font-size:15px;color:#c9b48a;font-style:italic}
+.pacotes{display:flex;gap:8px;margin-left:10px}
+.pacotes i{width:22px;height:30px;border-radius:4px;background:linear-gradient(160deg,#5a3a18,#2a1808);box-shadow:inset 0 0 0 1px #c9a24a55}
+.pacotes i.on{background:linear-gradient(160deg,#ffe9a8,#c9a24a);box-shadow:0 0 12px #e8b84a88}
+.pacotes i.feito{opacity:.35}
+#topo .escolha{font-family:var(--ff);font-size:14px;letter-spacing:.1em;color:#d8c8a8}
+/* relógio da escolha */
+#relogio{margin-left:auto;position:relative;width:48px;height:48px}
+#relogio svg{width:100%;height:100%;transform:rotate(-90deg)}
+#relogio circle{fill:none;stroke-width:4}
+#relogio .f{stroke:#3a2a18}#relogio .t{stroke:var(--ouro);stroke-linecap:round;transition:stroke .3s}
+#relogio.pouco .t{stroke:#ff6a3a}
+#relogio b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--ff);font-size:15px}
+
+/* ---------- mesa de jogadores (quem passa para quem) ---------- */
+#roda{position:fixed;left:26px;top:84px;width:220px;z-index:4;padding:14px 14px 10px;border-radius:14px;
+  background:linear-gradient(180deg,#1e120ae8,#140a06e8);box-shadow:inset 0 0 0 1px #00000099,0 10px 26px #000a}
+#roda::after{content:'';position:absolute;inset:5px;border-radius:10px;box-shadow:inset 0 0 0 1px #c9a24a30;pointer-events:none}
+#roda h3{margin:0 0 8px;font-family:var(--ff);font-size:12px;letter-spacing:.2em;color:var(--ouro2)}
+#roda .dir{font-size:13px;color:#c9b48a;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+#roda .dir svg{width:16px;height:16px;stroke:var(--ouro);fill:none;stroke-width:2}
+.jog{display:flex;align-items:center;gap:10px;padding:6px 4px;border-radius:8px}
+.jog .av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-family:var(--ff);font-size:13px;color:#1a1208;flex:none}
+.jog .nm{flex:1;font-size:15px}
+.jog .est{font-size:12px;color:#9a8a6a}
+.jog.eu{background:#e8b84a14;box-shadow:inset 0 0 0 1px #e8b84a40}
+.jog .est.pronto{color:#8ad08a}
+.jog .est.pensando{color:#e8c870}
+.jog .est.pensando::after{content:'...';animation:pts 1.2s steps(4) infinite;display:inline-block;width:14px;overflow:hidden;vertical-align:bottom}
+@keyframes pts{from{width:0}to{width:14px}}
+
+/* ---------- pacote aberto ---------- */
+#pacote{position:fixed;left:270px;right:26px;top:80px;bottom:230px;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:14px 12px;padding:10px}
+.carta{position:relative;width:clamp(110px,10.5vw,150px);aspect-ratio:63/88;border-radius:6px;cursor:pointer;background:#111 center/cover;
+  box-shadow:0 8px 18px #000c;transition:transform .2s cubic-bezier(.2,.9,.3,1.3),box-shadow .2s,opacity .3s,filter .3s;animation:entra .5s cubic-bezier(.2,.9,.3,1.1) both;animation-delay:var(--d)}
+@keyframes entra{from{opacity:0;transform:translateY(30px) rotateX(30deg)}}
+.carta:hover{transform:translateY(-10px) scale(1.06);box-shadow:0 0 0 2px var(--ouro),0 0 26px #e8b84a88,0 16px 26px #000c;z-index:2}
+.carta.lenda::before{content:'COMANDANTE';position:absolute;left:50%;top:-11px;transform:translateX(-50%);z-index:1;font-family:var(--ff);font-size:9px;letter-spacing:.14em;padding:2px 8px;border-radius:5px;
+  color:#2a1606;background:linear-gradient(180deg,#ffe9a8,#c9a24a);box-shadow:0 2px 6px #000a;white-space:nowrap}
+.carta.marcada{box-shadow:0 0 0 3px #ffe08a,0 0 40px #ffd34acc,0 16px 26px #000c;transform:translateY(-12px) scale(1.08)}
+.carta.sai{opacity:0;transform:scale(.6);pointer-events:none}
+#pacote.espera .carta{filter:grayscale(.6) brightness(.5);pointer-events:none}
+#confirmar{position:fixed;left:calc(50% + 122px);bottom:244px;transform:translateX(-50%);z-index:6;display:none;font-family:var(--fa);font-size:19px;letter-spacing:.1em;color:#2a1606;
+  padding:12px 40px;border:0;border-radius:12px;cursor:pointer;background:linear-gradient(180deg,#ffe9a8,#e8b84a 55%,#b8862a);box-shadow:0 6px 0 #6a4410,0 0 30px #e8b84a66}
+#confirmar:active{transform:translateX(-50%) translateY(4px);box-shadow:0 2px 0 #6a4410}
+#aviso{position:fixed;left:calc(50% + 122px);top:50%;transform:translate(-50%,-50%);z-index:6;display:none;text-align:center;font-family:var(--fa);font-size:22px;color:var(--ouro)}
+#aviso small{display:block;font-family:'EB Garamond',serif;font-size:16px;color:#c9b48a;font-style:italic;margin-top:6px}
+
+/* ---------- suas escolhas ---------- */
+#picks{position:fixed;left:0;right:0;bottom:0;height:220px;z-index:4;padding:12px 26px 14px;
+  background:linear-gradient(0deg,#0c0704,#0c0704ee 70%,#0c070400);display:flex;flex-direction:column}
+#picks .cab{display:flex;align-items:baseline;gap:16px;margin-bottom:8px}
+#picks h3{margin:0;font-family:var(--ff);font-size:13px;letter-spacing:.2em;color:var(--ouro2)}
+#picks .conta{font-size:15px;color:#d8c8a8}
+#picks .conta b{color:var(--ouro)}
+#picks .cores{margin-left:auto;display:flex;gap:6px}
+#picks .cores span{display:flex;align-items:center;gap:4px;font-size:14px;color:#d8c8a8}
+#picks .cores i{width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 1px #0006}
+.colunas{flex:1;display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;padding-top:4px;scrollbar-width:thin;scrollbar-color:#c9a24a55 transparent}
+.coluna{flex:none;display:flex;flex-direction:column;align-items:center}
+.coluna small{font-family:var(--ff);font-size:11px;letter-spacing:.1em;color:#9a8a6a;margin-bottom:4px}
+.pilha{position:relative;width:86px}
+.mini{width:86px;aspect-ratio:63/88;border-radius:4px;background:#111 center/cover;box-shadow:0 3px 8px #000c;margin-top:-92px;transition:transform .2s;cursor:pointer}
+.mini:first-child{margin-top:0}
+.mini:hover{transform:translateY(-6px);z-index:3;position:relative}
+.mini.lenda{box-shadow:0 0 0 2px #e8b84a,0 3px 8px #000c}
+.mini.nova{animation:chega .6s cubic-bezier(.2,.9,.3,1.3)}
+@keyframes chega{from{transform:translateY(-120px) scale(1.4);opacity:0}}
+/* carta voando do pacote para as escolhas */
+.voa{position:fixed;z-index:20;border-radius:6px;background:#111 center/cover;pointer-events:none;box-shadow:0 0 30px #ffd34a;transition:all .55s cubic-bezier(.5,0,.3,1)}
+/* zoom ao passar o mouse */
+#zoom{position:fixed;z-index:30;width:300px;border-radius:14px;pointer-events:none;display:none;box-shadow:0 0 0 2px var(--ouro),0 20px 50px #000}
+</style></head><body>
+<svg id="runas" viewBox="0 0 400 400"></svg>
+<div id="topo">
+  <div class="tit">Draft de Commander</div><div class="cubo">MTGO Legendary Cube</div>
+  <div class="pacotes" id="pacotes"></div>
+  <div class="escolha" id="escolha"></div>
+  <div id="relogio"><svg viewBox="0 0 48 48"><circle class="f" cx="24" cy="24" r="20"/><circle class="t" id="arco" cx="24" cy="24" r="20" stroke-dasharray="125.7"/></svg><b id="seg"></b></div>
+</div>
+<div id="roda"><h3>MESA DO DRAFT</h3><div class="dir"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span id="dirTxt">Passando para a esquerda</span></div><div id="jogs"></div></div>
+<div id="pacote"></div>
+<button id="confirmar">Escolher</button>
+<div id="aviso">Esperando o pacote do Lucas<small>ele ainda está escolhendo</small></div>
+<div id="picks"><div class="cab"><h3>SUAS ESCOLHAS</h3><div class="conta" id="conta"></div><div class="cores" id="cores"></div></div><div class="colunas" id="colunas"></div></div>
+<img id="zoom" alt="">
+<script>
+const img = n => `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(n).replace(/'/g,'%27')}&format=image&version=normal`;
+// [nome, cor (W U B R G M=multicolor C=incolor), custo, lenda]
+const CUBO = [
+ ['Atraxa, Praetors\' Voice','M',4,1],['Edgar Markov','M',6,1],['Krenko, Mob Boss','R',4,1],['Thalia, Guardian of Thraben','W',2,1],['Toski, Bearer of Secrets','G',4,1],
+ ['Selvala, Heart of the Wilds','G',3,1],['Kaalia of the Vast','M',4,1],['Najeela, the Blade-Blossom','R',3,1],['Talrand, Sky Summoner','U',4,1],['Meren of Clan Nel Toth','M',4,1],
+ ['Sol Ring','C',1,0],['Swords to Plowshares','W',1,0],['Lightning Greaves','C',2,0],['Counterspell','U',2,0],['Rhystic Study','U',3,0],
+ ['Demonic Tutor','B',2,0],['Lightning Bolt','R',1,0],['Cultivate','G',3,0],['Command Tower','C',0,0],['Arcane Signet','C',2,0],
+ ['Sheoldred, the Apocalypse','B',4,1],['Ragavan, Nimble Pilferer','R',1,1],['Kenrith, the Returned King','R',5,1],['Smothering Tithe','W',4,0],['Cyclonic Rift','U',2,0],
+ ['Beast Within','G',3,0],['Anguished Unmaking','M',3,0],['Feed the Swarm','B',2,0],['Llanowar Elves','G',1,0],['Mana Crypt','C',0,0],
+];
+const COR = {W:['Branco','#f4ecd0'],U:['Azul','#4a90d8'],B:['Preto','#6a5a7a'],R:['Vermelho','#e0582a'],G:['Verde','#3aa050'],M:['Multicolor','#d8b040'],C:['Incolor','#a8a8a8']};
+const JOGS = [{n:'Twelvez',c:'#e8b84a',eu:1},{n:'Lucas',c:'#6ab0e8'},{n:'Ana',c:'#d870a0'},{n:'Bruno',c:'#7ac070'}];
+let pac = 1, esc = 1, picks = [], marcada = null, t = 40, tempo = null;
+const embaralha = l => { l = [...l]; for (let i = l.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [l[i], l[j]] = [l[j], l[i]]; } return l; };
+let pacote = embaralha(CUBO).slice(0, 15);
+
+// runas do fundo
+(function(){ const R = 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ'; let h = '<circle cx="200" cy="200" r="196"/><circle cx="200" cy="200" r="176"/><circle cx="200" cy="200" r="120"/>';
+  h += '<path id="rc" d="M200 200 m-186 0 a186 186 0 1 1 372 0 a186 186 0 1 1 -372 0"/><text font-size="13" font-family="serif"><textPath href="#rc" textLength="1160" lengthAdjust="spacing">' + R + R + '</textPath></text>';
+  document.getElementById('runas').innerHTML = h; })();
+
+const som = n => { try { const a = new Audio(n); a.volume = .5; a.play().catch(()=>{}); } catch(e){} };
+function desenharTopo(){
+  document.getElementById('pacotes').innerHTML = [1,2,3].map(i=>`<i class="${i===pac?'on':i<pac?'feito':''}" title="Pacote ${i}"></i>`).join('');
+  document.getElementById('escolha').textContent = `PACOTE ${pac} DE 3 · ESCOLHA ${esc} DE 15`;
+  document.getElementById('dirTxt').textContent = pac === 2 ? 'Passando para a direita' : 'Passando para a esquerda';
+  document.querySelector('#roda .dir svg').style.transform = pac === 2 ? 'scaleX(-1)' : '';
+}
+function desenharJogs(estados){
+  document.getElementById('jogs').innerHTML = JOGS.map((j,i)=>`<div class="jog ${j.eu?'eu':''}"><div class="av" style="background:${j.c}">${j.n[0]}</div><div class="nm">${j.n}${j.eu?' (você)':''}</div>
+    <div class="est ${estados[i]}">${estados[i]==='pronto'?'escolheu':estados[i]==='pensando'?'escolhendo':''}</div></div>`).join('');
+}
+function desenharPacote(){
+  const p = document.getElementById('pacote'); p.classList.remove('espera');
+  p.innerHTML = pacote.map((c,i)=>`<div class="carta ${c[3]?'lenda':''}" data-i="${i}" style="--d:${(i*.04).toFixed(2)}s;background-image:url('${img(c[0])}')"></div>`).join('');
+  p.querySelectorAll('.carta').forEach(el=>{
+    el.onmouseenter = ev => { const z = document.getElementById('zoom'); z.src = img(pacote[+el.dataset.i][0]); const r = el.getBoundingClientRect();
+      z.style.left = (r.right + 316 < innerWidth ? r.right + 16 : r.left - 316) + 'px'; z.style.top = Math.max(10, Math.min(innerHeight - 430, r.top - 60)) + 'px'; z.style.display = 'block'; };
+    el.onmouseleave = () => document.getElementById('zoom').style.display = 'none';
+    el.onclick = () => { document.querySelectorAll('.carta.marcada').forEach(x=>x.classList.remove('marcada')); el.classList.add('marcada'); marcada = +el.dataset.i;
+      document.getElementById('confirmar').style.display = 'block'; som('sons/kenney/rpg/cloth1.ogg'); };
+    el.ondblclick = () => { marcada = +el.dataset.i; escolher(); };
+  });
+  desenharJogs(JOGS.map((j,i)=>i===0?'':'pensando'));
+  t = 40; clearInterval(tempo); tempo = setInterval(relogio, 1000); relogio(true);
+}
+function relogio(sem){
+  if (!sem) t--; const a = document.getElementById('arco'); a.style.strokeDashoffset = 125.7 * (1 - t/40);
+  document.getElementById('seg').textContent = t; document.getElementById('relogio').classList.toggle('pouco', t <= 10);
+  if (t <= 0){ clearInterval(tempo); if (marcada === null) marcada = 0; escolher(); }   // acabou o tempo: escolhe a marcada (ou a primeira)
+}
+function escolher(){
+  if (marcada === null) return; clearInterval(tempo);
+  const c = pacote[marcada], el = document.querySelector(`.carta[data-i="${marcada}"]`), r = el.getBoundingClientRect();
+  document.getElementById('confirmar').style.display = 'none'; document.getElementById('zoom').style.display = 'none';
+  // a carta voa até as suas escolhas
+  const v = document.createElement('div'); v.className = 'voa'; v.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;background-image:url('${img(c[0])}')`;
+  document.body.appendChild(v); el.style.visibility = 'hidden';
+  const alvo = document.getElementById('colunas').getBoundingClientRect();
+  requestAnimationFrame(()=>{ v.style.left = (alvo.left + 20) + 'px'; v.style.top = (alvo.top + 10) + 'px'; v.style.width = '86px'; v.style.height = '120px'; v.style.opacity = .3; });
+  som('sons/kenney/rpg/bookFlip2.ogg');
+  setTimeout(()=>{ v.remove(); picks.push(c); desenharPicks(c); }, 560);
+  // o resto do pacote some e você espera o próximo (os outros jogadores vão escolhendo)
+  pacote.splice(marcada, 1); marcada = null;
+  document.querySelectorAll('.carta').forEach(x=>x.classList.add('sai'));
+  const aviso = document.getElementById('aviso'); setTimeout(()=>{ aviso.style.display = 'block'; }, 300);
+  const est = ['pronto','pensando','pensando','pensando']; desenharJogs(est);
+  [1,2,3].forEach(i=>setTimeout(()=>{ est[i] = 'pronto'; desenharJogs(est); }, 500 + i * 450));
+  setTimeout(()=>{ aviso.style.display = 'none'; proximo(); }, 2200);
+}
+function proximo(){
+  // na prévia: o pacote que chega é o "do vizinho" (cartas novas do cubo, uma a menos a cada escolha)
+  esc++; if (esc > 15 || !pacote.length){ pac++; esc = 1; if (pac > 3){ fim(); return; } }
+  const fora = new Set(picks.map(p=>p[0])); pacote = embaralha(CUBO.filter(c=>!fora.has(c[0]))).slice(0, 16 - esc);
+  desenharTopo(); desenharPacote();
+}
+function desenharPicks(nova){
+  const grupos = {}; picks.forEach(c=>{ const k = c[3] ? 'L' : c[1]; (grupos[k] = grupos[k] || []).push(c); });
+  const ordem = ['L','W','U','B','R','G','M','C'], nomeG = k => k === 'L' ? 'Comandantes' : COR[k][0];
+  document.getElementById('colunas').innerHTML = ordem.filter(k=>grupos[k]).map(k=>`<div class="coluna"><small>${nomeG(k)} · ${grupos[k].length}</small><div class="pilha">${
+    grupos[k].sort((a,b)=>a[2]-b[2]).map(c=>`<div class="mini ${c[3]?'lenda':''} ${c===nova?'nova':''}" style="background-image:url('${img(c[0])}')" data-n="${c[0].replace(/"/g,'&quot;')}"></div>`).join('')}</div></div>`).join('');
+  const lendas = picks.filter(c=>c[3]).length;
+  document.getElementById('conta').innerHTML = `<b>${picks.length}</b> cartas · <b>${lendas}</b> possíve${lendas===1?'l':'is'} comandante${lendas===1?'':'s'}`;
+  const cores = {}; picks.forEach(c=>{ if ('WUBRG'.includes(c[1])) cores[c[1]] = (cores[c[1]]||0) + 1; });
+  document.getElementById('cores').innerHTML = Object.entries(cores).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<span><i style="background:${COR[k][1]}"></i>${n}</span>`).join('');
+  document.querySelectorAll('.mini').forEach(m=>{ m.onmouseenter = () => { const z = document.getElementById('zoom'), r = m.getBoundingClientRect(); z.src = img(m.dataset.n);
+    z.style.left = Math.min(innerWidth - 310, r.left) + 'px'; z.style.top = (r.top - 430) + 'px'; z.style.display = 'block'; }; m.onmouseleave = () => document.getElementById('zoom').style.display = 'none'; });
+}
+function fim(){
+  document.getElementById('pacote').innerHTML = ''; const a = document.getElementById('aviso');
+  a.innerHTML = 'Draft concluído<small>Agora escolha o seu comandante e monte o deck de 60 cartas</small>'; a.style.display = 'block';
+}
+document.getElementById('confirmar').onclick = escolher;
+desenharTopo(); desenharPacote(); desenharPicks();
+</script>
+</body></html>
