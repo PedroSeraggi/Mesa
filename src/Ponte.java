@@ -114,6 +114,7 @@ public class Ponte implements MageClient {
         srv.createContext("/api/perfil", this::rotaPerfil);
         srv.createContext("/api/ia", this::rotaIa);
         srv.createContext("/api/mundo", this::rotaMundo);
+        srv.createContext("/api/draft", this::rotaDraft);
         srv.createContext("/api/versao", ex -> {   // versão instalada (versao.txt vem no instalador; sem ele = cópia de desenvolvimento)
             String v = "dev";
             try { Path f = MESA.resolve("versao.txt"); if (Files.exists(f)) v = new String(Files.readAllBytes(f), StandardCharsets.UTF_8).trim(); } catch (Exception ignored) { }
@@ -2189,6 +2190,105 @@ public class Ponte implements MageClient {
     final LinkedList<Map<String, Object>> eventosMundo = new LinkedList<>();
     final LinkedHashSet<String> midsVistos = new LinkedHashSet<>();
     long seqMundo = 0;
+    // ---------------- Draft de Commander (cubo): o XMage conduz o draft; a Mesa mostra os pacotes e monta o deck ----------------
+    volatile UUID draftMesa = null, draftId = null;
+    volatile String draftFase = "";   // "" | sala | escolhendo | montando
+    volatile List<Map<String, Object>> draftPacote = new ArrayList<>(), draftEscolhas = new ArrayList<>();
+    volatile boolean draftMinhaVez = false;
+    volatile int draftTempo = 0, draftPacoteN = 0, draftCartaN = 0;
+    volatile long draftQuando = 0;
+    volatile List<String> draftJogadores = new ArrayList<>();
+    volatile String draftCubo = "", draftErro = null;
+
+    Map<String, Object> cartaDraft(SimpleCardView s) {
+        Map<String, Object> c = new LinkedHashMap<>();
+        c.put("id", s.getId().toString()); c.put("set", s.getExpansionSetCode()); c.put("num", s.getCardNumber());
+        try {
+            mage.cards.repository.CardInfo ci = mage.cards.repository.CardRepository.instance.findCard(s.getExpansionSetCode(), s.getCardNumber());
+            if (ci != null) {
+                c.put("nome", ci.getName()); c.put("mv", ci.getManaValue());
+                c.put("tipo", ci.getTypes() == null ? "" : String.valueOf(ci.getTypes()));
+                c.put("lenda", ci.getSupertypes() != null && ci.getSupertypes().contains(SuperType.LEGENDARY) && ci.getTypes() != null && ci.getTypes().contains(CardType.CREATURE));
+            }
+        } catch (Throwable ignored) { }
+        return c;
+    }
+    void lerPickView(DraftPickView pv) {
+        if (pv == null) return;
+        List<Map<String, Object>> p = new ArrayList<>(), e = new ArrayList<>();
+        if (pv.getBooster() != null) for (SimpleCardView s : pv.getBooster().values()) p.add(cartaDraft(s));
+        if (pv.getPicks() != null) for (SimpleCardView s : pv.getPicks().values()) e.add(cartaDraft(s));
+        draftPacote = p; draftEscolhas = e; draftMinhaVez = pv.isPicking(); draftTempo = pv.getTimeout(); draftQuando = System.currentTimeMillis();
+        mudou();
+    }
+    Map<String, Object> estadoDraft() {
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("fase", draftFase); r.put("mesa", draftMesa == null ? null : draftMesa.toString()); r.put("cubo", draftCubo);
+        r.put("pacote", draftPacote); r.put("escolhas", draftEscolhas); r.put("minhaVez", draftMinhaVez);
+        r.put("tempo", Math.max(0, draftTempo - (int) ((System.currentTimeMillis() - draftQuando) / 1000)));
+        r.put("pacoteN", draftPacoteN); r.put("cartaN", draftCartaN); r.put("jogadores", draftJogadores); r.put("erro", draftErro);
+        return r;
+    }
+    void rotaDraft(HttpExchange ex) throws IOException {
+        try {
+            if (!"POST".equals(ex.getRequestMethod())) { json(ex, 200, estadoDraft()); return; }
+            JsonObject b = corpo(ex); String acao = b.has("acao") ? b.get("acao").getAsString() : "estado";
+            draftErro = null;
+            if (acao.equals("cubos")) { conectar(); json(ex, 200, Arrays.asList(session.getDraftCubes())); return; }
+            if (acao.equals("criar")) {
+                conectar();
+                String cubo = b.has("cubo") ? b.get("cubo").getAsString() : "MTGO Legendary Cube";
+                int lugares = b.has("lugares") ? b.get("lugares").getAsInt() : 2, bots = b.has("bots") ? b.get("bots").getAsInt() : 0;
+                TournamentTypeView tipo = null;
+                for (TournamentTypeView t : session.getTournamentTypes()) if (t.getName().equals("Booster Draft Elimination (Cube)")) tipo = t;
+                if (tipo == null) throw new IllegalStateException("O servidor não tem o draft de cubo.");
+                mage.game.tournament.TournamentOptions op = new mage.game.tournament.TournamentOptions("Draft da Mesa", "", false);
+                op.setTournamentType(tipo.getName());
+                for (int i = 0; i < lugares; i++) op.getPlayerTypes().add(i < lugares - bots ? PlayerType.HUMAN : PlayerType.COMPUTER_DRAFT_BOT);
+                op.setWatchingAllowed(false); op.setPassword("");   // sem senha o XMage quebra a lista de mesas (TableView lê a senha)
+                mage.game.draft.DraftOptions lo = new mage.game.draft.DraftOptions();
+                lo.setTiming(mage.game.draft.DraftOptions.TimingOption.REGULAR);
+                lo.setDraftCubeName(cubo); lo.setNumberBoosters(3); lo.setConstructionTime(20);
+                op.setLimitedOptions(lo);
+                op.getMatchOptions().setDeckType("Limited"); op.getMatchOptions().setGameType("Two Player Duel"); op.getMatchOptions().setLimited(true);
+                op.setNumberRounds(1);
+                TableView t = session.createTournamentTable(roomId, op);
+                if (t == null) throw new IllegalStateException("O servidor recusou criar o draft.");
+                draftMesa = t.getTableId(); draftCubo = cubo;
+                if (!session.joinTournamentTable(roomId, draftMesa, meuNome, PlayerType.HUMAN, 1, new DeckCardLists(), "")) throw new IllegalStateException("Não consegui entrar no draft.");
+                for (int i = 0; i < bots; i++) session.joinTournamentTable(roomId, draftMesa, "Bot " + (i + 1), PlayerType.COMPUTER_DRAFT_BOT, 5, new DeckCardLists(), "");
+                draftFase = "sala"; draftEscolhas = new ArrayList<>(); draftPacote = new ArrayList<>();
+                json(ex, 200, estadoDraft()); return;
+            }
+            if (acao.equals("entrar")) {
+                conectar();
+                draftMesa = UUID.fromString(b.get("mesa").getAsString());
+                if (!session.joinTournamentTable(roomId, draftMesa, meuNome, PlayerType.HUMAN, 1, new DeckCardLists(), "")) throw new IllegalStateException("Não consegui entrar no draft (cheio ou já começou).");
+                draftFase = "sala"; draftEscolhas = new ArrayList<>(); draftPacote = new ArrayList<>();
+                json(ex, 200, estadoDraft()); return;
+            }
+            if (acao.equals("comecar")) {
+                if (draftMesa == null || !session.startTournament(roomId, draftMesa)) throw new IllegalStateException("Não deu para começar: todos os lugares precisam estar ocupados.");
+                json(ex, 200, estadoDraft()); return;
+            }
+            if (acao.equals("escolher")) {
+                if (draftId == null) throw new IllegalStateException("O draft ainda não começou.");
+                DraftPickView pv = session.sendCardPick(draftId, UUID.fromString(b.get("carta").getAsString()), new HashSet<>());
+                lerPickView(pv);
+                json(ex, 200, estadoDraft()); return;
+            }
+            if (acao.equals("sair")) {
+                try { if (draftId != null) session.quitDraft(draftId); } catch (Exception ignored) { }
+                draftMesa = null; draftId = null; draftFase = "";
+                json(ex, 200, estadoDraft()); return;
+            }
+            json(ex, 200, estadoDraft());
+        } catch (Throwable t) {
+            draftErro = String.valueOf(t.getMessage());
+            json(ex, 200, Collections.singletonMap("erro", draftErro));
+        }
+    }
+
     DatagramSocket socketMundo;
     void rotaMundo(HttpExchange ex) throws IOException {
         try {
@@ -3141,6 +3241,38 @@ public class Ponte implements MageClient {
                 int turnos = 0;
                 try { turnos = ((Number) jogo.get("turno")).intValue(); } catch (Exception ignored) { }
                 if (!assistindo) registrarPartida(g.getWins() > 0, turnos);
+                mudou();
+                break;
+            }
+            case START_DRAFT: {   // o draft começou: entra nele (os pacotes chegam em DRAFT_INIT / DRAFT_PICK)
+                TableClientMessage m = (TableClientMessage) d;
+                draftId = m.getGameId(); draftFase = "escolhendo";
+                session.joinDraft(draftId);
+                mudou();
+                break;
+            }
+            case DRAFT_INIT:
+            case DRAFT_PICK: {
+                DraftClientMessage m = (DraftClientMessage) d;
+                lerPickView(m.getDraftPickView());
+                if (m.getDraftView() != null) { draftPacoteN = m.getDraftView().getBoosterNum(); draftCartaN = m.getDraftView().getCardNum(); draftJogadores = new ArrayList<>(m.getDraftView().getPlayers()); }
+                break;
+            }
+            case DRAFT_UPDATE: {
+                DraftClientMessage m = (DraftClientMessage) d;
+                DraftView dv = m.getDraftView();
+                if (dv != null) { draftPacoteN = dv.getBoosterNum(); draftCartaN = dv.getCardNum(); draftJogadores = new ArrayList<>(dv.getPlayers()); }
+                if (m.getDraftPickView() != null) lerPickView(m.getDraftPickView());
+                mudou();
+                break;
+            }
+            case DRAFT_OVER: {   // acabaram os pacotes: as escolhas ficam guardadas para montar o deck de 60
+                draftFase = "montando"; draftPacote = new ArrayList<>(); draftMinhaVez = false;
+                mudou();
+                break;
+            }
+            case CONSTRUCT: {   // o XMage pede o deck de 40 do torneio: a Mesa monta o próprio deck de 60 (ignora)
+                if (draftId != null) draftFase = "montando";
                 mudou();
                 break;
             }
