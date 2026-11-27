@@ -814,7 +814,7 @@ public class Amigos {
             }
             Map<String, Object> r = new LinkedHashMap<>();
             r.put("n", n); r.put("jogador", dckCampanha(u.campanha)); r.put("bots", bots);
-            r.put("nivel", n == 15 ? 7 : n <= 7 ? 4 : 5);   // chefe do mundo: IA bem mais forte (o 10 do Chefe do dia é lento demais)
+            r.put("nivel", n == 15 ? 8 : n <= 7 ? 4 : 5);   // chefe do mundo: IA bem mais forte (o 10 do Chefe do dia é lento demais)
             r.put("chefe", n == 15);
             return r;
         }
