@@ -95,6 +95,9 @@ public class Ponte implements MageClient {
         Ponte p = new Ponte();
         p.iniciarWeb();
         new Thread(p::lacoAmigos, "amigos").start();
+        // já liga o XMage deste PC em segundo plano: partidas contra bots e o Chefe do dia rodam aqui, e assim
+        // não esperam ~1 minuto ao começar (fica desligado com "botsNoServidor": true no config.json)
+        new Thread(() -> { try { if (p.temXmageLocal() && !(p.config().has("botsNoServidor") && p.config().get("botsNoServidor").getAsBoolean())) p.ligarServidorLocal(true); } catch (Throwable t) { System.out.println("XMage local não ligou agora: " + t.getMessage()); } }, "xmage-local").start();
         System.out.println("Mesa no ar: http://localhost:" + PORTA_WEB);
     }
 
@@ -1310,20 +1313,67 @@ public class Ponte implements MageClient {
                     + ". Confira se o anfitrião está com a Mesa aberta, se vocês estão na mesma rede (Radmin/Tailscale) e o IP.");
             return;
         }
+        ligarServidorLocal();
+    }
+
+    /** O XMage que vem com a Mesa existe neste PC (instalação normal; em desenvolvimento pode faltar). */
+    boolean temXmageLocal() { return Files.isDirectory(XMAGE.resolve("xmage").resolve("mage-server").resolve("lib")); }
+
+    // Bot da Mesa (servidor-xmage-plugin/MesaComputerPlayer): passa na hora quando não tem resposta e pensa no
+    // máximo 10 s por decisão. Entra no lugar do "Computer - mad" no config.xml; a IA original continua carregada
+    // numa linha antes (o XMage põe todos os plugins no mesmo classloader e o bot da Mesa estende a classe dela).
+    static final String JAR_BOT_MESA = "mage-player-ai-mesa-1.4.63.jar";
+    // O XMage só aceita os nomes de bot que já conhece ("Computer - mad"...), então a linha do "Computer - mad" passa
+    // a apontar para o jar da Mesa; esse jar já leva junto as classes da IA original (ver compilar-bot.cmd).
+    static final String JAR_MAD = "mage-player-ai-mad-1.4.63.jar", CLASSE_MAD = "mage.player.ai.ComputerPlayerControllableProxy";
+    void prepararBotMesa(Path dirServidor) {
+        try {
+            Path cfg = dirServidor.resolve("config").resolve("config.xml");
+            if (!Files.exists(cfg)) return;
+            String x = new String(Files.readAllBytes(cfg), StandardCharsets.UTF_8);
+            // versão antiga deste ajuste: uma linha "Computer - mad (original)", que derruba o servidor
+            String novo = x.replaceAll("[ \\t]*<playerType name=\"Computer - mad \\(original\\)\"[^>]*/>\\r?\\n?", "");
+            boolean temJar = Files.exists(dirServidor.resolve("plugins").resolve(JAR_BOT_MESA));
+            String linha = temJar ? "<playerType name=\"Computer - mad\" jar=\"" + JAR_BOT_MESA + "\" className=\"mage.player.ai.MesaComputerPlayer\"/>"
+                                  : "<playerType name=\"Computer - mad\" jar=\"" + JAR_MAD + "\" className=\"" + CLASSE_MAD + "\"/>";
+            novo = novo.replaceFirst("<playerType name=\"Computer - mad\" jar=\"[^\"]+\" className=\"[^\"]+\"\\s*/>", java.util.regex.Matcher.quoteReplacement(linha));
+            if (!novo.equals(x)) {
+                Files.write(cfg, novo.getBytes(StandardCharsets.UTF_8));
+                System.out.println(temJar ? "Bot da Mesa ativado no XMage deste PC." : "Bot da Mesa desativado (jar não encontrado).");
+            }
+        } catch (Exception e) {
+            System.out.println("Não consegui ajustar o bot da Mesa no config.xml: " + e);
+        }
+    }
+
+    /** Liga o XMage deste PC (se ainda não estiver ligado). */
+    void ligarServidorLocal() throws Exception { ligarServidorLocal(false); }
+    // trava própria (não o "this"): ligar o XMage leva até alguns minutos e não pode segurar o config() e cia.
+    final Object travaXmageLocal = new Object();
+    volatile boolean ligandoXmageLocal = false;
+    void ligarServidorLocal(boolean silencioso) throws Exception {
+        if (!silencioso && ligandoXmageLocal) status("Terminando de ligar o servidor de regras do XMage neste PC...");
+        synchronized (travaXmageLocal) {
+            ligandoXmageLocal = true;
+            try { ligarServidorLocalJa(silencioso); } finally { ligandoXmageLocal = false; }
+        }
+    }
+    private void ligarServidorLocalJa(boolean silencioso) throws Exception {
         if (portaAberta(PORTA_XMAGE)) return;
         Path dir = XMAGE.resolve("xmage").resolve("mage-server");
+        prepararBotMesa(dir);
         Path java = XMAGE.resolve("java").resolve("jre1.8.0_201").resolve("bin").resolve("java.exe");
         String jar = null;
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir.resolve("lib"), "mage-server-*.jar")) {
             for (Path p : ds) jar = "./lib/" + p.getFileName();
         }
         ProcessBuilder pb = new ProcessBuilder(Files.exists(java) ? java.toString() : "java",
-                "-Xmx1024m", "-Dfile.encoding=UTF-8", "-Dsun.jnu.encoding=UTF-8", "-jar", jar);
+                "-Xmx1536m", "-Dfile.encoding=UTF-8", "-Dsun.jnu.encoding=UTF-8", "-jar", jar);
         pb.directory(dir.toFile());
         pb.redirectErrorStream(true);
         pb.redirectOutput(MESA.resolve("servidor-xmage.log").toFile());
         servidorLigadoPorMim = pb.start();
-        status("Ligando o servidor de regras do XMage (leva ~1 minuto na primeira vez)...");
+        if (!silencioso) status("Ligando o servidor de regras do XMage (leva ~1 minuto na primeira vez)...");
         for (int i = 0; i < 240; i++) {
             if (portaAberta(PORTA_XMAGE)) {
                 Thread.sleep(3000);
@@ -2558,11 +2608,16 @@ public class Ponte implements MageClient {
     }
 
     void criarPartida(String meuDeck, List<String> oponentes, int skill) throws Exception { criarPartida(meuDeck, oponentes, skill, false); }
-    /** noPc: a partida roda no XMage deste PC (campanha), mesmo com o Zera ligado. O resultado continua indo para o Zera. */
+    /** noPc: a partida tem que rodar no XMage deste PC (campanha: o plugin dos chefes está aqui). O resultado continua indo para o Zera. */
     void criarPartida(String meuDeck, List<String> oponentes, int skill, boolean noPc) throws Exception {
-        // bots e chefe: no Zera; se ele não responder, no próprio PC. Campanha: sempre no PC (não pesa no servidor do grupo)
-        usarPcLocal = noPc;
-        if (!noPc && !portaAberta(enderecoZera(), PORTA_XMAGE)) { usarPcLocal = true; aviso("O servidor do grupo não respondeu: esta partida contra bots vai rodar no seu PC."); }
+        // bots e chefe: no próprio PC (cada um roda o seu bot e o Zera não fica sobrecarregado com várias partidas
+        // ao mesmo tempo). Sem o XMage local, ou com "botsNoServidor": true no config.json, vão para o Zera.
+        boolean noServidor = !noPc && config().has("botsNoServidor") && config().get("botsNoServidor").getAsBoolean();
+        usarPcLocal = noPc || (temXmageLocal() && !noServidor);
+        if (!usarPcLocal && !portaAberta(enderecoZera(), PORTA_XMAGE)) {
+            if (!temXmageLocal()) throw new IllegalStateException("Não consegui alcançar o servidor do grupo (Zera) e este PC não tem o XMage da Mesa.");
+            usarPcLocal = true; aviso("O servidor do grupo não respondeu: esta partida contra bots vai rodar no seu PC.");
+        }
         synchronized (trava) {
             fase = "conectando";
             erro = null;
