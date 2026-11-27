@@ -27,9 +27,15 @@ main{flex:1;min-height:0;display:flex;gap:18px;padding:0 26px 22px}
 .grade{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:12px;padding:4px 2px 4px;scrollbar-width:thin;scrollbar-color:#c9a24a55 transparent}
 .carta{position:relative;aspect-ratio:63/88;border-radius:6px;cursor:pointer;background:#111 center/cover;box-shadow:0 6px 14px #000c;transition:transform .18s,box-shadow .18s,filter .25s,opacity .25s}
 .carta:hover{transform:translateY(-6px);box-shadow:0 0 0 2px var(--ouro),0 0 20px #e8b84a77,0 12px 20px #000c}
-.carta.noDeck{filter:brightness(.38) saturate(.5)}
-.carta.noDeck::after{content:'NO DECK';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--ff);font-size:11px;letter-spacing:.15em;color:#ffe9a8;text-shadow:0 0 8px #000}
-.carta.foraCor{opacity:.28;cursor:not-allowed}
+.carta.noDeck{box-shadow:0 0 0 3px #e8c870,0 0 18px #e8b84a88,0 6px 14px #000c}
+.carta.noDeck::after{content:'✓';position:absolute;right:-8px;top:-8px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:15px;font-weight:700;color:#2a1606;
+  background:linear-gradient(180deg,#ffe9a8,#c9a24a);box-shadow:0 2px 6px #000a}
+.carta.foraCor{filter:grayscale(1) brightness(.4);opacity:.45;cursor:not-allowed}
+.secao{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:6px 0 -2px;font-family:var(--ff);font-size:12px;letter-spacing:.18em;color:var(--ouro2)}
+.secao::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,#c9a24a66,transparent)}
+.secao small{font-family:'EB Garamond',serif;font-style:italic;letter-spacing:0;font-size:13px;color:#a8987a}
+#explica{margin:0 0 10px;padding:8px 14px;border-radius:9px;background:#0005;box-shadow:inset 0 0 0 1px #c9a24a33;font-size:14.5px;color:#d8c8a8}
+#explica b{color:var(--ouro)}
 .carta.foraCor:hover{transform:none;box-shadow:0 6px 14px #000c}
 .carta .ehCmd{position:absolute;left:50%;top:-9px;transform:translateX(-50%);font-family:var(--ff);font-size:9px;letter-spacing:.12em;padding:2px 8px;border-radius:5px;white-space:nowrap;
   color:#2a1606;background:linear-gradient(180deg,#ffe9a8,#c9a24a);box-shadow:0 2px 6px #000a;cursor:pointer}
@@ -81,6 +87,7 @@ main{flex:1;min-height:0;display:flex;gap:18px;padding:0 26px 22px}
   <section id="pool">
     <div class="cabP"><h3>SUAS ESCOLHAS DO DRAFT</h3><span class="dica" id="dicaPool">Clique numa lenda em "Comandante" para começar</span>
       <div class="filtros" id="filtros"></div></div>
+    <div id="explica">Use as cartas que <b>você escolheu no draft</b>. Clique numa carta para colocar ou tirar do deck. O que faltar para 60 é completado com <b>terrenos básicos</b>.</div>
     <div class="grade" id="grade"></div>
   </section>
   <aside id="deck">
@@ -120,7 +127,11 @@ const som = n => { try { const a = new Audio(n); a.volume = .45; a.play().catch(
 function desenhar(){
   const g = document.getElementById('grade');
   const l = POOL.filter(c => !filtro || (filtro === 'C' ? !c[1] : c[1].includes(filtro))).filter(c => c !== cmd);
-  g.innerHTML = l.map(c => `<div class="carta ${deck.has(c)?'noDeck':''} ${cabe(c)?'':'foraCor'}" data-n="${c[0].replace(/"/g,'&quot;')}" style="background-image:url('${img(c[0])}')">${c[3]?'<span class="ehCmd" title="Usar como comandante">COMANDANTE</span>':''}</div>`).join('');
+  const html = c => `<div class="carta ${deck.has(c)?'noDeck':''} ${cabe(c)?'':'foraCor'}" data-n="${c[0].replace(/"/g,'&quot;')}" style="background-image:url('${img(c[0])}')">${c[3]?'<span class="ehCmd" title="Usar como comandante">COMANDANTE</span>':''}</div>`;
+  const noD = l.filter(c=>deck.has(c)), res = l.filter(c=>!deck.has(c) && cabe(c)), fora = l.filter(c=>!cabe(c));
+  g.innerHTML = (noD.length ? `<div class="secao">NO DECK · ${noD.length}</div>` + noD.map(html).join('') : '')
+    + `<div class="secao">RESERVA · ${res.length} <small>suas escolhas que ainda não estão no deck</small></div>` + res.map(html).join('')
+    + (fora.length ? `<div class="secao">FORA DAS CORES · ${fora.length} <small>não combinam com o comandante</small></div>` + fora.map(html).join('') : '');
   g.querySelectorAll('.carta').forEach(el=>{
     const c = POOL.find(x=>x[0]===el.dataset.n);
     el.onmouseenter = () => { const z = document.getElementById('zoom'), r = el.getBoundingClientRect(); z.src = img(c[0]);
