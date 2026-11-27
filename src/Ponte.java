@@ -1627,6 +1627,19 @@ public class Ponte implements MageClient {
     }
     /** Sala em que estou (para os amigos entrarem), só se ela estiver num servidor que eles alcançam. */
     Map<String, Object> salaParaAmigos() {
+        if (draftMesa != null && "sala".equals(draftFase) && session != null) {   // sala de draft esperando gente: os amigos podem entrar
+            try {
+                Optional<TableView> t = session.getTable(roomId, draftMesa);
+                if (t.isPresent()) {
+                    int livres = 0; for (SeatView sv : t.get().getSeats()) if (sv.getPlayerName() == null || sv.getPlayerName().isEmpty()) livres++;
+                    Map<String, Object> r = new LinkedHashMap<>();
+                    r.put("servidor", servidorBruto()); r.put("mesa", draftMesa.toString()); r.put("draft", true);
+                    r.put("nome", "Draft de " + t.get().getTableName().replaceFirst("^" + java.util.regex.Pattern.quote(PREFIXO_DRAFT), ""));
+                    r.put("lugares", t.get().getSeats().size()); r.put("ocupados", t.get().getSeats().size() - livres); r.put("livres", livres);
+                    return r;
+                }
+            } catch (Exception ignored) { }
+        }
         if ("jogo".equals(fase) && usarPcLocal) return null;   // partida no PC (campanha, ou o Zera fora do ar): os amigos não alcançam para assistir
         if ("jogo".equals(fase) && tableId != null && !souAnfitriao()) {   // em partida: os amigos podem assistir
             Map<String, Object> r = new LinkedHashMap<>();
@@ -1803,7 +1816,7 @@ public class Ponte implements MageClient {
             r.put("erro", amigosErro);
             r.put("foto", amigosFoto);
             r.put("possoConvidar", salaParaAmigos() != null);
-            r.put("minhaMesa", "sala".equals(fase) && tableId != null ? tableId.toString() : null);
+            r.put("minhaMesa", draftMesa != null && "sala".equals(draftFase) ? draftMesa.toString() : "sala".equals(fase) && tableId != null ? tableId.toString() : null);
             json(ex, 200, r);
         } catch (Exception e) {
             json(ex, 200, Collections.singletonMap("erro", String.valueOf(e.getMessage())));
@@ -2413,6 +2426,11 @@ public class Ponte implements MageClient {
             }
             if (acao.equals("pronto")) {   // deck de 60 pronto: o dono cria a partida final, os outros entram nela
                 String arq = salvarDeckDraft(b);
+                if (draftDono && draftHumanos <= 1) {   // draft só com bots: guarda o deck, sem partida final
+                    draftFase = ""; draftMesa = null; draftId = null;
+                    Map<String, Object> r = new LinkedHashMap<>(); r.put("ok", true); r.put("deck", arq); r.put("sozinho", true);
+                    json(ex, 200, r); return;
+                }
                 if (draftDono) criarPartidaDraft(arq, draftHumanos);
                 else {
                     UUID achou = null; String alvo = " #" + draftMesa.toString().substring(0, 6);

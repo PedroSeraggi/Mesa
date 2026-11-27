@@ -3769,7 +3769,7 @@ function desenharAmigos(){
       const podeConv = conv && a.online && !(a.sala && a.sala.mesa === A.minhaMesa);
       return `<div class="bnItem ${a.online?'':'off'}">${avAmigo(a, a.online)}<div class="amInfo"><b>${esc(a.nome)}</b><span class="${a.online?'bnVerde':''}">${a.online ? esc(a.status ? a.status[0].toUpperCase()+a.status.slice(1) : 'Online') : quandoOffline(a.visto)}</span></div>
         <div class="bnAcoes ${sala||jogoAmigo?'sempre':''}"><button class="amOlho" title="Ver perfil" data-ver="${a.codigo}">${OLHO_SVG}</button>
-        ${sala ? `<button class="pri" data-entrar="${esc(JSON.stringify(sala))}">Entrar</button>` : ''}
+        ${sala ? `<button class="pri" data-entrar="${esc(JSON.stringify(sala))}">${sala.draft ? 'Entrar no draft' : 'Entrar'}</button>` : ''}
         ${jogoAmigo ? `<button data-assistir="${esc(JSON.stringify(jogoAmigo))}">Assistir</button>` : ''}
         ${podeConv ? `<button data-am="convidar" data-c="${a.codigo}">Convidar</button>` : ''}
         ${a.online ? `<button data-trocar="${a.codigo}" title="Trocar cartas com ${esc(a.nome)}">Trocar</button>` : ''}
@@ -3786,7 +3786,7 @@ function desenharAmigos(){
     if (b.dataset.am==='remover' && !confirm(`Remover ${b.dataset.n} dos amigos?`)) return;
     acaoAmigo(b.dataset.am, b.dataset.c);
   });
-  L.querySelectorAll('[data-entrar]').forEach(b=>b.onclick=()=>escolherDeckEEntrar(JSON.parse(b.dataset.entrar)));
+  L.querySelectorAll('[data-entrar]').forEach(b=>b.onclick=()=>{ const s = JSON.parse(b.dataset.entrar); if (s.draft){ painelAmigosAberto = false; $('#painelAmigos').classList.add('oculto'); abrirDraft(s.mesa); } else escolherDeckEEntrar(s); });
   L.querySelectorAll('[data-assistir]').forEach(b=>b.onclick=()=>assistirMesa(JSON.parse(b.dataset.assistir)));
   L.querySelectorAll('[data-ver]').forEach(b=>b.onclick=()=>verPerfilAmigo(b.dataset.ver));
 }
@@ -3915,15 +3915,17 @@ function desenharConvites(){
   const ids = lista.map(c=>c.id).join(',');
   if (box.dataset.ids === ids) return;
   box.dataset.ids = ids;
-  box.innerHTML = lista.map(c=>`<div class="conviteBox" data-id="${c.id}">${avAmigo(c.de)}<div><b>${esc(c.de.nome)}</b> te chamou para a sala <b>${esc(c.sala.nome||'')}</b> (${c.sala.ocupados||'?'}/${c.sala.lugares||'?'})</div>
+  box.innerHTML = lista.map(c=>c.sala && c.sala.draft
+    ? `<div class="conviteBox" data-id="${c.id}">${avAmigo(c.de)}<div><b>${esc(c.de.nome)}</b> te chamou para um <b>Draft de Commander</b> (${c.sala.ocupados||'?'}/${c.sala.lugares||'?'})</div><button class="pri cvEntrar">Entrar no draft</button><button class="cvNao">Agora não</button></div>`
+    : `<div class="conviteBox" data-id="${c.id}">${avAmigo(c.de)}<div><b>${esc(c.de.nome)}</b> te chamou para a sala <b>${esc(c.sala.nome||'')}</b> (${c.sala.ocupados||'?'}/${c.sala.lugares||'?'})</div>
     <select class="cvDeck">${opcoesDeck(d=>`<option value="${esc(d.arquivo)}">${esc(nomeDeckCurto(d))}</option>`)}</select>
     <button class="pri cvEntrar">Entrar</button><button class="cvNao">Agora não</button></div>`).join('');
   box.querySelectorAll('.conviteBox').forEach(el=>{
     const c = lista.find(x=>x.id===el.dataset.id);
-    const sel = el.querySelector('.cvDeck'); const salvo = localGet('meuDeck'); if (salvo) sel.value = salvo;
+    const sel = el.querySelector('.cvDeck'); const salvo = localGet('meuDeck'); if (sel && salvo) sel.value = salvo;
     const fim = ()=>{ convitesVistos.add(c.id); localSet('convitesVistos', JSON.stringify([...convitesVistos].slice(-50))); post('/api/amigos',{acao:'descartar', convite:c.id}); el.remove(); box.dataset.ids=''; };
     el.querySelector('.cvNao').onclick = fim;
-    el.querySelector('.cvEntrar').onclick = async ()=>{ fim(); await entrarSalaAmigo(c.sala, sel.value); };
+    el.querySelector('.cvEntrar').onclick = async ()=>{ fim(); if (c.sala.draft) abrirDraft(c.sala.mesa); else await entrarSalaAmigo(c.sala, sel.value); };
   });
 }
 // convite de troca: aparece por cima de tudo (menos durante uma partida)
@@ -4505,9 +4507,9 @@ function telaEscolhaInicial(){
   document.body.appendChild(fr);
 }
 // draft de Commander (draft.html por cima da Mesa): criar/entrar, escolher cartas, montar o deck de 60
-function abrirDraft(){
+function abrirDraft(entrar){
   let fr = $('#frameDraft'); if (fr) fr.remove();
-  fr = document.createElement('iframe'); fr.id = 'frameDraft'; fr.src = 'draft.html';
+  fr = document.createElement('iframe'); fr.id = 'frameDraft'; fr.src = 'draft.html' + (entrar ? '?entrar=' + encodeURIComponent(entrar) : '');
   fr.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:9300;background:#070504';
   const ouvir = e=>{ if (!e.data || !e.data.draft || e.source !== fr.contentWindow) return;
     if (e.data.acao === 'fechar' || e.data.acao === 'partida'){ window.removeEventListener('message', ouvir); fr.remove(); } };

@@ -66,6 +66,9 @@ h2{margin:0 0 6px;font-family:var(--fa);font-weight:400;font-size:30px;color:var
 .lugar{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;background:#0005;box-shadow:inset 0 0 0 1px #c9a24a2a;font-size:17px}
 .lugar .av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-family:var(--ff);color:#1a1208;background:var(--ouro)}
 .lugar.livre{color:#7a6a4a;font-style:italic}.lugar.livre .av{background:#2a1a0e;color:#6a5a3a}
+#convidarBox{text-align:left;margin:-6px 0 18px}#convidarBox h4{margin:0 0 6px;font-family:var(--ff);font-size:11px;letter-spacing:.2em;color:var(--ouro2)}
+.amigoC{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:8px;font-size:15px}.amigoC:hover{background:#0004}
+.amigoC .btCouro{margin-left:auto;padding:5px 12px;font-size:11px}.amigoC .btCouro.ok{filter:grayscale(1);opacity:.6;pointer-events:none}
 
 /* ---------- escolhendo ---------- */
 #topo{position:absolute;left:0;right:0;top:0;height:64px;display:flex;align-items:center;gap:22px;padding:0 120px 0 26px;z-index:5;background:linear-gradient(180deg,#0c0704f0,#0c070400)}
@@ -168,7 +171,7 @@ h2{margin:0 0 6px;font-family:var(--fa);font-weight:400;font-size:30px;color:var
   <div class="painel"><h3>CRIAR UM DRAFT</h3>
     <div class="cuboEsc" id="cuboEsc"><div class="cuboArte" id="cuboArte"></div><div class="cuboTx"><small>CUBO</small><b id="cuboNome">Carregando...</b><span id="cuboResumo"></span></div><button class="btCouro" id="trocarCubo">Trocar</button></div>
     <div class="campo">Jogadores <select id="lugares"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
-    <div class="campo" id="campoBots" style="display:none">Bots de draft (teste) <select id="bots"><option>0</option><option>1</option><option>2</option><option>3</option></select></div>
+    <div class="campo" id="campoBots" style="display:none" title="Bots completam a mesa do draft, mas não jogam a partida final">Bots de draft <select id="bots"><option>0</option><option>1</option><option>2</option><option>3</option></select></div>
     <button class="btOuro" id="criar" style="width:100%;margin-top:4px">Criar draft</button></div>
   <div class="painel"><h3>DRAFTS ABERTOS</h3><div class="abertos" id="abertos"><div class="vazio">Procurando...</div></div></div>
 </div></div>
@@ -178,6 +181,7 @@ h2{margin:0 0 6px;font-family:var(--fa);font-weight:400;font-size:30px;color:var
 <div class="tela" id="tSala"><div class="col painel">
   <h2>Sala do draft</h2><div class="sub" id="salaSub"></div>
   <div class="lugares" id="lugaresSala"></div>
+  <div id="convidarBox"></div>
   <button class="btOuro" id="comecar" style="display:none">Começar o draft</button>
   <div class="sub" id="salaEspera"></div>
 </div></div>
@@ -219,7 +223,8 @@ const $ = id => document.getElementById(id);
 function erro(t){ const e = $('erro'); e.textContent = t; e.style.display = 'block'; clearTimeout(erro.t); erro.t = setTimeout(()=>e.style.display = 'none', 6000); }
 (function(){ const R = 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ'; $('runas').innerHTML = '<circle cx="200" cy="200" r="196"/><circle cx="200" cy="200" r="176"/><circle cx="200" cy="200" r="120"/><path id="rc" d="M200 200 m-186 0 a186 186 0 1 1 372 0 a186 186 0 1 1 -372 0"/><text font-size="13" font-family="serif"><textPath href="#rc" textLength="1160" lengthAdjust="spacing">' + R + R + '</textPath></text>'; })();
 function mostrar(id){ document.querySelectorAll('.tela').forEach(t=>t.classList.toggle('on', t.id === id)); }
-if (new URLSearchParams(location.search).has('teste')) $('campoBots').style.display = '';
+$('campoBots').style.display = '';
+const ENTRAR = new URLSearchParams(location.search).get('entrar');
 const zoom = (el, c) => { el.onmouseenter = () => { const z = $('zoom'), r = el.getBoundingClientRect(); z.src = img(c);
   z.style.left = (r.right + 300 < innerWidth ? r.right + 12 : Math.max(8, r.left - 302)) + 'px'; z.style.top = Math.max(10, Math.min(innerHeight - 420, r.top - 40)) + 'px'; z.style.display = 'block'; };
   el.onmouseleave = () => $('zoom').style.display = 'none'; };
@@ -282,6 +287,17 @@ async function desenharSala(){
   $('lugaresSala').innerHTML = h;
   $('comecar').style.display = r.dono ? '' : 'none'; $('comecar').disabled = m.livres > 0;
   $('salaEspera').textContent = r.dono ? (m.livres > 0 ? `Esperando ${m.livres} jogador${m.livres===1?'':'es'} entrar...` : 'Todos chegaram!') : 'Esperando o dono começar o draft...';
+}
+// convidar amigos online para a sala do draft (o convite aparece na Mesa deles)
+const convidados = new Set();
+async function desenharConvidar(){
+  let r; try { r = await (await fetch('/api/amigos')).json(); } catch(e){ return; }
+  const on = ((r.foto && r.foto.amigos) || []).filter(a=>a.online);
+  $('convidarBox').innerHTML = on.length ? '<h4>CHAMAR AMIGOS</h4>' + on.map(a=>`<div class="amigoC"><div>${a.nome}</div><button class="btCouro ${convidados.has(a.codigo)?'ok':''}" data-c="${a.codigo}">${convidados.has(a.codigo)?'Chamado':'Chamar'}</button></div>`).join('')
+    : '<h4>CHAMAR AMIGOS</h4><div class="vazio" style="padding:2px 8px">Nenhum amigo online agora.</div>';
+  $('convidarBox').querySelectorAll('[data-c]').forEach(b=>b.onclick = async () => {
+    const x = await (await fetch('/api/amigos', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({acao:'convidar', codigo: b.dataset.c})})).json();
+    if (x.erro) erro(x.erro); else { convidados.add(b.dataset.c); desenharConvidar(); } });
 }
 $('comecar').onclick = async () => { const r = await post({acao:'comecar'}); if (r.erro) erro(r.erro); };
 
@@ -376,6 +392,7 @@ $('pronto').onclick = async () => {
   $('pronto').disabled = true; $('pronto').textContent = 'Esperando os outros...';
   const r = await post({acao:'pronto', comandante: {nome: cmd.nome, set: cmd.set, num: cmd.num}, cartas: [...deck].map(c=>({nome:c.nome, set:c.set, num:c.num})), basicos: bas});
   if (r.erro){ erro(r.erro); $('pronto').disabled = false; $('pronto').textContent = 'Pronto'; return; }
+  if (r.sozinho){ $('pronto').textContent = 'Deck salvo!'; erro(`Deck salvo como "${r.deck.replace(/\.dck$/,'')}". Sem outros jogadores no draft, não há partida final: use o deck em Jogar com bots.`); setTimeout(()=>pai({acao:'fechar'}), 5000); return; }
   pai({acao: 'partida'});   // a Mesa mostra a sala da partida final (todos que draftaram)
 };
 
@@ -387,12 +404,12 @@ async function ciclo(){
   if (!['', 'sala', 'escolhendo', 'montando', 'jogando'].includes(f) || !('pacote' in e)){   // Mesa sem o draft (versão antiga aberta)
     mostrar('tInicio'); erro('Esta Mesa está desatualizada para o draft. Feche e abra a Mesa de novo.'); fase = f; return; }
   if (f === '') { mostrar('tInicio'); if (fase !== '') desenharInicio(); }
-  else if (f === 'sala') { mostrar('tSala'); desenharSala(); }
+  else if (f === 'sala') { mostrar('tSala'); desenharSala(); if (fase !== 'sala' || !desenharConvidar.ult || Date.now() - desenharConvidar.ult > 8000){ desenharConvidar.ult = Date.now(); desenharConvidar(); } }
   else if (f === 'escolhendo') { mostrar('tEscolhe'); desenharEscolha(e); }
   else if (f === 'montando') { if (fase !== 'montando'){ POOL = e.escolhas || []; cmd = null; deck = new Set(); mostrar('tMonta'); desenharMonta(); } }
   fase = f;
 }
-ciclo(); setInterval(ciclo, 1000); setInterval(()=>{ if (fase === '') desenharInicio(); }, 5000);
+(async () => { if (ENTRAR){ const x = await post({acao:'entrar', mesa: ENTRAR}); if (x.erro) erro(x.erro); } ciclo(); })(); setInterval(ciclo, 1000); setInterval(()=>{ if (fase === '') desenharInicio(); }, 5000);
 $('fechar').onclick = async () => { if (fase && fase !== 'jogando' && !confirm('Sair do draft? Você perde o seu lugar.')) return; if (fase && fase !== 'jogando') await post({acao:'sair'}); pai({acao: 'fechar'}); };
 </script>
 </body></html>
